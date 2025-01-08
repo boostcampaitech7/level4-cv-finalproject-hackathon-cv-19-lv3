@@ -8,12 +8,12 @@
 
 <table align="center">
     <tr align="center">
-        <td><img src="https://github.com/user-attachments/assets/337d06ce-6a68-4ff9-9638-b54b2d17e9e9" width="200" height="120"></td>
-        <td><img src="https://github.com/user-attachments/assets/f962dbc4-1ac0-49c1-bc1a-b999e01fa67f" width="200" height="120"></td>
-        <td><img src="https://github.com/user-attachments/assets/dcd46b40-5117-437c-a8a0-8217cffcb487" width="200" height="120"></td>
-        <td><img src="https://github.com/user-attachments/assets/9b936eca-2463-48d2-b01b-3196761e738e" width="200" height="120"></td>
-        <td><img src="https://github.com/user-attachments/assets/4a8f05bf-9635-47f7-b90e-39bb7c6f6824" width="200" height="120"></td>
-        <td><img src="https://github.com/user-attachments/assets/78c78353-ba3b-494d-ba94-429c4f838cd1" width="200" height="120"></td>
+        <td><img src="https://github.com/user-attachments/assets/5c95d938-f80c-4a6b-812d-d8a682c56989" width="200" height="120"></td>
+        <td><img src="https://github.com/user-attachments/assets/4ed624a7-36c0-472f-9da1-2cb12df7f07f" width="200" height="120"></td>
+        <td><img src="https://github.com/user-attachments/assets/a6b47b75-54e7-4048-82ce-7ec657ad7de1" width="200" height="120"></td>
+        <td><img src="https://github.com/user-attachments/assets/815a963f-6d7b-4f4a-a361-565e6927a932" width="200" height="120"></td>
+        <td><img src="https://github.com/user-attachments/assets/a3ade63b-176d-48ba-ac1a-9452935bcb57" width="200" height="120"></td>
+        <td><img src="https://github.com/user-attachments/assets/64292b40-2b5d-4ea2-88e4-ba3a494601ff" width="200" height="120"></td>
     </tr>
     <tr align="center">
         <td><a href="https://github.com/minrongtic" target="_blank">김민영</a></td>
