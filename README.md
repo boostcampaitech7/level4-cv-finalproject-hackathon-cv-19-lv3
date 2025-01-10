@@ -35,5 +35,3 @@
 
 <br/>
 <br/>
-
-jira test
