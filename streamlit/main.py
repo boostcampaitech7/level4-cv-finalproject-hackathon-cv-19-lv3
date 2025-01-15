@@ -13,6 +13,9 @@ page_option = st.sidebar.selectbox("태스크 선택: ", page_options)
 
 
 if page_option is None or page_option == page_options[0]:
+    gif_options = ["only overlap", "All"]
+    gif_option = st.sidebar.selectbox("예측 결과 표시 옵션: ", gif_options)
+    
     # 비디오 파일 업로드
     uploaded_file = st.file_uploader("", type=["mp4", "mov", "avi", "mkv"])
 
@@ -23,14 +26,18 @@ if page_option is None or page_option == page_options[0]:
             temp_filepath = temp_file.name
         
         # OpenCV로 비디오 읽기
-        original_video_frames, only_skeleton_frames, frames = mediapipe_inference.estimPose_video(temp_filepath, thickness=10)
+        original_video_frames, only_skeleton_frames, frames = mediapipe_inference.estimPose_video(temp_filepath, thickness=5)
         new_frames = []
-        for i in range(len(frames)):
-            original = original_video_frames[i]
-            overlap = frames[i]
-            only_skeleton = only_skeleton_frames[i]
 
-            new_frames.append(util.concat_frames_with_spacing([original, only_skeleton, overlap]))
+        if gif_option == "only overlap":
+            new_frames = frames
+        else:
+            for i in range(len(frames)):
+                original = original_video_frames[i]
+                overlap = frames[i]
+                only_skeleton = only_skeleton_frames[i]
+
+                new_frames.append(util.concat_frames_with_spacing([original, only_skeleton, overlap]))
 
         # 프레임 표시 영역
         placeholder = st.empty()
