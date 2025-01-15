@@ -4,6 +4,7 @@ import tempfile
 import mediapipe_inference, util
 import time
 import imageio
+import cv2
 
 st.sidebar.success("CV19 영원한종이박")
 st.markdown("<h2 style='text-align: center;'>Dance Pose Estimation Demo</h2>", unsafe_allow_html=True)
@@ -25,10 +26,16 @@ if page_option is None or page_option == page_options[0]:
             temp_file.write(uploaded_file.read())
             temp_filepath = temp_file.name
         
-        # OpenCV로 비디오 읽기
+        # OpenCV로 비디오 읽고 추론
+        start_time = time.perf_counter()
         original_video_frames, only_skeleton_frames, frames = mediapipe_inference.estimPose_video(temp_filepath, thickness=5)
+        end_time = time.perf_counter()
+        elapsed_time = end_time - start_time
+        st.success(f"pose estimation 완료. 수행시간: {elapsed_time:.2f}초")
+
         new_frames = []
 
+        # 옵션에 따라 gif를 keypoint와 image가 겹쳐진 것만 보여줄지, 분리된 것도 보여줄 지 선택
         if gif_option == "only overlap":
             new_frames = frames
         else:
@@ -43,14 +50,18 @@ if page_option is None or page_option == page_options[0]:
         placeholder = st.empty()
 
         # GIF로 저장
+        start_time = time.perf_counter()
         if st.button("GIF 생성 및 보기"):
             with tempfile.NamedTemporaryFile(delete=False, suffix=".gif") as temp_gif:
                 gif_path = temp_gif.name
                 imageio.mimsave(gif_path, new_frames, format="GIF", fps=30, loop=0)  # FPS 설정
-                st.success("GIF 파일 생성 완료!")
+                end_time = time.perf_counter()
+                elapsed_time = end_time - start_time
+                st.success(f"GIF 파일 생성 완료! 수행시간: {elapsed_time:.2f}초")
                 
                 # GIF 표시
                 st.image(gif_path, caption="생성된 GIF")
+
 else:
     # 녹화 데이터 저장을 위한 리스트
     frames = []
@@ -92,9 +103,6 @@ else:
 
             # 녹화된 비디오 저장
             if frames:
-                import cv2
-                import tempfile
-
                 # 임시 파일 생성
                 with tempfile.NamedTemporaryFile(delete=False, suffix=".mp4") as video_file:
                     height, width, _ = frames[0].shape
