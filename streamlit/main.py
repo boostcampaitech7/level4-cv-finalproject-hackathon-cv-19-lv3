@@ -5,12 +5,33 @@ import mediapipe_inference, util
 import time
 import imageio
 import cv2
+import av
+from PIL import Image
 
+# main title
 st.sidebar.success("CV19 영원한종이박")
 st.markdown("<h2 style='text-align: center;'>Dance Pose Estimation Demo</h2>", unsafe_allow_html=True)
 
+
+# sidebar
 page_options = ['Single Video Pose Estimation', 'Record and Compare']
 page_option = st.sidebar.selectbox("태스크 선택: ", page_options)
+frame_option = st.sidebar.slider('frame: ', 10, 30)
+
+
+# session state
+if "uploaded_file" not in st.session_state:
+    st.session_state["uploaded_file"] = None
+if "original_video_frames" not in st.session_state:
+    st.session_state["original_video_frames"] = None
+if "only_skeleton_frames" not in st.session_state:
+    st.session_state["only_skeleton_frames"] = None
+if "frames" not in st.session_state:
+    st.session_state["frames"] = None
+if "estimation_start_time" not in st.session_state:
+    st.session_state["estimation_start_time"] = None
+if "estimation_end_time" not in st.session_state:
+    st.session_state["estimation_end_time"] = None
 
 
 if page_option is None or page_option == page_options[0]:
@@ -27,40 +48,83 @@ if page_option is None or page_option == page_options[0]:
             temp_filepath = temp_file.name
         
         # OpenCV로 비디오 읽고 추론
-        start_time = time.perf_counter()
-        original_video_frames, only_skeleton_frames, frames = mediapipe_inference.estimPose_video(temp_filepath, thickness=5)
-        end_time = time.perf_counter()
-        elapsed_time = end_time - start_time
-        st.success(f"pose estimation 완료. 수행시간: {elapsed_time:.2f}초")
+        if st.session_state['estimation_start_time'] is None:
+            st.session_state.estimation_start_time = time.perf_counter()
+        if st.session_state["uploaded_file"] is None or uploaded_file.name != st.session_state["uploaded_file"].name:
+            st.session_state["uploaded_file"] = uploaded_file
+            st.session_state.original_video_frames, st.session_state.only_skeleton_frames, st.session_state.frames = mediapipe_inference.estimPose_video(temp_filepath, thickness=5)
+    
+        if st.session_state['estimation_end_time'] is None:
+            st.session_state.estimation_end_time = time.perf_counter()
+        st.session_state.estimation_elapsed_time = st.session_state['estimation_end_time'] - st.session_state['estimation_start_time']
+        st.success(f"pose estimation 완료. 수행시간: {st.session_state['estimation_elapsed_time']:.2f}초")
 
         new_frames = []
 
         # 옵션에 따라 gif를 keypoint와 image가 겹쳐진 것만 보여줄지, 분리된 것도 보여줄 지 선택
         if gif_option == "only overlap":
-            new_frames = frames
+            new_frames = st.session_state["frames"]
         else:
-            for i in range(len(frames)):
-                original = original_video_frames[i]
-                overlap = frames[i]
-                only_skeleton = only_skeleton_frames[i]
+            for i in range(len(st.session_state["frames"])):
+                original = st.session_state["original_video_frames"][i]
+                overlap = st.session_state["frames"][i]
+                only_skeleton = st.session_state["only_skeleton_frames"][i]
 
                 new_frames.append(util.concat_frames_with_spacing([original, only_skeleton, overlap]))
+
+
+        ## gif또는 mp4로 표시
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            gif_button = st.button("GIF 생성 및 보기")
+        with col2:
+            mp4_button = st.button("MP4 생성 및 보기")
+        with col3:
+            raw_button = st.button("frame으로부터 가져오기")
+        
 
         # 프레임 표시 영역
         placeholder = st.empty()
 
         # GIF로 저장
         start_time = time.perf_counter()
-        if st.button("GIF 생성 및 보기"):
+        if gif_button:
             with tempfile.NamedTemporaryFile(delete=False, suffix=".gif") as temp_gif:
                 gif_path = temp_gif.name
-                imageio.mimsave(gif_path, new_frames, format="GIF", fps=30, loop=0)  # FPS 설정
+                imageio.mimsave(gif_path, new_frames, format="GIF", fps=frame_option, loop=0)  # FPS 설정
                 end_time = time.perf_counter()
                 elapsed_time = end_time - start_time
                 st.success(f"GIF 파일 생성 완료! 수행시간: {elapsed_time:.2f}초")
-                
-                # GIF 표시
                 st.image(gif_path, caption="생성된 GIF")
+        
+
+        if mp4_button:
+            with tempfile.NamedTemporaryFile(delete=False, suffix=".mp4") as temp_mp4:
+                video_path = temp_mp4.name
+                height, width, _ = new_frames[0].shape
+                
+                # OpenCV VideoWriter로 MP4 저장
+                fourcc = cv2.VideoWriter_fourcc(*"DIVX")  # MP4 코덱
+                out = cv2.VideoWriter(video_path, fourcc, frame_option, (width, height))  # FPS = 10
+                
+                for frame in new_frames:
+                    out.write(cv2.cvtColor(frame, cv2.COLOR_RGB2BGR))  # RGB -> BGR 변환 필요
+                out.release()
+                end_time = time.perf_counter()
+                elapsed_time = end_time - start_time
+                st.success(f"MP4 파일 생성 완료! {elapsed_time:.2f}초")
+                
+                # MP4 표시
+                video_file = open(video_path, 'rb')
+                st.video(video_file)
+
+        if raw_button:
+            # 비디오 플레이어 컨트롤러
+            placeholder = st.empty()  # 빈 컨테이너 생성
+            for frame in new_frames:
+                placeholder.image(frame, channels="RGB")  # 프레임 표시
+                time.sleep(1 / frame_option)  # 프레임 속도에 맞춰 대기
+
 
 else:
     # 녹화 데이터 저장을 위한 리스트
