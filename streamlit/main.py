@@ -97,6 +97,16 @@ if page_option is None or page_option == page_options[0]:
                 elapsed_time = end_time - start_time
                 st.success(f"GIF 파일 생성 완료! 수행시간: {elapsed_time:.2f}초")
                 st.image(gif_path, caption="생성된 GIF")
+            
+            # 다운로드 버튼
+            with open(gif_path, "rb") as gif_file:
+                gif_bytes = gif_file.read()
+                st.download_button(
+                    label="다운로드 GIF 파일",
+                    data=gif_bytes,
+                    file_name="output.gif",
+                    mime="image/gif"
+                )
         
 
         if mp4_button:
@@ -112,6 +122,16 @@ if page_option is None or page_option == page_options[0]:
                 with open(video_path, "rb") as video_file:
                     video_bytes = video_file.read()
                     st.video(video_bytes)
+            
+            # 다운로드 버튼
+            with open(video_path, "rb") as video_file:
+                video_bytes = video_file.read()
+                st.download_button(
+                    label="다운로드 MP4 파일",
+                    data=video_bytes,
+                    file_name="output.mp4",
+                    mime="video/mp4"
+                )
 
         if raw_button:
             # 비디오 플레이어 컨트롤러
