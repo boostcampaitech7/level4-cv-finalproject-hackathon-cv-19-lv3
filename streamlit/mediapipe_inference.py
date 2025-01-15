@@ -29,7 +29,7 @@ def estimPose_img(input_file, pose=pose_img, landmarks_c=(234,63,247), connectio
     output_img = input_img.copy()
     
     # Perform the Pose Detection.
-    results = pose.process(output_img)
+    results = pose.process(output_img) # 이거 이렇게 하면 트래킹은 안되자나..
     
     # Retrieve the height and width of the input image.
     height, width, _ = input_img.shape

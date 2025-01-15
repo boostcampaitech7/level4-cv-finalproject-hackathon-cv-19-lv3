@@ -3,10 +3,11 @@ from streamlit_webrtc import webrtc_streamer, VideoProcessorBase, WebRtcMode
 import tempfile
 import mediapipe_inference, util
 import time
+import imageio.v3 as iio
 import imageio
+from moviepy import VideoFileClip
 import cv2
 import av
-from PIL import Image
 
 # main title
 st.sidebar.success("CV19 영원한종이박")
@@ -100,23 +101,17 @@ if page_option is None or page_option == page_options[0]:
 
         if mp4_button:
             with tempfile.NamedTemporaryFile(delete=False, suffix=".mp4") as temp_mp4:
+                # MP4 파일 경로
                 video_path = temp_mp4.name
-                height, width, _ = new_frames[0].shape
-                
-                # OpenCV VideoWriter로 MP4 저장
-                fourcc = cv2.VideoWriter_fourcc(*"DIVX")  # MP4 코덱
-                out = cv2.VideoWriter(video_path, fourcc, frame_option, (width, height))  # FPS = 10
-                
-                for frame in new_frames:
-                    out.write(cv2.cvtColor(frame, cv2.COLOR_RGB2BGR))  # RGB -> BGR 변환 필요
-                out.release()
+                iio.imwrite(video_path, new_frames, fps=frame_option)
                 end_time = time.perf_counter()
                 elapsed_time = end_time - start_time
-                st.success(f"MP4 파일 생성 완료! {elapsed_time:.2f}초")
-                
-                # MP4 표시
-                video_file = open(video_path, 'rb')
-                st.video(video_file)
+                st.success(f"MP4 파일 생성 완료!: {elapsed_time:.2f}초")
+
+                # Streamlit에서 재생
+                with open(video_path, "rb") as video_file:
+                    video_bytes = video_file.read()
+                    st.video(video_bytes)
 
         if raw_button:
             # 비디오 플레이어 컨트롤러
