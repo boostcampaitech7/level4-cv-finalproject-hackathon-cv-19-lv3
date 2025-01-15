@@ -1,5 +1,6 @@
 import cv2
 import mediapipe as mp
+import numpy as np
 import matplotlib.pyplot as plt
 
 
@@ -27,11 +28,8 @@ def estimPose_img(input_file, pose=pose_img, landmarks_c=(234,63,247), connectio
     # Create a copy of the input image
     output_img = input_img.copy()
     
-    # Convert the image from BGR into RGB format.
-    RGB_img = cv2.cvtColor(output_img, cv2.COLOR_BGR2RGB)
-    
     # Perform the Pose Detection.
-    results = pose.process(RGB_img)
+    results = pose.process(output_img)
     
     # Retrieve the height and width of the input image.
     height, width, _ = input_img.shape
@@ -41,6 +39,10 @@ def estimPose_img(input_file, pose=pose_img, landmarks_c=(234,63,247), connectio
     
     # Check if any landmarks are detected.
     if results.pose_landmarks:
+        skeleton = np.zeros_like(input_img)
+        mp_drawing.draw_landmarks(skeleton, results.pose_landmarks, mp_pose.POSE_CONNECTIONS, 
+                                  mp_drawing.DrawingSpec(landmarks_c, thickness, circle_r),
+                                  mp_drawing.DrawingSpec(connection_c, thickness, circle_r))
     
         # Draw Pose landmarks on the output image.
         mp_drawing.draw_landmarks(output_img, results.pose_landmarks, mp_pose.POSE_CONNECTIONS, 
@@ -66,7 +68,7 @@ def estimPose_img(input_file, pose=pose_img, landmarks_c=(234,63,247), connectio
     # Just get output_img and landmarks
     else:
         # Return the output image and the found landmarks.
-        return output_img, landmarks
+        return output_img, skeleton, landmarks
 
 def estimPose_video(input_file, pose_video=pose_video, landmarks_c=(234,63,247), connection_c=(117,249,77), 
                  thickness=1, circle_r=1, nrows_frames=4, ncols_frames=3):
@@ -76,10 +78,14 @@ def estimPose_video(input_file, pose_video=pose_video, landmarks_c=(234,63,247),
     
     total_frames = int(video.get(cv2.CAP_PROP_FRAME_COUNT))
     frames = []
+    original_video_frames = []
+    only_skeleton_frames = []
     
     for i in range(total_frames):
         # Read a frame.
         ok, frame = video.read()
+        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        original_video_frames.append(frame.copy())
     
         # Check if frame is not read properly.
         if not ok:
@@ -90,8 +96,8 @@ def estimPose_video(input_file, pose_video=pose_video, landmarks_c=(234,63,247),
         frame_height, frame_width, _ =  frame.shape
         # Resize the frame while keeping the aspect ratio.
         frame = cv2.resize(frame, (int(frame_width * (640 / frame_height)), 640))
-        frame, _ = estimPose_img(frame, pose_video, landmarks_c, connection_c, thickness, 
+        frame, skeleton, _ = estimPose_img(frame, pose_video, landmarks_c, connection_c, thickness, 
                               circle_r, display=False)
-        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         frames.append(frame)
-    return frames
+        only_skeleton_frames.append(skeleton)
+    return original_video_frames, only_skeleton_frames, frames
