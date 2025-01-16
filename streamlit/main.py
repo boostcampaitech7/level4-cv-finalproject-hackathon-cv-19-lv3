@@ -3,9 +3,8 @@ from streamlit_webrtc import webrtc_streamer, VideoProcessorBase, WebRtcMode
 import tempfile
 import mediapipe_inference, util
 import time
-import imageio.v3 as iio
 import imageio
-from moviepy import VideoFileClip
+import imageio.v3 as iio
 import cv2
 import av
 
