@@ -4,7 +4,7 @@ import cv2
 camera = cv2.VideoCapture(0)
 
 # 오버랩할 동영상 불러오기
-overlay_video = cv2.VideoCapture('chal2.mp4')
+overlay_video = cv2.VideoCapture('pr.mp4')
 
 # 동영상 크기 가져오기
 overlay_width = int(overlay_video.get(cv2.CAP_PROP_FRAME_WIDTH))
