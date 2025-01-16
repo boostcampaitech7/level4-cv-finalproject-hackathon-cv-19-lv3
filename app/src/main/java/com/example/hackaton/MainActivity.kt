@@ -1,7 +1,10 @@
 package com.example.hackaton
 
 import android.hardware.Camera
+import android.media.AudioManager
+import java.text.SimpleDateFormat
 import android.media.CamcorderProfile
+import android.media.MediaPlayer
 import android.media.MediaRecorder
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
@@ -12,6 +15,8 @@ import android.widget.Button
 import android.widget.Toast
 import com.gun0912.tedpermission.PermissionListener
 import com.gun0912.tedpermission.normal.TedPermission
+import java.util.Date
+import java.util.Locale
 
 class MainActivity : AppCompatActivity(), SurfaceHolder.Callback {
     private lateinit var btnRecord: Button
@@ -20,8 +25,10 @@ class MainActivity : AppCompatActivity(), SurfaceHolder.Callback {
     private var mediaRecorder: MediaRecorder? = null
     private lateinit var surfaceHolder: SurfaceHolder
     private var recording = false
-
+    private val url = "https://www.youtube.com/shorts/Fpmqa_ldQS0"; // your URL here
     private val TAG = "MainActivity.kt"
+
+    private var mediaPlayer: MediaPlayer? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -42,6 +49,9 @@ class MainActivity : AppCompatActivity(), SurfaceHolder.Callback {
         btnRecord = findViewById(R.id.btn_record)
         btnRecord.setOnClickListener {
             if (recording) {
+                mediaPlayer?.release();
+                mediaPlayer = null;
+
                 // 녹화 중지
                 mediaRecorder?.apply {
                     stop()
@@ -51,6 +61,8 @@ class MainActivity : AppCompatActivity(), SurfaceHolder.Callback {
                 recording = false
                 btnRecord.text = "녹화 시작"
             } else {
+                val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
+
                 // 녹화 시작
                 runOnUiThread {
                     Toast.makeText(this@MainActivity, "녹화가 시작되었습니다.", Toast.LENGTH_SHORT).show()
@@ -61,10 +73,13 @@ class MainActivity : AppCompatActivity(), SurfaceHolder.Callback {
                             setAudioSource(MediaRecorder.AudioSource.CAMCORDER)
                             setVideoSource(MediaRecorder.VideoSource.CAMERA)
 
+                            mediaPlayer = MediaPlayer.create(this@MainActivity, R.raw.kick_drum_base)
+                            mediaPlayer?.start()
+
                             // 녹화 설정
                             setProfile(CamcorderProfile.get(CamcorderProfile.QUALITY_720P))
-                            setOrientationHint(90)
-                            setOutputFile("/storage/emulated/0/Download/test.mp4")
+                            setOrientationHint(270)
+                            setOutputFile("/storage/emulated/0/Download/video_$timeStamp.mp4")
                             setPreviewDisplay(surfaceHolder.surface)
                             prepare()
                             start()
@@ -120,6 +135,10 @@ class MainActivity : AppCompatActivity(), SurfaceHolder.Callback {
 
     override fun surfaceCreated(holder: SurfaceHolder) {
         // Surface가 생성되었을 때 동작
+        camera?.apply {
+            setPreviewDisplay(holder)
+            startPreview() // 미리보기 시작
+        }
     }
 
     private fun refreshCamera(camera: Camera?) {
