@@ -2,6 +2,14 @@
 *.mp4
 *.gif
 
+# image
+*.jpg
+*.jpeg
+*.png
+
+# model weights
+*.task
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

@@ -50,17 +50,17 @@ def estimPose_img(input_file, pose=pose_img, landmarks_c=(234,63,247), connectio
                                   mp_drawing.DrawingSpec(connection_c, thickness, circle_r))
         
         # Iterate over the detected landmarks.
-        for landmark in results.pose_landmarks.landmark:
-            landmarks.append((int(landmark.x * width), int(landmark.y * height),
-                                  (landmark.z * width)))
+        for landmark in results.pose_world_landmarks.landmark:
+            landmarks.append((landmark.x, landmark.y,
+                                  landmark.z, landmark.visibility))
             
     # print(results.pose_landmarks)
     # Check if we want to display.
     if display:
         # Display the original input image and the resulting image.
         plt.figure(figsize=[15,15])
-        plt.subplot(121);plt.imshow(input_img[:,:,::-1]);plt.title("Original image");plt.axis('off');
-        plt.subplot(122);plt.imshow(output_img[:,:,::-1]);plt.title("Output image");plt.axis('off');
+        plt.subplot(121);plt.imshow(input_img[:,:,::-1]);plt.title("Original image");plt.axis('off')
+        plt.subplot(122);plt.imshow(output_img[:,:,::-1]);plt.title("Output image");plt.axis('off')
         
         # Plot the Pose landmarks in 3D.
         mp_drawing.plot_landmarks(results.pose_world_landmarks, mp_pose.POSE_CONNECTIONS)
@@ -77,10 +77,12 @@ def estimPose_video(input_file, pose_video=pose_video, landmarks_c=(234,63,247),
     video = cv2.VideoCapture(input_file)
     
     total_frames = int(video.get(cv2.CAP_PROP_FRAME_COUNT))
+    fps = int(video.get(cv2.CAP_PROP_FPS))
     frames = []
     original_video_frames = []
     only_skeleton_frames = []
     
+    all_landmarks = []
     for i in range(total_frames):
         # Read a frame.
         ok, frame = video.read()
@@ -96,8 +98,9 @@ def estimPose_video(input_file, pose_video=pose_video, landmarks_c=(234,63,247),
         frame_height, frame_width, _ =  frame.shape
         # Resize the frame while keeping the aspect ratio.
         frame = cv2.resize(frame, (int(frame_width * (640 / frame_height)), 640))
-        frame, skeleton, _ = estimPose_img(frame, pose_video, landmarks_c, connection_c, thickness, 
+        frame, skeleton, landmarks = estimPose_img(frame, pose_video, landmarks_c, connection_c, thickness, 
                               circle_r, display=False)
         frames.append(frame)
+        all_landmarks.append(landmarks)
         only_skeleton_frames.append(skeleton)
-    return original_video_frames, only_skeleton_frames, frames
+    return original_video_frames, only_skeleton_frames, frames, all_landmarks

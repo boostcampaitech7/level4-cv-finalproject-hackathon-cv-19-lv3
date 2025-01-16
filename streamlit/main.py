@@ -1,11 +1,12 @@
 import streamlit as st
 from streamlit_webrtc import webrtc_streamer, VideoProcessorBase, WebRtcMode
 import tempfile
-import mediapipe_inference, util
+import mediapipe_inference, util, keypoint_map
 import time
 import imageio
 import imageio.v3 as iio
 import cv2
+import json
 import av
 
 # main title
@@ -32,6 +33,10 @@ if "estimation_start_time" not in st.session_state:
     st.session_state["estimation_start_time"] = None
 if "estimation_end_time" not in st.session_state:
     st.session_state["estimation_end_time"] = None
+if "all_landmarks" not in st.session_state:
+    st.session_state["all_landmarks"] = None
+if "all_landmarks_dict" not in st.session_state:
+    st.session_state["all_landmarks_dict"] = None
 
 
 if page_option is None or page_option == page_options[0]:
@@ -52,15 +57,31 @@ if page_option is None or page_option == page_options[0]:
             st.session_state.estimation_start_time = time.perf_counter()
         if st.session_state["uploaded_file"] is None or uploaded_file.name != st.session_state["uploaded_file"].name:
             st.session_state["uploaded_file"] = uploaded_file
-            st.session_state.original_video_frames, st.session_state.only_skeleton_frames, st.session_state.frames = mediapipe_inference.estimPose_video(temp_filepath, thickness=5)
+            st.session_state.original_video_frames, st.session_state.only_skeleton_frames, st.session_state.frames, st.session_state.all_landmarks = mediapipe_inference.estimPose_video(temp_filepath, thickness=5)
+            st.session_state['all_landmarks_dict'] = keypoint_map.landmarks_to_dict(st.session_state['all_landmarks'])
     
         if st.session_state['estimation_end_time'] is None:
             st.session_state.estimation_end_time = time.perf_counter()
         st.session_state.estimation_elapsed_time = st.session_state['estimation_end_time'] - st.session_state['estimation_start_time']
         st.success(f"pose estimation 완료. 수행시간: {st.session_state['estimation_elapsed_time']:.2f}초")
+        # 임시 파일 생성
+        with tempfile.NamedTemporaryFile("w", delete=False, suffix=".json") as tmp_file:
+            # 딕셔너리를 JSON 형식으로 임시 파일에 저장
+            json.dump(st.session_state['all_landmarks_dict'], tmp_file, indent=4)
+            tmp_file_path = tmp_file.name  # 임시 파일 경로
+            
+        # Streamlit 다운로드 버튼 추가
+        with open(tmp_file_path, "r") as file:
+            st.download_button(
+                label="Download JSON (Tempfile)",
+                data=file,
+                file_name="data.json",
+                mime="application/json",
+            )
+            
+        
 
         new_frames = []
-
         # 옵션에 따라 gif를 keypoint와 image가 겹쳐진 것만 보여줄지, 분리된 것도 보여줄 지 선택
         if gif_option == "only overlap":
             new_frames = st.session_state["frames"]
@@ -141,59 +162,9 @@ if page_option is None or page_option == page_options[0]:
 
 
 else:
-    # 녹화 데이터 저장을 위한 리스트
-    frames = []
+    # Camera input
+    image = st.camera_input("Take a picture")
 
-    # VideoProcessor 클래스 정의
-    class VideoProcessor(VideoProcessorBase):
-        def __init__(self):
-            self.recording = False
-
-        def recv(self, frame):
-            # WebRTC에서 전달받은 프레임 처리
-            img = frame.to_ndarray(format="bgr24")
-            
-            # 녹화 중이면 프레임 저장
-            if self.recording:
-                frames.append(img)
-            
-            return av.VideoFrame.from_ndarray(img, format="bgr24")
-
-    # WebRTC 스트리머 초기화
-    ctx = webrtc_streamer(
-        key="example",
-        mode=WebRtcMode.SENDRECV,
-        video_processor_factory=VideoProcessor,
-        media_stream_constraints={"video": True, "audio": False},
-        async_processing=True,
-    )
-
-    # 녹화 컨트롤 버튼
-    if ctx.video_processor:
-        if st.button("녹화 시작"):
-            ctx.video_processor.recording = True
-            frames.clear()  # 녹화 시작 시 이전 데이터 삭제
-            st.info("녹화를 시작했습니다.")
-        
-        if st.button("녹화 중지"):
-            ctx.video_processor.recording = False
-            st.success("녹화를 중지했습니다.")
-
-            # 녹화된 비디오 저장
-            if frames:
-                # 임시 파일 생성
-                with tempfile.NamedTemporaryFile(delete=False, suffix=".mp4") as video_file:
-                    height, width, _ = frames[0].shape
-                    fourcc = cv2.VideoWriter_fourcc(*"mp4v")
-                    out = cv2.VideoWriter(video_file.name, fourcc, 20, (width, height))
-
-                    for frame in frames:
-                        out.write(frame)
-                    out.release()
-                
-                    st.success(f"녹화된 비디오가 저장되었습니다: {video_file.name}")
-                    st.video(video_file.name)
-
-    # WebRTC 상태 정보 출력
-    if ctx.state.playing:
-        st.text("웹캠이 활성화되었습니다.")
+    # If an image is taken, display it
+    if image:
+        st.image(image, caption="Captured Image", use_column_width=True)
