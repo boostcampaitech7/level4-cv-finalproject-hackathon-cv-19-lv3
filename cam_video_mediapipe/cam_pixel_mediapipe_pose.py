@@ -6,7 +6,7 @@ import numpy as np
 import time
 
 # 동영상 경로
-input_video_path = "chal2.mp4"  # 입력 동영상 파일 경로
+input_video_path = "chal.mp4"  # 입력 동영상 파일 경로
 # 동영상 읽기
 cap = cv2.VideoCapture(input_video_path)
 fps = int(cap.get(cv2.CAP_PROP_FPS))  # 입력 동영상의 FPS
@@ -14,7 +14,7 @@ frame_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))  # 프레임 너비
 frame_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))  # 프레임 높이
 
 # Mediapipe PoseLandmarker 설정
-base_options = python.BaseOptions(model_asset_path='pose_landmarker_lite.task')
+base_options = python.BaseOptions(model_asset_path='pose_landmarker_heavy.task')
 options = vision.PoseLandmarkerOptions(
     base_options=base_options,
     output_segmentation_masks=True,
@@ -74,7 +74,7 @@ while True:
     mask_rgb = cv2.cvtColor(mask, cv2.COLOR_GRAY2BGR)
 
     # 합성 (투명도 적용)
-    blended = cv2.addWeighted(webcam_frame_resized, 0.9, mask_rgb, 0.1, 0)
+    blended = cv2.addWeighted(webcam_frame_resized, 0.75, mask_rgb, 0.25, 0)
 
     # 합성된 영상 화면에 표시
     cv2.imshow('Segmentation Overlay', blended)
