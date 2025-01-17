@@ -1,4 +1,5 @@
 import numpy as np
+from keypoint_map import KEYPOINT_MAPPING
 
 
 # 간격 추가하여 두 프레임 이어붙이기
@@ -15,3 +16,18 @@ def concat_frames_with_spacing(frames, spacing=20, color=(0, 0, 0)):
     combined_frame = np.hstack(final_frames)
 
     return combined_frame
+
+
+def landmarks_to_dict(all_landmarks):
+    landmark_dict = {}
+    
+    for i, landmarks in enumerate(all_landmarks):
+        d = {j: {
+                "name": KEYPOINT_MAPPING[j],
+                "x": landmarks[j][0],
+                "y": landmarks[j][1],
+                "z": landmarks[j][2],
+                "visibility": landmarks[j][3]
+            } for j in KEYPOINT_MAPPING.keys()}
+        landmark_dict[i] = d
+    return landmark_dict

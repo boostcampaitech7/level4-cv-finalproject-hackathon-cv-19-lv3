@@ -1,7 +1,7 @@
 import streamlit as st
 from streamlit_webrtc import webrtc_streamer, VideoProcessorBase, WebRtcMode
 import tempfile
-import mediapipe_inference, util, keypoint_map
+import mediapipe_inference, util, keypoint_map, scoring
 import time
 import imageio
 import imageio.v3 as iio
@@ -58,7 +58,7 @@ if page_option is None or page_option == page_options[0]:
         if st.session_state["uploaded_file"] is None or uploaded_file.name != st.session_state["uploaded_file"].name:
             st.session_state["uploaded_file"] = uploaded_file
             st.session_state.original_video_frames, st.session_state.only_skeleton_frames, st.session_state.frames, st.session_state.all_landmarks = mediapipe_inference.estimPose_video(temp_filepath, thickness=5)
-            st.session_state['all_landmarks_dict'] = keypoint_map.landmarks_to_dict(st.session_state['all_landmarks'])
+            st.session_state['all_landmarks_dict'] = util.landmarks_to_dict(st.session_state['all_landmarks'])
     
         if st.session_state['estimation_end_time'] is None:
             st.session_state.estimation_end_time = time.perf_counter()

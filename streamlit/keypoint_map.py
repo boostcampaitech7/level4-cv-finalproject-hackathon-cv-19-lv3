@@ -1,7 +1,5 @@
-import numpy as np
-
 NUM_CLASSES = 33
-keypoint_mapping = {
+KEYPOINT_MAPPING = {
     0: "nose",
     1: "left_eye_inner",
     2: "left_eye",
@@ -39,7 +37,7 @@ keypoint_mapping = {
 SELECTED = [2, 5, 11, 12, 13, 14, 15, 16, 19, 20, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32]
 
 
-reverse_keypoint_mapping = {
+REVERSE_KEYPOINT_MAPPING = {
     "nose": 0,
     "left_eye_inner": 1,
     "left_eye": 2,
@@ -75,7 +73,7 @@ reverse_keypoint_mapping = {
     "right_foot_index": 32
 }
 
-weights = {
+WEIGHTS = {
     "nose": 0.05,
     "left_eye_inner": 0.02,
     "left_eye": 0.02,
@@ -111,7 +109,7 @@ weights = {
     "right_foot_index": 0.02
 }
 
-sigma_i_value = {
+K_I_VALUE = {
     'nose': 0.026,
     'eye': 0.025,
     'ear': 0.035,
@@ -128,43 +126,3 @@ sigma_i_value = {
     'heel': 0.089,
     'foot': 0.089
 }
-k_i_value = {
-    k: sigma_i_value[k] for k in sigma_i_value.keys()
-}
-
-def normalize_landmarks(landmarks_np, mode="default"):
-    if mode == "shoulder":
-        right_shoulder_idx = reverse_keypoint_mapping['right_shoulder']
-        left_shoulder_idx = reverse_keypoint_mapping['left_shoulder']
-        d = np.linalg.norm(landmarks_np[right_shoulder_idx] - landmarks_np[left_shoulder_idx])
-    elif mode == 'l2':
-        d = np.linalg.norm(landmarks_np.flatten())
-    else:
-        right_hip_idx = reverse_keypoint_mapping['right_hip']
-        left_hip_idx = reverse_keypoint_mapping['left_hip']
-        hip_center = (landmarks_np[right_hip_idx] + landmarks_np[left_hip_idx]) / 2.
-        landmarks_np = landmarks_np - hip_center
-        right_shoulder_idx = reverse_keypoint_mapping['right_shoulder']
-        left_shoulder_idx = reverse_keypoint_mapping['left_shoulder']
-        d = np.linalg.norm((landmarks_np[right_shoulder_idx] - landmarks_np[left_shoulder_idx]))
-
-    return landmarks_np / d
-
-def filter_important_features(landmarks_np, targets=SELECTED):
-    return landmarks_np[targets]
-
-
-def landmarks_to_dict(all_landmarks):
-    landmark_dict = {}
-    
-    for i, landmarks in enumerate(all_landmarks):
-        d = {j: {
-                "name": keypoint_mapping[j],
-                "x": landmarks[j][0],
-                "y": landmarks[j][1],
-                "z": landmarks[j][2],
-                "visibility": landmarks[j][3]
-            } for j in keypoint_mapping.keys()}
-        landmark_dict[i] = d
-    return landmark_dict
-        
