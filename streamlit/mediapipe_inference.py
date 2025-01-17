@@ -2,6 +2,9 @@ import cv2
 import mediapipe as mp
 import numpy as np
 import matplotlib.pyplot as plt
+from mediapipe.tasks import python
+from mediapipe.tasks.python import vision
+from util import draw_landmarks_on_image
 
 
 # Initializing mediapipe pose class.
@@ -104,3 +107,23 @@ def estimPose_video(input_file, pose_video=pose_video, landmarks_c=(234,63,247),
         all_landmarks.append(landmarks)
         only_skeleton_frames.append(skeleton)
     return original_video_frames, only_skeleton_frames, frames, all_landmarks
+
+
+
+def get_detection(img_path, display=False):
+    base_options = python.BaseOptions(model_asset_path='pose_landmarker.task')
+    options = vision.PoseLandmarkerOptions(
+        base_options=base_options,
+        output_segmentation_masks=True)
+    detector = vision.PoseLandmarker.create_from_options(options)
+    image = cv2.imread(img_path)
+    image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+    mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=image)
+    detection_result = detector.detect(mp_image)
+    annotated_image = draw_landmarks_on_image(mp_image.numpy_view(), detection_result)
+
+    if display:
+        plt.imshow(annotated_image)
+        plt.show()
+    
+    return detection_result.pose_landmarks, detection_result.segmentation_masks, annotated_image

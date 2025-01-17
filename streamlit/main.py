@@ -162,9 +162,38 @@ if page_option is None or page_option == page_options[0]:
 
 
 else:
-    # Camera input
-    image = st.camera_input("Take a picture")
+    # # Camera input
+    # image = st.camera_input("Take a picture")
 
-    # If an image is taken, display it
-    if image:
-        st.image(image, caption="Captured Image", use_column_width=True)
+    # # If an image is taken, display it
+    # if image:
+    #     st.image(image, caption="Captured Image", use_column_width=True)
+    
+
+    image_1 = st.file_uploader("input_1", type=["jpg", "png", "jpeg"])
+    image_2 = st.file_uploader("input_2", type=["jpg", "png", "jpeg"])
+
+    if image_1 is not None and image_2 is not None:
+        # 업로드된 파일을 임시 파일로 저장
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".mp4") as temp_file_1:
+            temp_file_1.write(image_1.read())
+            temp_filepath_1 = temp_file_1.name
+        
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".mp4") as temp_file_2:
+            temp_file_2.write(image_2.read())
+            temp_filepath_2 = temp_file_2.name
+        
+        pose_landmarks_1, segmentation_masks_1, annotated_image_1 = mediapipe_inference.get_detection(temp_filepath_1)
+        pose_landmarks_2, segmentation_masks_2, annotated_image_2 = mediapipe_inference.get_detection(temp_filepath_2)
+
+        col1, col2 = st.columns(2)
+        with col1:
+            st.image(annotated_image_1)
+        with col2:
+            st.image(annotated_image_2)
+        
+        pose_landmarks_np_1 = scoring.normalize_landmarks(scoring.refine_landmarks(pose_landmarks_1[0]))
+        pose_landmarks_np_2 = scoring.normalize_landmarks(scoring.refine_landmarks(pose_landmarks_2[0]))
+        score = scoring.cos_sim(pose_landmarks_np_1, pose_landmarks_np_2)
+        st.success(f"코사인 유사도 점수 : {score:.3f}")
+        

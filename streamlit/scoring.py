@@ -24,3 +24,22 @@ def normalize_landmarks(landmarks_np, mode="default", root_idx1=None, root_idx2=
 # select only important feature in all keypoint
 def filter_important_features(landmarks_np, targets=SELECTED):
     return landmarks_np[targets]
+
+
+def cos_sim(landmarks1, landmarks2):
+    if landmarks1.shape != landmarks2.shape:
+        raise ValueError("both landmarks must have same shape!!")
+    
+    if landmarks1.shape[-1] == 4:
+        landmarks1 = landmarks1[..., :3]
+        landmarks2 = landmarks2[..., :3]
+    landmarks1 = landmarks1.flatten()
+    landmarks2 = landmarks2.flatten()
+    return (1+np.dot(landmarks1, landmarks2)/(np.linalg.norm(landmarks1)*np.linalg.norm(landmarks2))) / 2
+
+
+def refine_landmarks(landmarks):
+    lst = []
+    for landmark in landmarks:
+        lst.append([landmark.x, landmark.y, landmark.z, landmark.visibility])
+    return np.array(lst)
