@@ -2,3 +2,5 @@ mediapipe
 opencv-python
 pyaudio
 wave
+moviepy
+pygame
