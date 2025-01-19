@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".StartActivity">
+
+    <ImageView
+        android:id="@+id/imageView"
+        android:layout_width="243dp"
+        android:layout_height="209dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:srcCompat="@drawable/kakaotalk_20250116_113945229_1" />
+
+    <TextView
+        android:id="@+id/ddanddara_txt"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="딴 - 따라"
+        android:textSize="34sp"
+        tools:layout_editor_absoluteX="145dp"
+        tools:layout_editor_absoluteY="174dp" />
+
+    <TextView
+        android:id="@+id/shortform_txt"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="숏폼 챌린지 AI 코치"
+        tools:layout_editor_absoluteX="148dp"
+        tools:layout_editor_absoluteY="153dp" />
+
+    <TextView
+        android:id="@+id/sub1_txt"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="도전하기 어려웠던 쇼츠 챌린지"
+        tools:layout_editor_absoluteX="116dp"
+        tools:layout_editor_absoluteY="487dp" />
+
+    <TextView
+        android:id="@+id/sub1_txt2"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="AI 댄스 코치 딴-따라와 함께 정복해가요!"
+        tools:layout_editor_absoluteX="88dp"
+        tools:layout_editor_absoluteY="508dp" />
+
+    <Button
+        android:id="@+id/start_btn"
+        android:layout_width="288dp"
+        android:layout_height="49dp"
+        android:text="START"
+        tools:layout_editor_absoluteX="61dp"
+        tools:layout_editor_absoluteY="569dp" />
+
+    <TextView
+        android:id="@+id/copyright_txt"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="ⓒ 2025. 영원한종이박 All rights reserved."
+        android:textSize="8sp"
+        tools:layout_editor_absoluteX="133dp"
+        tools:layout_editor_absoluteY="692dp" />
+</androidx.constraintlayout.widget.ConstraintLayout>

@@ -6,21 +6,27 @@ import java.text.SimpleDateFormat
 import android.media.CamcorderProfile
 import android.media.MediaPlayer
 import android.media.MediaRecorder
+import android.net.Uri
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
 import android.view.SurfaceHolder
 import android.view.SurfaceView
+import android.view.View
 import android.widget.Button
 import android.widget.Toast
+import android.widget.VideoView
+import com.google.android.material.floatingactionbutton.FloatingActionButton
+import com.google.android.material.snackbar.Snackbar
 import com.gun0912.tedpermission.PermissionListener
 import com.gun0912.tedpermission.normal.TedPermission
 import java.util.Date
 import java.util.Locale
 
 class MainActivity : AppCompatActivity(), SurfaceHolder.Callback {
-    private lateinit var btnRecord: Button
+    private lateinit var btnRecord: FloatingActionButton
     private lateinit var surfaceView: SurfaceView
+    private lateinit var videoOverlay: VideoView
     private var camera: Camera? = null
     private var mediaRecorder: MediaRecorder? = null
     private lateinit var surfaceHolder: SurfaceHolder
@@ -46,67 +52,92 @@ class MainActivity : AppCompatActivity(), SurfaceHolder.Callback {
             )
             .check()
 
-        btnRecord = findViewById(R.id.btn_record)
+        btnRecord = findViewById(R.id.fab_main)
+        surfaceView = findViewById(R.id.surfaceView)
+        videoOverlay = findViewById(R.id.videoOverlay)
+
+        // SurfaceHolder 초기화
+        surfaceHolder = surfaceView.holder
+        surfaceHolder.addCallback(this)
+        surfaceHolder.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS)
+
         btnRecord.setOnClickListener {
             if (recording) {
-                mediaPlayer?.release();
-                mediaPlayer = null;
-
-                // 녹화 중지
-                mediaRecorder?.apply {
-                    stop()
-                    release()
-                }
-                camera?.lock()
-                recording = false
-                btnRecord.text = "녹화 시작"
+                stopRecording()
             } else {
-                val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
-
-                // 녹화 시작
-                runOnUiThread {
-                    Toast.makeText(this@MainActivity, "녹화가 시작되었습니다.", Toast.LENGTH_SHORT).show()
-                    try {
-                        mediaRecorder = MediaRecorder().apply {
-                            camera?.unlock()
-                            setCamera(camera)
-                            setAudioSource(MediaRecorder.AudioSource.CAMCORDER)
-                            setVideoSource(MediaRecorder.VideoSource.CAMERA)
-
-                            mediaPlayer = MediaPlayer.create(this@MainActivity, R.raw.kick_drum_base)
-                            mediaPlayer?.start()
-
-                            // 녹화 설정
-                            setProfile(CamcorderProfile.get(CamcorderProfile.QUALITY_720P))
-                            setOrientationHint(270)
-                            setOutputFile("/storage/emulated/0/Download/video_$timeStamp.mp4")
-                            setPreviewDisplay(surfaceHolder.surface)
-                            prepare()
-                            start()
-                        }
-                        recording = true
-                        btnRecord.text = "녹화 종료"
-                    } catch (e: Exception) {
-                        Log.e(TAG, "Error in 79: ${e.message}")
-                        e.printStackTrace()
-                        mediaRecorder?.release()
-                    }
-                }
+                startRecording()
             }
         }
     }
 
-    // 전면 카메라 ID 가져오기 함수
-    private fun getFrontCameraId(): Int {
-        val numberOfCameras = Camera.getNumberOfCameras()
-        val cameraInfo = Camera.CameraInfo()
-        for (i in 0 until numberOfCameras) {
-            Camera.getCameraInfo(i, cameraInfo)
-            if (cameraInfo.facing == Camera.CameraInfo.CAMERA_FACING_FRONT) {
-                return i // 전면 카메라 ID 반환
+    private fun setupVideoOverlay() {
+        val videoUri = Uri.parse("android.resource://${packageName}/${R.raw.kick_drum_base}")
+
+        videoOverlay.setVideoURI(videoUri)
+        videoOverlay.setOnPreparedListener { mediaPlayer ->
+            mediaPlayer.isLooping = false
+        }
+
+        // 동영상 재생 완료 시 녹화 중지
+        videoOverlay.setOnCompletionListener {
+            stopRecording()
+        }
+
+        videoOverlay.visibility = View.VISIBLE // 비디오 오버레이를 표시
+        videoOverlay.start()
+    }
+    private fun startRecording() {
+        val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
+
+        // 동영상 오버레이 설정
+        setupVideoOverlay()
+
+        // 녹화 시작
+        runOnUiThread {
+            Toast.makeText(this@MainActivity, "녹화가 시작되었습니다.", Toast.LENGTH_SHORT).show()
+
+            try {
+                mediaRecorder = MediaRecorder().apply {
+                    camera?.unlock()
+                    setCamera(camera)
+                    setAudioSource(MediaRecorder.AudioSource.CAMCORDER)
+                    setVideoSource(MediaRecorder.VideoSource.CAMERA)
+
+                    // 녹화 설정
+                    setProfile(CamcorderProfile.get(CamcorderProfile.QUALITY_720P))
+                    setOrientationHint(270)
+                    setOutputFile("/storage/emulated/0/Download/video_$timeStamp.mp4")
+                    setPreviewDisplay(surfaceHolder.surface)
+                    prepare()
+                    start()
+                }
+
+                recording = true
+
+            } catch (e: Exception) {
+                Log.e(TAG, "Error in 79: ${e.message}")
+                e.printStackTrace()
+                mediaRecorder?.release()
+                recording = false
             }
         }
-        return -1 // 전면 카메라를 찾지 못함
+    }
+    private fun stopRecording() {
+        try {
+            mediaRecorder?.apply {
+                stop()
+                release()
+            }
+            camera?.lock()
+            mediaRecorder = null
+            recording = false
+            Toast.makeText(this, "녹화가 종료되었습니다.", Toast.LENGTH_SHORT).show()
+            // 동영상 오버레이 숨김 처리
+            videoOverlay.visibility = View.INVISIBLE
+        } catch (e: Exception) {
+            Log.e(TAG, "녹화 중지 오류: ${e.message}")
+            e.printStackTrace()
+        }
     }
 
     private val permissionListener = object : PermissionListener {
@@ -131,6 +162,19 @@ class MainActivity : AppCompatActivity(), SurfaceHolder.Callback {
             // 권한 거부 시
             Toast.makeText(this@MainActivity, "권한 거부", Toast.LENGTH_SHORT).show()
         }
+    }
+
+    // 전면 카메라 ID 가져오기 함수
+    private fun getFrontCameraId(): Int {
+        val numberOfCameras = Camera.getNumberOfCameras()
+        val cameraInfo = Camera.CameraInfo()
+        for (i in 0 until numberOfCameras) {
+            Camera.getCameraInfo(i, cameraInfo)
+            if (cameraInfo.facing == Camera.CameraInfo.CAMERA_FACING_FRONT) {
+                return i // 전면 카메라 ID 반환
+            }
+        }
+        return -1 // 전면 카메라를 찾지 못함
     }
 
     override fun surfaceCreated(holder: SurfaceHolder) {
