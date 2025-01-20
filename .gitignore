@@ -1,3 +1,7 @@
+# audio
+*.mp3
+*.wav
+
 # video
 *.mp4
 *.gif
@@ -9,6 +13,9 @@
 
 # model weights
 *.task
+
+# data
+*.json
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
