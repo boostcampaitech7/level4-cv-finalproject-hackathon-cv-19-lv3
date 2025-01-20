@@ -177,7 +177,7 @@
                 android:layout_weight="0.2" />
 
             <ImageButton
-                android:id="@+id/imageButton3"
+                android:id="@+id/home_btn"
                 android:layout_width="48dp"
                 android:layout_height="48dp"
                 android:background="#00FFFFFF"

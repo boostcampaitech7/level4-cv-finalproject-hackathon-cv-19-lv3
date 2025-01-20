@@ -147,6 +147,12 @@ class MainActivity : AppCompatActivity(), SurfaceHolder.Callback {
             if (cameraId != -1) {
                 camera = Camera.open(cameraId) // 전면 카메라 열기
                 camera?.setDisplayOrientation(90)
+                try {
+                    camera?.setPreviewDisplay(surfaceHolder)
+                    camera?.startPreview() // 카메라 미리보기 시작
+                } catch (e: Exception) {
+                    Log.e(TAG, "Error setting camera preview: ${e.message}")
+                }
             } else {
                 Toast.makeText(this@MainActivity, "전면 카메라를 찾을 수 없습니다.", Toast.LENGTH_SHORT).show()
                 return
@@ -180,8 +186,12 @@ class MainActivity : AppCompatActivity(), SurfaceHolder.Callback {
     override fun surfaceCreated(holder: SurfaceHolder) {
         // Surface가 생성되었을 때 동작
         camera?.apply {
-            setPreviewDisplay(holder)
-            startPreview() // 미리보기 시작
+            try {
+                setPreviewDisplay(holder)
+                startPreview() // 수정: Surface가 생성되면 카메라 프리뷰 시작
+            } catch (e: Exception) {
+                Log.e(TAG, "Error setting camera preview in surfaceCreated: ${e.message}")
+            }
         }
     }
 
