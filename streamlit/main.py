@@ -187,6 +187,12 @@ else:
             st.image(annotated_image_2)
         
         pose_landmarks_np_1 = scoring.refine_landmarks(pose_landmarks_1)
-        pose_landmarks_np_2 = scoring.normalize_landmarks_to_range(pose_landmarks_np_1, scoring.refine_landmarks(pose_landmarks_2))
-        evaluation_results = scoring.evaluate_everything(pose_landmarks_np_1, b1, pose_landmarks_np_2, b2)
+        pose_landmarks_np_2 = scoring.refine_landmarks(pose_landmarks_2)
+
+        evaluation_results = scoring.evaluate_everything(pose_landmarks_np_1, b1, pose_landmarks_np_2, b2, normalize=True)
+        st.subheader("Normalize를 적용시의 결과: ")
         st.json(evaluation_results)
+
+        evaluation_results_2 = scoring.evaluate_everything(pose_landmarks_np_1, b1, scoring.refine_landmarks(pose_landmarks_2), b2, normalize=False)
+        st.subheader("Normalize를 적용하지 않을 시의 결과: ")
+        st.json(evaluation_results_2)

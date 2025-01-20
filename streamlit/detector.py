@@ -21,13 +21,14 @@ class PoseDetector:
 
         options = vision.PoseLandmarkerOptions(
             base_options=self.base_options,
-            output_segmentation_masks=True, running_mode=vision.RunningMode.VIDEO)
+            output_segmentation_masks=True, running_mode=vision.RunningMode.IMAGE)
         self.detector = vision.PoseLandmarker.create_from_options(options)
     
 
     def get_detection(self, img_path, landmarks_c=(234,63,247), connection_c=(117,249,77), 
                     thickness=20, circle_r=10, display=False):
-        self.detector._running_mode = vision.RunningMode.IMAGE
+        if self.detector._running_mode != vision.RunningMode.IMAGE:
+            self.detector._running_mode = vision.RunningMode.IMAGE
 
         # Read the input image
         if isinstance(img_path, str) :
@@ -66,7 +67,8 @@ class PoseDetector:
 
     def estimPose_video(self, input_file, landmarks_c=(234,63,247), connection_c=(117,249,77), 
                     thickness=1, circle_r=1):
-        self.detector._running_mode = vision.RunningMode.VIDEO
+        if self.detector._running_mode != vision.RunningMode.VIDEO:
+            self.detector._running_mode = vision.RunningMode.VIDEO
 
         # Initialize the VideoCapture object to read from a video stored in the disk.
         video = cv2.VideoCapture(input_file)

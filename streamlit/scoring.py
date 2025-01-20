@@ -111,8 +111,11 @@ def pck(gt, preds, threshold):
     return pck_score
 
 
-def evaluate_everything(landmarks1_np, bs1, landmarks2_np, bs2, pck_thres=0.1):
-    l2 = normalize_landmarks_to_range(landmarks1_np, landmarks2_np)
+def evaluate_everything(landmarks1_np, bs1, landmarks2_np, bs2, pck_thres=0.1, normalize=True):
+    if normalize:
+        l2 = normalize_landmarks_to_range(landmarks1_np, landmarks2_np)
+    else:
+        l2 = landmarks2_np
     l1 = landmarks1_np
 
     results = {
