@@ -34,8 +34,6 @@ KEYPOINT_MAPPING = {
     31: "left_foot_index",
     32: "right_foot_index"
 }
-SELECTED = [2, 5, 11, 12, 13, 14, 15, 16, 19, 20, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32]
-
 
 REVERSE_KEYPOINT_MAPPING = {
     "nose": 0,
@@ -111,18 +109,64 @@ WEIGHTS = {
 
 K_I_VALUE = {
     'nose': 0.026,
-    'eye': 0.025,
-    'ear': 0.035,
-    'mouse': 0.026,
-    'shoulder': 0.079,
-    'elbow': 0.072,
-    'wrist': 0.062,
-    'pinky': 0.072,
-    'index': 0.072,
-    'thumb': 0.072,
-    'hip': 0.107,
-    'knee': 0.087,
-    'ankle': 0.089,
-    'heel': 0.089,
-    'foot': 0.089
+    'left_eye_inner': 0.025,
+    'left_eye': 0.025,
+    'left_eye_outer': 0.025,
+    'right_eye_inner': 0.025,
+    'right_eye': 0.025,
+    'right_eye_outer': 0.025,
+    'left_ear': 0.035,
+    'right_ear': 0.035,
+    'mouth_left': 0.026,
+    'mouth_right': 0.026,
+    'left_shoulder': 0.079,
+    'right_shoulder': 0.079,
+    'left_elbow': 0.072,
+    'right_elbow': 0.072,
+    'left_wrist': 0.062,
+    'right_wrist': 0.062,
+    'left_pinky': 0.072,
+    'right_pinky': 0.072,
+    'left_index': 0.072,
+    'right_index': 0.072,
+    'left_thumb': 0.072,
+    'right_thumb': 0.072,
+    'left_hip': 0.107,
+    'right_hip': 0.107,
+    'left_knee': 0.087,
+    'right_knee': 0.087,
+    'left_ankle': 0.089,
+    'right_ankle': 0.089,
+    'left_heel': 0.089,
+    'right_heel': 0.089,
+    'left_foot_index': 0.072,
+    'right_foot_index': 0.072
 }
+
+
+# select for oks calculation
+SELECTED_KEYPOINTS = [0,7,8,11,12,13,14,15,16,17,18,23,24,25,26,27,28,29,30,31,32]
+SELECTED_KEYPOINTS_MAPPING = {KEYPOINT_MAPPING[SELECTED_KEYPOINTS[i]]: i for i in range(len(SELECTED_KEYPOINTS))}
+SELECTED_SIGMAS = [K_I_VALUE[k] for k in SELECTED_KEYPOINTS_MAPPING.keys()]
+
+CONNECTIONS = [
+    (0,1), (0,2), # Nose to Ears
+    (3,5), (4,6), # Shoulders to Elbows
+    (5,7), (6,8), # Elbows to Wrists
+    (9,11), (10,12), # Hips to Knees
+    (11,13), (12,14), # Knees to Ankles
+    (3, 4), (4, 10), (10, 9), (9, 3) # body
+]
+
+# for cosine similarity
+VECTOR_LIST = [
+    (1, 2),
+    (3, 5),
+    (4, 6),
+    (5, 7),
+    (6, 8),
+    (9, 11),
+    (10, 12),
+    (11, 13),
+    (12, 14)
+]

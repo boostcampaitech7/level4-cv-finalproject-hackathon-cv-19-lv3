@@ -5,7 +5,9 @@ import matplotlib.pyplot as plt
 from mediapipe.tasks import python
 from mediapipe.tasks.python import vision
 from util import draw_landmarks_on_image
-
+from keypoint_map import SELECTED_KEYPOINTS
+from scoring import refine_landmarks
+import warnings
 
 # Initializing mediapipe pose class.
 mp_pose = mp.solutions.pose
@@ -109,9 +111,8 @@ def estimPose_video(input_file, pose_video=pose_video, landmarks_c=(234,63,247),
     return original_video_frames, only_skeleton_frames, frames, all_landmarks
 
 
-
-def get_detection(img_path, display=False):
-    base_options = python.BaseOptions(model_asset_path='pose_landmarker.task')
+def get_detection(img_path, display=False, model_path='pose_landmarker.task'):
+    base_options = python.BaseOptions(model_asset_path=model_path)
     options = vision.PoseLandmarkerOptions(
         base_options=base_options,
         output_segmentation_masks=True)
@@ -120,10 +121,21 @@ def get_detection(img_path, display=False):
     image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
     mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=image)
     detection_result = detector.detect(mp_image)
-    annotated_image = draw_landmarks_on_image(mp_image.numpy_view(), detection_result)
-
-    if display:
-        plt.imshow(annotated_image)
-        plt.show()
     
-    return detection_result.pose_landmarks, detection_result.segmentation_masks, annotated_image
+    xmin, xmax, ymin, ymax, zmin, zmax = 0, 0, 0, 0, 0, 0
+    if detection_result.pose_landmarks:
+        for landmark in detection_result.pose_landmarks[0]:
+            if xmin == 0:
+                xmin, ymin, zmin = landmark.x, landmark.y, landmark.z
+            else:
+                xmin, xmax, ymin, ymax, zmin, zmax = min(xmin, landmark.x), max(xmax, landmark.x), min(ymin, landmark.y), max(ymax, landmark.y), min(zmin, landmark.z), max(zmax, landmark.z)
+        annotated_image = draw_landmarks_on_image(mp_image.numpy_view(), detection_result)
+        boxsize = (xmin, xmax, ymin, ymax, zmin, zmax)
+        boxsize = np.array([boxsize[2 * i + 1] - boxsize[2 * i] for i in range(3)])
+    
+        if display:
+            plt.imshow(annotated_image)
+            plt.show()
+    else:
+        warnings.warn("there is no pose_landmarks in the image!!")
+    return detection_result.pose_landmarks[0], detection_result.segmentation_masks, annotated_image, boxsize

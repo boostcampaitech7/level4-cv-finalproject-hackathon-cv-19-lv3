@@ -183,8 +183,8 @@ else:
             temp_file_2.write(image_2.read())
             temp_filepath_2 = temp_file_2.name
         
-        pose_landmarks_1, segmentation_masks_1, annotated_image_1 = mediapipe_inference.get_detection(temp_filepath_1)
-        pose_landmarks_2, segmentation_masks_2, annotated_image_2 = mediapipe_inference.get_detection(temp_filepath_2)
+        pose_landmarks_1, segmentation_masks_1, annotated_image_1, _ = mediapipe_inference.get_detection(temp_filepath_1)
+        pose_landmarks_2, segmentation_masks_2, annotated_image_2, _ = mediapipe_inference.get_detection(temp_filepath_2)
 
         col1, col2 = st.columns(2)
         with col1:
@@ -192,8 +192,8 @@ else:
         with col2:
             st.image(annotated_image_2)
         
-        pose_landmarks_np_1 = scoring.normalize_landmarks(scoring.refine_landmarks(pose_landmarks_1[0]))
-        pose_landmarks_np_2 = scoring.normalize_landmarks(scoring.refine_landmarks(pose_landmarks_2[0]))
+        pose_landmarks_np_1, _ = scoring.normalize_landmarks(scoring.refine_landmarks(pose_landmarks_1[0]))
+        pose_landmarks_np_2, _ = scoring.normalize_landmarks(scoring.refine_landmarks(pose_landmarks_2[0]))
         score = scoring.cos_sim(pose_landmarks_np_1, pose_landmarks_np_2)
         st.success(f"코사인 유사도 점수 : {score:.3f}")
         
