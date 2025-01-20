@@ -101,7 +101,7 @@ def landmarks_to_dict(all_landmarks):
 
 
 def draw_landmarks_on_image(rgb_image, detection_result, landmarks_c=(234,63,247), connection_c=(117,249,77), 
-                    thickness=20, circle_r=10):
+                    thickness=10, circle_r=10):
   try:
       pose_landmarks_list = detection_result.pose_landmarks
   except:
