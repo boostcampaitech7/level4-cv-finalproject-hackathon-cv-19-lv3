@@ -7,6 +7,12 @@ import numpy as np
 from keypoint_map import KEYPOINT_MAPPING
 from mediapipe import solutions
 from mediapipe.framework.formats import landmark_pb2
+import random
+
+def set_seed(seed):
+    random.seed(seed)
+    np.random.seed(seed)
+
 
 def download_model(model_size):
     if model_size == 0:

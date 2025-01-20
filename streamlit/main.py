@@ -4,9 +4,7 @@ import detector, util, keypoint_map, scoring
 import time
 import imageio
 import imageio.v3 as iio
-import cv2
 import json
-import av
 
 # main title
 st.sidebar.success("CV19 영원한종이박")
@@ -14,10 +12,11 @@ st.markdown("<h2 style='text-align: center;'>Dance Pose Estimation Demo</h2>", u
 
 
 # sidebar
-page_options = ['Single Video Pose Estimation', 'Record and Compare']
+page_options = ['Single Video Pose Estimation', 'Image Compare']
 page_option = st.sidebar.selectbox("태스크 선택: ", page_options)
 frame_option = st.sidebar.slider('frame: ', 10, 30)
 model_size = st.sidebar.slider('model_size: ', 0, 2)
+seed = st.sidebar.number_input('random seed ', min_value=0, max_value=2024, step=1)
 
 
 # session state
@@ -42,6 +41,7 @@ if "estimate_class" not in st.session_state:
 
 
 if page_option is None or page_option == page_options[0]:
+    util.set_seed(seed)
     gif_options = ["only overlap", "All"]
     gif_option = st.sidebar.selectbox("예측 결과 표시 옵션: ", gif_options)
     
@@ -188,6 +188,5 @@ else:
         
         pose_landmarks_np_1 = scoring.refine_landmarks(pose_landmarks_1)
         pose_landmarks_np_2 = scoring.normalize_landmarks_to_range(pose_landmarks_np_1, scoring.refine_landmarks(pose_landmarks_2))
-        score = scoring.cos_sim(pose_landmarks_np_1, pose_landmarks_np_2)
-        st.success(f"코사인 유사도 점수 : {score:.3f}")
-        
+        evaluation_results = scoring.evaluate_everything(pose_landmarks_np_1, b1, pose_landmarks_np_2, b2)
+        st.json(evaluation_results)

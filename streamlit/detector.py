@@ -37,7 +37,7 @@ class PoseDetector:
             image = img_path
         if image is None:
             raise ValueError(f"image path {img_path} is wrong")
-            
+        # image = cv2.resize(image, (1024, 1024))
 
         mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=image)
         detection_result = self.detector.detect(mp_image)

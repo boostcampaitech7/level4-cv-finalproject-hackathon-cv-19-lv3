@@ -114,11 +114,17 @@ def pck(gt, preds, threshold):
 def evaluate_everything(landmarks1_np, bs1, landmarks2_np, bs2, pck_thres=0.1):
     l2 = normalize_landmarks_to_range(landmarks1_np, landmarks2_np)
     l1 = landmarks1_np
-    print("L1 score : ", L1_score(l1, l2))
-    print("L2 distance : ", np.linalg.norm((l1 - l2)[..., :3].flatten()))
-    print(f"cos similarity : {cos_sim(l1, l2)}")
-    print(f"PCK(thres is {pck_thres}): ", pck(l1, l2, pck_thres))
-    print("oks: ", oks(l1, l2, np.array([1,0,0])))
+
+    results = {
+        "L1_score":  L1_score(l1, l2),
+        "L2_distance": np.linalg.norm((l1 - l2)[..., :3].flatten()),
+        "cos_similarity": cos_sim(l1, l2),
+        f"PCK(thres={pck_thres})": pck(l1, l2, pck_thres),
+        "oks:": oks(l1, l2, bs1)
+    }
+    for k, v in results.items():
+        print(f"{k}: {v}")
+    return results
 
 
 def main(p1, p2):
