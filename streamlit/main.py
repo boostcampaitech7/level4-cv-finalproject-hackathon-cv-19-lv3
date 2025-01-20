@@ -177,8 +177,8 @@ else:
             temp_file_2.write(image_2.read())
             temp_filepath_2 = temp_file_2.name
         
-        pose_landmarks_1, segmentation_masks_1, annotated_image_1, b1 = st.session_state['estimate_class'].get_detection(temp_filepath_1)
-        pose_landmarks_2, segmentation_masks_2, annotated_image_2, b2 = st.session_state['estimate_class'].get_detection(temp_filepath_2)
+        pose_landmarks_1, segmentation_masks_1, annotated_image_1, b1 = st.session_state['estimate_class'].get_detection(temp_filepath_1, landmarks_c=(234,63,247), connection_c=(117,249,77))
+        pose_landmarks_2, segmentation_masks_2, annotated_image_2, b2 = st.session_state['estimate_class'].get_detection(temp_filepath_2, landmarks_c=(255, 165, 0), connection_c=(200, 200, 200))
 
         col1, col2 = st.columns(2)
         with col1:

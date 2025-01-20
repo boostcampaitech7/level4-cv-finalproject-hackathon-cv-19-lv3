@@ -117,5 +117,6 @@ def draw_landmarks_on_image(rgb_image, detection_result, landmarks_c=(234,63,247
       annotated_image,
       pose_landmarks_proto,
       solutions.pose.POSE_CONNECTIONS,
-      solutions.drawing_styles.get_default_pose_landmarks_style())
+      solutions.drawing_utils.DrawingSpec(landmarks_c, thickness, circle_r),
+      solutions.drawing_utils.DrawingSpec(connection_c, thickness, circle_r))
   return annotated_image

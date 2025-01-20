@@ -26,7 +26,7 @@ class PoseDetector:
     
 
     def get_detection(self, img_path, landmarks_c=(234,63,247), connection_c=(117,249,77), 
-                    thickness=20, circle_r=10, display=False):
+                    thickness=10, circle_r=10, display=False):
         if self.detector._running_mode != vision.RunningMode.IMAGE:
             self.detector._running_mode = vision.RunningMode.IMAGE
 
