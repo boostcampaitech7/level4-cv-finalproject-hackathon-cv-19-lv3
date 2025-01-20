@@ -14,29 +14,6 @@ def refine_landmarks(landmarks):
 def filter_important_features(landmarks_np, targets=SELECTED_KEYPOINTS):
     return landmarks_np[targets]
 
-# pos normalization function
-# def normalize_landmarks(landmarks_np, mode="default", root_idx1=None, root_idx2=None, norm_idx1=None, norm_idx2=None):
-#     """
-#     landmarks_np : shape (num_selected, 4) 4 feature is (x, y, z, visibility)
-#     box : shape (3,) numpy array [xmax - xmin, ymax - ymin, zmax - zmin]
-#     """
-#     if mode == "shoulder":
-#         right_shoulder_idx = norm_idx1 if norm_idx1 else SELECTED_KEYPOINTS_MAPPING['right_shoulder']
-#         left_shoulder_idx = norm_idx2 if norm_idx2 else SELECTED_KEYPOINTS_MAPPING['left_shoulder']
-#         d = np.linalg.norm(landmarks_np[right_shoulder_idx, :3] - landmarks_np[left_shoulder_idx, :3])
-#     elif mode == 'l2':
-#         d = np.linalg.norm(landmarks_np[..., :3].flatten())
-#     else:
-#         right_hip_idx = root_idx1 if root_idx1 else SELECTED_KEYPOINTS_MAPPING['right_hip']
-#         left_hip_idx = root_idx2 if root_idx2 else SELECTED_KEYPOINTS_MAPPING['left_hip']
-#         hip_center = (landmarks_np[right_hip_idx, :3] + landmarks_np[left_hip_idx, :3]) / 2.
-#         landmarks_np[..., :3] = landmarks_np[..., :3] - hip_center
-#         right_shoulder_idx = norm_idx1 if norm_idx1 else SELECTED_KEYPOINTS_MAPPING['right_shoulder']
-#         left_shoulder_idx = norm_idx2 if norm_idx2 else SELECTED_KEYPOINTS_MAPPING['left_shoulder']
-#         d = np.linalg.norm((landmarks_np[right_shoulder_idx, :3] - landmarks_np[left_shoulder_idx, :3]))
-
-#     landmarks_np[..., :3] = landmarks_np[..., :3] / d
-#     return landmarks_np / d
 
 def normalize_landmarks(landmarks, box):
     """
@@ -134,7 +111,7 @@ def pck(gt, preds, threshold):
     return pck_score
 
 
-def evaluate_everything(landmarks1_np, bs1, landmarks2_np, bs2, pck_thres=0.125):
+def evaluate_everything(landmarks1_np, bs1, landmarks2_np, bs2, pck_thres=0.1):
     l2 = normalize_landmarks_to_range(landmarks1_np, landmarks2_np)
     l1 = landmarks1_np
     print("L1 score : ", L1_score(l1, l2))
@@ -145,10 +122,12 @@ def evaluate_everything(landmarks1_np, bs1, landmarks2_np, bs2, pck_thres=0.125)
 
 
 def main(p1, p2):
-    from mediapipe_inference import get_detection
+    from detector import PoseDetector
     import matplotlib.pyplot as plt
-    l1, seg1, ann_img1, bs1 = get_detection(p1)
-    l2, seg2, ann_img2, bs2 = get_detection(p2)
+    d = PoseDetector()
+
+    l1, seg1, ann_img1, bs1 = d.get_detection(p1)
+    l2, seg2, ann_img2, bs2 = d.get_detection(p2)
     np_l1 = refine_landmarks(l1)
     np_l2 = refine_landmarks(l2)
     evaluate_everything(np_l1, bs1, np_l2, bs2)
@@ -156,6 +135,6 @@ def main(p1, p2):
 
 
 if __name__=="__main__":
-    img_path1 = "images/승윤팔짱1.jpg"
-    img_path2 = "images/승윤팔짱2.jpg"
+    img_path1 = "images/jun_v.jpg"
+    img_path2 = "images/wrong_pose_img.jpg"
     main(img_path1, img_path2)

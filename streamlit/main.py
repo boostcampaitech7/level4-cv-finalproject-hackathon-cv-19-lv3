@@ -1,7 +1,6 @@
 import streamlit as st
-from streamlit_webrtc import webrtc_streamer, VideoProcessorBase, WebRtcMode
 import tempfile
-import mediapipe_inference, util, keypoint_map, scoring
+import detector, util, keypoint_map, scoring
 import time
 import imageio
 import imageio.v3 as iio
@@ -18,6 +17,7 @@ st.markdown("<h2 style='text-align: center;'>Dance Pose Estimation Demo</h2>", u
 page_options = ['Single Video Pose Estimation', 'Record and Compare']
 page_option = st.sidebar.selectbox("태스크 선택: ", page_options)
 frame_option = st.sidebar.slider('frame: ', 10, 30)
+model_size = st.sidebar.slider('model_size: ', 0, 2)
 
 
 # session state
@@ -37,6 +37,8 @@ if "all_landmarks" not in st.session_state:
     st.session_state["all_landmarks"] = None
 if "all_landmarks_dict" not in st.session_state:
     st.session_state["all_landmarks_dict"] = None
+if "estimate_class" not in st.session_state:
+    st.session_state['estimate_class'] = detector.PoseDetector(model_size=model_size)
 
 
 if page_option is None or page_option == page_options[0]:
@@ -57,7 +59,7 @@ if page_option is None or page_option == page_options[0]:
             st.session_state.estimation_start_time = time.perf_counter()
         if st.session_state["uploaded_file"] is None or uploaded_file.name != st.session_state["uploaded_file"].name:
             st.session_state["uploaded_file"] = uploaded_file
-            st.session_state.original_video_frames, st.session_state.only_skeleton_frames, st.session_state.frames, st.session_state.all_landmarks = mediapipe_inference.estimPose_video(temp_filepath, thickness=5)
+            st.session_state.original_video_frames, st.session_state.only_skeleton_frames, st.session_state.frames, st.session_state.all_landmarks = st.session_state['estimate_class'].estimPose_video(temp_filepath, thickness=5)
             st.session_state['all_landmarks_dict'] = util.landmarks_to_dict(st.session_state['all_landmarks'])
     
         if st.session_state['estimation_end_time'] is None:
@@ -162,14 +164,6 @@ if page_option is None or page_option == page_options[0]:
 
 
 else:
-    # # Camera input
-    # image = st.camera_input("Take a picture")
-
-    # # If an image is taken, display it
-    # if image:
-    #     st.image(image, caption="Captured Image", use_column_width=True)
-    
-
     image_1 = st.file_uploader("input_1", type=["jpg", "png", "jpeg"])
     image_2 = st.file_uploader("input_2", type=["jpg", "png", "jpeg"])
 
@@ -183,8 +177,8 @@ else:
             temp_file_2.write(image_2.read())
             temp_filepath_2 = temp_file_2.name
         
-        pose_landmarks_1, segmentation_masks_1, annotated_image_1, _ = mediapipe_inference.get_detection(temp_filepath_1)
-        pose_landmarks_2, segmentation_masks_2, annotated_image_2, _ = mediapipe_inference.get_detection(temp_filepath_2)
+        pose_landmarks_1, segmentation_masks_1, annotated_image_1, b1 = st.session_state['estimate_class'].get_detection(temp_filepath_1)
+        pose_landmarks_2, segmentation_masks_2, annotated_image_2, b2 = st.session_state['estimate_class'].get_detection(temp_filepath_2)
 
         col1, col2 = st.columns(2)
         with col1:
@@ -192,8 +186,8 @@ else:
         with col2:
             st.image(annotated_image_2)
         
-        pose_landmarks_np_1, _ = scoring.normalize_landmarks(scoring.refine_landmarks(pose_landmarks_1[0]))
-        pose_landmarks_np_2, _ = scoring.normalize_landmarks(scoring.refine_landmarks(pose_landmarks_2[0]))
+        pose_landmarks_np_1 = scoring.refine_landmarks(pose_landmarks_1)
+        pose_landmarks_np_2 = scoring.normalize_landmarks_to_range(pose_landmarks_np_1, scoring.refine_landmarks(pose_landmarks_2))
         score = scoring.cos_sim(pose_landmarks_np_1, pose_landmarks_np_2)
         st.success(f"코사인 유사도 점수 : {score:.3f}")
         
