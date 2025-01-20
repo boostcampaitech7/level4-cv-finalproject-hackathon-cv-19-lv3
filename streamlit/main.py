@@ -5,6 +5,8 @@ import time
 import imageio
 import imageio.v3 as iio
 import json
+import cv2
+from copy import deepcopy
 
 # main title
 st.sidebar.success("CV19 영원한종이박")
@@ -169,11 +171,11 @@ else:
 
     if image_1 is not None and image_2 is not None:
         # 업로드된 파일을 임시 파일로 저장
-        with tempfile.NamedTemporaryFile(delete=False, suffix=".mp4") as temp_file_1:
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".jpg") as temp_file_1:
             temp_file_1.write(image_1.read())
             temp_filepath_1 = temp_file_1.name
         
-        with tempfile.NamedTemporaryFile(delete=False, suffix=".mp4") as temp_file_2:
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".jpg") as temp_file_2:
             temp_file_2.write(image_2.read())
             temp_filepath_2 = temp_file_2.name
         
@@ -186,13 +188,45 @@ else:
         with col2:
             st.image(annotated_image_2)
         
+        # normalize한 경우에 대한 overlap image와 점수 계산
         pose_landmarks_np_1 = scoring.refine_landmarks(pose_landmarks_1)
         pose_landmarks_np_2 = scoring.refine_landmarks(pose_landmarks_2)
-
         evaluation_results = scoring.evaluate_everything(pose_landmarks_np_1, b1, pose_landmarks_np_2, b2, normalize=True)
+
+        overlap_img1 = cv2.cvtColor(cv2.imread(temp_filepath_1), cv2.COLOR_BGR2RGB)
+        overlap_img1 = util.image_alpha_control(overlap_img1, alpha=0.4)
+        overlap_img1 = util.draw_landmarks_on_image(overlap_img1, pose_landmarks_1)
+
+        normalized_pose_landmarks_2 = deepcopy(pose_landmarks_2)
+        normalized_pose_landmarks_np_2 = scoring.normalize_landmarks_to_range(
+            scoring.refine_landmarks(pose_landmarks_1, target_keys=keypoint_map.TOTAL_KEYPOINTS), 
+            scoring.refine_landmarks(pose_landmarks_2, target_keys=keypoint_map.TOTAL_KEYPOINTS)
+        )
+
+        for i, landmarks in enumerate(normalized_pose_landmarks_2):
+            landmarks.x = normalized_pose_landmarks_np_2[i, 0]
+            landmarks.y = normalized_pose_landmarks_np_2[i, 1]
+            landmarks.z = normalized_pose_landmarks_np_2[i, 2]
+        overlap_img1 = util.draw_landmarks_on_image(overlap_img1, normalized_pose_landmarks_2, landmarks_c=(255, 165, 0), connection_c=(200, 200, 200))
+
         st.subheader("Normalize를 적용시의 결과: ")
-        st.json(evaluation_results)
+        col3, col4 = st.columns(2)
+        with col3:
+            st.json(evaluation_results)
+        with col4:
+            st.image(overlap_img1)
+
+
 
         evaluation_results_2 = scoring.evaluate_everything(pose_landmarks_np_1, b1, scoring.refine_landmarks(pose_landmarks_2), b2, normalize=False)
+        overlap_img2 = cv2.cvtColor(cv2.imread(temp_filepath_1), cv2.COLOR_BGR2RGB)
+        overlap_img2 = util.image_alpha_control(overlap_img2, alpha=0.4)
+        overlap_img2 = util.draw_landmarks_on_image(overlap_img2, pose_landmarks_1)
+        overlap_img2 = util.draw_landmarks_on_image(overlap_img2, pose_landmarks_2, landmarks_c=(255, 165, 0), connection_c=(200, 200, 200))
+
         st.subheader("Normalize를 적용하지 않을 시의 결과: ")
-        st.json(evaluation_results_2)
+        col5, col6 = st.columns(2)
+        with col5:
+            st.json(evaluation_results_2)
+        with col6:
+            st.image(overlap_img2)

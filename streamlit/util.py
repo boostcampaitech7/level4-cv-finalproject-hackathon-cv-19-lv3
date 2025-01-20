@@ -8,6 +8,7 @@ from keypoint_map import KEYPOINT_MAPPING
 from mediapipe import solutions
 from mediapipe.framework.formats import landmark_pb2
 import random
+import cv2
 
 def set_seed(seed):
     random.seed(seed)
@@ -101,7 +102,10 @@ def landmarks_to_dict(all_landmarks):
 
 def draw_landmarks_on_image(rgb_image, detection_result, landmarks_c=(234,63,247), connection_c=(117,249,77), 
                     thickness=20, circle_r=10):
-  pose_landmarks_list = detection_result.pose_landmarks
+  try:
+      pose_landmarks_list = detection_result.pose_landmarks
+  except:
+      pose_landmarks_list = [detection_result]
   annotated_image = np.copy(rgb_image)
 
   # Loop through the detected poses to visualize.
@@ -120,3 +124,10 @@ def draw_landmarks_on_image(rgb_image, detection_result, landmarks_c=(234,63,247
       solutions.drawing_utils.DrawingSpec(landmarks_c, thickness, circle_r),
       solutions.drawing_utils.DrawingSpec(connection_c, thickness, circle_r))
   return annotated_image
+
+
+
+def image_alpha_control(image, alpha=0.5):
+    background = np.zeros_like(image, dtype=np.uint8)  # 검정색 배경 생성
+    blended_image = cv2.addWeighted(image, alpha, background, 1 - alpha, 0)
+    return blended_image

@@ -3,10 +3,13 @@ import numpy as np
 import cv2
 
 # refine landmark result to numpy array
-def refine_landmarks(landmarks):
+def refine_landmarks(landmarks, target_keys=None):
+    if target_keys is None:
+        target_keys = SELECTED_KEYPOINTS
+
     lst = []
     for i, landmark in enumerate(landmarks):
-        if i in SELECTED_KEYPOINTS:
+        if i in target_keys:
             lst.append([landmark.x, landmark.y, landmark.z, landmark.visibility])
     return np.array(lst)
 
