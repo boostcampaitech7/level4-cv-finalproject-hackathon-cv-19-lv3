@@ -19,10 +19,13 @@ class PoseDetector:
         self.model_path = download_model(model_size)
         self.base_options = python.BaseOptions(self.model_path)
 
-        options = vision.PoseLandmarkerOptions(
+        self.options = vision.PoseLandmarkerOptions(
             base_options=self.base_options,
             output_segmentation_masks=True, running_mode=vision.RunningMode.IMAGE)
-        self.detector = vision.PoseLandmarker.create_from_options(options)
+        self.detector = vision.PoseLandmarker.create_from_options(self.options)
+    
+    def reset_detector(self):
+        self.detector = vision.PoseLandmarker.create_from_options(self.options)
     
 
     def get_detection(self, img_path, landmarks_c=(234,63,247), connection_c=(117,249,77), 

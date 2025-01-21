@@ -7,6 +7,7 @@ import imageio.v3 as iio
 import json
 import cv2
 from copy import deepcopy
+from fastdtw import fastdtw
 
 # main title
 st.sidebar.success("CV19 영원한종이박")
@@ -232,4 +233,21 @@ elif page_option == 'Image Compare':
         with col6:
             st.image(overlap_img2)
 else:
-    pass
+    # 비디오 파일 업로드
+    video_1 = st.file_uploader("video_1", type=["mp4", "mov", "avi", "mkv"])
+    video_2 = st.file_uploader("video_2", type=["mp4", "mov", "avi", "mkv"])
+    
+
+    if video_1 and video_2:
+        # 업로드된 파일을 임시 파일로 저장
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".mp4") as temp_file_1:
+            temp_file_1.write(video_1.read())
+            temp_filepath_1 = temp_file_1.name
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".mp4") as temp_file_2:
+            temp_file_2.write(video_2.read())
+            temp_filepath_2 = temp_file_2.name
+        
+        # landmarks 추출
+        original_frames_1, skeleton_1, ann_1, all_landmarks_1 = st.session_state['estimate_class'].estimPose_video(temp_filepath_1)
+        st.session_state['estimate_class'].reset_detector() # timestamp를 초기화해야 다음 동영상 분석 가능
+        original_frames_2, skeleton_2, ann_2, all_landmarks_2 = st.session_state['estimate_class'].estimPose_video(temp_filepath_2, landmarks_c=(255, 165, 0), connection_c=(200, 200, 200))
