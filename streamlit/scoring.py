@@ -4,6 +4,10 @@ import cv2
 
 # refine landmark result to numpy array
 def refine_landmarks(landmarks, target_keys=None):
+    """
+    Pose Object로 구성된 list를 numpy array로 변환하여 반환
+    [PoseObject1(x, y, z, v, p), ...] -> numpy array
+    """
     if target_keys is None:
         target_keys = SELECTED_KEYPOINTS
 
@@ -18,7 +22,7 @@ def filter_important_features(landmarks_np, targets=SELECTED_KEYPOINTS):
     return landmarks_np[targets]
 
 
-def normalize_landmarks(landmarks, box):
+def normalize_landmarks(landmarks_np, box):
     """
     Normalize landmarks based on the bounding box dimensions.
     
@@ -29,35 +33,65 @@ def normalize_landmarks(landmarks, box):
     Returns:
         numpy array: Normalized landmarks of shape (num_selected_point, 4).
     """
-    normalized_landmarks = np.copy(landmarks)
+    normalized_landmarks = np.copy(landmarks_np)
     normalized_landmarks[:, :3] /= box  # Normalize x, y, z by dividing by bounding box dimensions
     return normalized_landmarks
 
-def normalize_landmarks_to_range(landmarks1, landmarks2):
+def normalize_landmarks_to_range(landmarks_np_1, landmarks_np_2):
     """
     Normalize landmarks2 to match the coordinate range of landmarks1.
 
     Parameters:
-        landmarks1 (numpy array): Keypoints array for the first pose (num_selected_point, 4).
-        landmarks2 (numpy array): Keypoints array for the second pose (num_selected_point, 4).
+        landmarks_np_1 (numpy array): Keypoints array for the first pose (num_selected_point, 4).
+        landmarks_np_2 (numpy array): Keypoints array for the second pose (num_selected_point, 4).
 
     Returns:
         numpy array: Normalized landmarks2 matching the range of landmarks1.
     """
     # Calculate min and max for landmarks1 and landmarks2
-    min1 = np.min(landmarks1[:, :3], axis=0)  # (x_min, y_min, z_min) for landmarks1
-    max1 = np.max(landmarks1[:, :3], axis=0)  # (x_max, y_max, z_max) for landmarks1
+    min1 = np.min(landmarks_np_1[:, :3], axis=0)  # (x_min, y_min, z_min) for landmarks1
+    max1 = np.max(landmarks_np_1[:, :3], axis=0)  # (x_max, y_max, z_max) for landmarks1
 
-    min2 = np.min(landmarks2[:, :3], axis=0)  # (x_min, y_min, z_min) for landmarks2
-    max2 = np.max(landmarks2[:, :3], axis=0)  # (x_max, y_max, z_max) for landmarks2
+    min2 = np.min(landmarks_np_2[:, :3], axis=0)  # (x_min, y_min, z_min) for landmarks2
+    max2 = np.max(landmarks_np_2[:, :3], axis=0)  # (x_max, y_max, z_max) for landmarks2
 
     # Normalize landmarks2 to the range of landmarks1
-    normalized_landmarks2 = (landmarks2[:, :3] - min2) / (max2 - min2) * (max1 - min1) + min1
+    normalized_landmarks2 = (landmarks_np_2[:, :3] - min2) / (max2 - min2) * (max1 - min1) + min1
 
     # Combine normalized coordinates with the original visibility values
-    normalized_landmarks2 = np.hstack((normalized_landmarks2, landmarks2[:, 3:4]))
+    normalized_landmarks2 = np.hstack((normalized_landmarks2, landmarks_np_2[:, 3:4]))
 
     return normalized_landmarks2
+
+def normalize_landmarks_to_range_by_mean(all_landmarks_np_1, all_landmarks_np_2):
+    """
+    Normalize landmarks2 to match the coordinate range of landmarks1 using the average min and max values across frames.
+
+    Parameters:
+        all_landmarks_np_1 (numpy array): Keypoints array for the first pose (num_frames, num_selected_point, 4).
+        all_landmarks_np_2 (numpy array): Keypoints array for the second pose (num_frames, num_selected_point, 4).
+
+    Returns:
+        numpy array: Normalized landmarks2 matching the range of landmarks1.
+    """
+    # Calculate the average min and max values for landmarks1
+    min1_mean = np.mean(np.min(all_landmarks_np_1[:, :, :3], axis=1), axis=0)  # Average of per-frame (x_min, y_min, z_min)
+    max1_mean = np.mean(np.max(all_landmarks_np_1[:, :, :3], axis=1), axis=0)  # Average of per-frame (x_max, y_max, z_max)
+
+    # Calculate the average min and max values for landmarks2
+    min2_mean = np.mean(np.min(all_landmarks_np_2[:, :, :3], axis=1), axis=0)  # Average of per-frame (x_min, y_min, z_min)
+    max2_mean = np.mean(np.max(all_landmarks_np_2[:, :, :3], axis=1), axis=0)  # Average of per-frame (x_max, y_max, z_max)
+
+    # Normalize all frames of landmarks2 to match the range of landmarks1
+    normalized_landmarks2 = (all_landmarks_np_2[:, :, :3] - min2_mean) / (max2_mean - min2_mean) * (max1_mean - min1_mean) + min1_mean
+
+    # Combine normalized coordinates with the original visibility values
+    normalized_landmarks2 = np.concatenate((normalized_landmarks2, all_landmarks_np_2[:, :, 3:4]), axis=2)
+
+    return normalized_landmarks2
+
+
+
 
 
 def cos_sim(landmarks1, landmarks2):
@@ -104,7 +138,7 @@ def oks(gt, preds, boxsize):
 
 
 # PCK 값 계산 함수
-def pck(gt, preds, threshold):
+def pck(gt, preds, threshold=0.1):
     """
     gt : shape (num_selected, 4) 4 feature is (x, y, z, visibility)
     preds : shape (num_selected, 4) 4 feature is (x, y, z, visibility)
@@ -114,7 +148,7 @@ def pck(gt, preds, threshold):
     return pck_score
 
 
-def evaluate_everything(landmarks1_np, bs1, landmarks2_np, bs2, pck_thres=0.1, normalize=True):
+def evaluate_everything(landmarks1_np, bs1, landmarks2_np, bs2, pck_thres=0.1, normalize=True, verbose=True):
     if normalize:
         l2 = normalize_landmarks_to_range(landmarks1_np, landmarks2_np)
     else:
@@ -128,8 +162,10 @@ def evaluate_everything(landmarks1_np, bs1, landmarks2_np, bs2, pck_thres=0.1, n
         f"PCK(thres={pck_thres})": pck(l1, l2, pck_thres),
         "oks:": oks(l1, l2, bs1)
     }
-    for k, v in results.items():
-        print(f"{k}: {v}")
+
+    if verbose:
+        for k, v in results.items():
+            print(f"{k}: {v}")
     return results
 
 

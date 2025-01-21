@@ -11,17 +11,23 @@ from tqdm import tqdm
 
 
 class PoseDetector:
-    def __init__(self, model_size=2):
+    def __init__(self, model_size=2, mode = 'IMAGE'):
         """
         model size : 0 ~ 2(int) 모델사이즈. 클수록 큰모델
         running_mode : video inference를 수행해야할 시 running_mode를 video로 설정 (video or image)
+        mode : default mode setting (IMAGE or VIDEO)
         """
         self.model_path = download_model(model_size)
         self.base_options = python.BaseOptions(self.model_path)
 
-        self.options = vision.PoseLandmarkerOptions(
-            base_options=self.base_options,
-            output_segmentation_masks=True, running_mode=vision.RunningMode.IMAGE)
+        if mode == 'IMAGE':
+            self.options = vision.PoseLandmarkerOptions(
+                base_options=self.base_options,
+                output_segmentation_masks=True, running_mode=vision.RunningMode.IMAGE)
+        else:
+            self.options = vision.PoseLandmarkerOptions(
+                base_options=self.base_options,
+                output_segmentation_masks=True, running_mode=vision.RunningMode.VIDEO)
         self.detector = vision.PoseLandmarker.create_from_options(self.options)
     
     def reset_detector(self):
@@ -78,6 +84,10 @@ class PoseDetector:
 
         total_frames = int(video.get(cv2.CAP_PROP_FRAME_COUNT))
         fps = int(video.get(cv2.CAP_PROP_FPS))
+        print("video information!!")
+        print("FPS: ", fps)
+        print("total frame length: ", total_frames)
+
         frame_duration = int(1000 / fps)
         frames = []
         original_video_frames = []
@@ -110,11 +120,9 @@ class PoseDetector:
                                                landmarks_c=landmarks_c, connection_c=connection_c,
                                                thickness=thickness, circle_r=circle_r)
 
-            lst = []
-            for landmark in landmarks:
-                lst.append([landmark.x, landmark.y, landmark.z, landmark.visibility])
+            
             
             frames.append(annotated_image)
-            all_landmarks.append(lst)
+            all_landmarks.append(landmarks)
             only_skeleton_frames.append(skeleton)
         return original_video_frames, only_skeleton_frames, frames, all_landmarks

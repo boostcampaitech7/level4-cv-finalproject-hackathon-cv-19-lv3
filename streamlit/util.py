@@ -91,10 +91,10 @@ def landmarks_to_dict(all_landmarks):
     for i, landmarks in enumerate(all_landmarks):
         d = {j: {
                 "name": KEYPOINT_MAPPING[j],
-                "x": landmarks[j][0],
-                "y": landmarks[j][1],
-                "z": landmarks[j][2],
-                "visibility": landmarks[j][3]
+                "x": landmarks[j].x,
+                "y": landmarks[j].y,
+                "z": landmarks[j].z,
+                "visibility": landmarks[j].visibility
             } for j in KEYPOINT_MAPPING.keys()}
         landmark_dict[i] = d
     return landmark_dict
