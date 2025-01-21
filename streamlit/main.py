@@ -14,7 +14,7 @@ st.markdown("<h2 style='text-align: center;'>Dance Pose Estimation Demo</h2>", u
 
 
 # sidebar
-page_options = ['Single Video Pose Estimation', 'Image Compare']
+page_options = ['Single Video Pose Estimation', 'Image Compare', 'Video Compare']
 page_option = st.sidebar.selectbox("태스크 선택: ", page_options)
 frame_option = st.sidebar.slider('frame: ', 10, 30)
 model_size = st.sidebar.slider('model_size: ', 0, 2)
@@ -38,12 +38,13 @@ if "all_landmarks" not in st.session_state:
     st.session_state["all_landmarks"] = None
 if "all_landmarks_dict" not in st.session_state:
     st.session_state["all_landmarks_dict"] = None
-if "estimate_class" not in st.session_state:
+if "estimate_class" not in st.session_state or (model_size != st.session_state['model_size']):
+    st.session_state['model_size'] = model_size
     st.session_state['estimate_class'] = detector.PoseDetector(model_size=model_size)
 
 
+util.set_seed(seed)
 if page_option is None or page_option == page_options[0]:
-    util.set_seed(seed)
     gif_options = ["only overlap", "All"]
     gif_option = st.sidebar.selectbox("예측 결과 표시 옵션: ", gif_options)
     
@@ -165,7 +166,7 @@ if page_option is None or page_option == page_options[0]:
                 time.sleep(1 / frame_option)  # 프레임 속도에 맞춰 대기
 
 
-else:
+elif page_option == 'Image Compare':
     image_1 = st.file_uploader("input_1", type=["jpg", "png", "jpeg"])
     image_2 = st.file_uploader("input_2", type=["jpg", "png", "jpeg"])
 
@@ -230,3 +231,5 @@ else:
             st.json(evaluation_results_2)
         with col6:
             st.image(overlap_img2)
+else:
+    pass
