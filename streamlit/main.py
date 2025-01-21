@@ -17,7 +17,6 @@ st.markdown("<h2 style='text-align: center;'>Dance Pose Estimation Demo</h2>", u
 # sidebar
 page_options = ['Single Video Pose Estimation', 'Image Compare', 'Video Compare']
 page_option = st.sidebar.selectbox("태스크 선택: ", page_options)
-frame_option = st.sidebar.slider('frame: ', 10, 30)
 model_size = st.sidebar.slider('model_size: ', 0, 2)
 seed = st.sidebar.number_input('random seed ', min_value=0, max_value=2024, step=1)
 
@@ -46,6 +45,7 @@ if "estimate_class" not in st.session_state or (model_size != st.session_state['
 
 util.set_seed(seed)
 if page_option is None or page_option == page_options[0]:
+    frame_option = st.sidebar.slider('frame: ', 10, 30)
     gif_options = ["only overlap", "All"]
     gif_option = st.sidebar.selectbox("예측 결과 표시 옵션: ", gif_options)
     
@@ -168,6 +168,9 @@ if page_option is None or page_option == page_options[0]:
 
 
 elif page_option == 'Image Compare':
+    ignore_z = st.sidebar.slider('ignore_z: ', False, True)
+    pck_thres = st.sidebar.number_input('pck_threshold', min_value=0.0, max_value=1.0, value=0.1, step=0.05)
+
     image_1 = st.file_uploader("input_1", type=["jpg", "png", "jpeg"])
     image_2 = st.file_uploader("input_2", type=["jpg", "png", "jpeg"])
 
@@ -193,7 +196,7 @@ elif page_option == 'Image Compare':
         # normalize한 경우에 대한 overlap image와 점수 계산
         pose_landmarks_np_1 = scoring.refine_landmarks(pose_landmarks_1)
         pose_landmarks_np_2 = scoring.refine_landmarks(pose_landmarks_2)
-        evaluation_results = scoring.evaluate_everything(pose_landmarks_np_1, b1, pose_landmarks_np_2, b2, normalize=True)
+        evaluation_results = scoring.evaluate_everything(pose_landmarks_np_1, b1, pose_landmarks_np_2, b2, pck_thres=pck_thres, normalize=True, ignore_z=ignore_z)
 
         overlap_img1 = cv2.cvtColor(cv2.imread(temp_filepath_1), cv2.COLOR_BGR2RGB)
         overlap_img1 = util.image_alpha_control(overlap_img1, alpha=0.4)
@@ -220,7 +223,7 @@ elif page_option == 'Image Compare':
 
 
 
-        evaluation_results_2 = scoring.evaluate_everything(pose_landmarks_np_1, b1, scoring.refine_landmarks(pose_landmarks_2), b2, normalize=False)
+        evaluation_results_2 = scoring.evaluate_everything(pose_landmarks_np_1, b1, scoring.refine_landmarks(pose_landmarks_2), b2, pck_thres=pck_thres, normalize=False, ignore_z=ignore_z)
         overlap_img2 = cv2.cvtColor(cv2.imread(temp_filepath_1), cv2.COLOR_BGR2RGB)
         overlap_img2 = util.image_alpha_control(overlap_img2, alpha=0.4)
         overlap_img2 = util.draw_landmarks_on_image(overlap_img2, pose_landmarks_1)
@@ -233,6 +236,7 @@ elif page_option == 'Image Compare':
         with col6:
             st.image(overlap_img2)
 else:
+    frame_option = st.sidebar.slider('frame: ', 10, 30)
     # 비디오 파일 업로드
     video_1 = st.file_uploader("video_1", type=["mp4", "mov", "avi", "mkv"])
     video_2 = st.file_uploader("video_2", type=["mp4", "mov", "avi", "mkv"])

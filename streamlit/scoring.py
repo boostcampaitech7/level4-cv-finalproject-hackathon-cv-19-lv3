@@ -1,4 +1,4 @@
-from keypoint_map import REVERSE_KEYPOINT_MAPPING, SELECTED_KEYPOINTS, SELECTED_SIGMAS, SELECTED_KEYPOINTS_MAPPING
+from keypoint_map import KEYPOINT_MAPPING, SELECTED_KEYPOINTS, SELECTED_SIGMAS, SELECTED_KEYPOINTS_MAPPING
 import numpy as np
 import cv2
 
@@ -92,32 +92,31 @@ def normalize_landmarks_to_range_by_mean(all_landmarks_np_1, all_landmarks_np_2)
 
 
 
+def cos_sim(landmarks1, landmarks2, ignore_z = False):
+    target_end = 3-ignore_z
 
-
-def cos_sim(landmarks1, landmarks2):
     if landmarks1.shape != landmarks2.shape:
         raise ValueError("both landmarks must have same shape!!")
     
-    if landmarks1.shape[-1] == 4:
-        landmarks1 = landmarks1[..., :3]
-        landmarks2 = landmarks2[..., :3]
+    landmarks1 = landmarks1[..., :target_end]
+    landmarks2 = landmarks2[..., :target_end]
     
     cos_score = 0.
-    for i in range(3):
+    for i in range(target_end):
         cos_score += (1+np.dot(landmarks1[..., i], landmarks2[..., i])/(np.linalg.norm(landmarks1[..., i])*np.linalg.norm(landmarks2[..., i]))) / 2
-    return cos_score / 3
+    return cos_score / target_end
 
 
-def L1_score(landmarks1, landmarks2):
+def L1_score(landmarks1, landmarks2, ignore_z = False):
     if landmarks1 is None or landmarks2 is None:
         return 0  # 비교 불가 시 유사성 0으로 처리
     
     if landmarks1.shape != landmarks2.shape:
         raise ValueError("both landmarks must have same shape!!")
-    
+    target_end = 3-ignore_z
     if landmarks1.shape[-1] == 4:
-        landmarks1 = landmarks1[..., :3]
-        landmarks2 = landmarks2[..., :3]
+        landmarks1 = landmarks1[..., :target_end]
+        landmarks2 = landmarks2[..., :target_end]
     # 평준화된 유클리드 거리 계산
     distance = np.linalg.norm(landmarks1 - landmarks2, axis=1)
     similarity = 1 / (1 + np.mean(distance))  # 유사성을 0~1로 정규화
@@ -125,42 +124,54 @@ def L1_score(landmarks1, landmarks2):
 
 
 # OKS 값 계산 함수
-def oks(gt, preds, boxsize):
+def oks(gt, preds, boxsize, ignore_z=False):
     """
     gt : shape (num_selected, 4) 4 feature is (x, y, z, visibility)
     preds : shape (num_selected, 4) 4 feature is (x, y, z, visibility)
     """
+    target_end = 3-ignore_z
     sigmas = np.array(SELECTED_SIGMAS)
-    distance = np.linalg.norm(gt[:, :3] - preds[:, :3], axis=1)
-    bbox_gt = boxsize[0] ** 2 + boxsize[1] ** 2 + boxsize[2] ** 2
+    distance = np.linalg.norm(gt[:, :target_end] - preds[:, :target_end], axis=1)
+
+    if ignore_z:
+        bbox_gt = boxsize[0] ** 2 + boxsize[1] ** 2
+    else:
+        bbox_gt = boxsize[0] ** 2 + boxsize[1] ** 2 + boxsize[2] ** 2
     kp_c = sigmas * 2
     return np.mean(np.exp(-(distance ** 2) / (2 * (bbox_gt) * (kp_c ** 2))))
 
 
 # PCK 값 계산 함수
-def pck(gt, preds, threshold=0.1):
+def pck(gt, preds, threshold=0.1, ignore_z=False):
     """
     gt : shape (num_selected, 4) 4 feature is (x, y, z, visibility)
     preds : shape (num_selected, 4) 4 feature is (x, y, z, visibility)
     """
-    distance = np.linalg.norm(gt[:, :3] - preds[:, :3], axis=1)
-    pck_score = np.mean(distance < threshold)
-    return pck_score
+    target_end = 3-ignore_z
+    distance = np.linalg.norm(gt[:, :target_end] - preds[:, :target_end], axis=1)
+    matched = distance < threshold
+    pck_score = np.mean(matched)
+    return pck_score, matched
 
 
-def evaluate_everything(landmarks1_np, bs1, landmarks2_np, bs2, pck_thres=0.1, normalize=True, verbose=True):
+def evaluate_everything(landmarks1_np, bs1, landmarks2_np, bs2, pck_thres=0.1, normalize=True, verbose=True, ignore_z=False):
+    target_end = 3-ignore_z
     if normalize:
         l2 = normalize_landmarks_to_range(landmarks1_np, landmarks2_np)
     else:
         l2 = landmarks2_np
     l1 = landmarks1_np
 
+    pck_score, matched = pck(l1, l2, pck_thres, ignore_z)
     results = {
-        "L1_score":  L1_score(l1, l2),
-        "L2_distance": np.linalg.norm((l1 - l2)[..., :3].flatten()),
-        "cos_similarity": cos_sim(l1, l2),
-        f"PCK(thres={pck_thres})": pck(l1, l2, pck_thres),
-        "oks:": oks(l1, l2, bs1)
+        "L1_score":  L1_score(l1, l2, ignore_z),
+        "L2_distance": np.linalg.norm((l1 - l2)[..., :target_end].flatten()),
+        "cos_similarity": cos_sim(l1, l2, ignore_z),
+        f"PCK(thres={pck_thres:.2f})": pck_score,
+        "oks:": oks(l1, l2, bs1, ignore_z),
+        "matched": {
+            KEYPOINT_MAPPING[real_idx]:matched[i] for i, real_idx in enumerate(SELECTED_KEYPOINTS)
+        }
     }
 
     if verbose:
@@ -178,9 +189,8 @@ def main(p1, p2):
     l2, seg2, ann_img2, bs2 = d.get_detection(p2)
     np_l1 = refine_landmarks(l1)
     np_l2 = refine_landmarks(l2)
-    evaluate_everything(np_l1, bs1, np_l2, bs2)
+    evaluate_everything(np_l1, bs1, np_l2, bs2, ignore_z=True)
     
-
 
 if __name__=="__main__":
     img_path1 = "images/jun_v.jpg"
