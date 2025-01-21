@@ -16,23 +16,31 @@ class SongActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_song)
 
+        supportFragmentManager.beginTransaction()
+            .replace(R.id.topFragmentContainer, TopFragment())
+            .commit()
+
+        supportFragmentManager.beginTransaction()
+            .replace(R.id.bottomFragmentContainer, BottomFragment())
+            .commit()
+
         kick_drum_base_btn = findViewById(R.id.kick_challenge_btn)
-        home_btn = findViewById(R.id.home_btn)
-        before_btn = findViewById(R.id.back_btn)
+//        home_btn = findViewById(R.id.home_btn)
+//        before_btn = findViewById(R.id.back_btn)
 
         kick_drum_base_btn.setOnClickListener {
             val intent = Intent(this, MainActivity::class.java)
             startActivity(intent)
         }
 
-        home_btn.setOnClickListener {
-            val intent = Intent(this, StartActivity::class.java)
-            startActivity(intent)
-        }
-
-        before_btn.setOnClickListener {
-            val intent = Intent(this, StartActivity::class.java)
-            startActivity(intent)
-        }
+//        home_btn.setOnClickListener {
+//            val intent = Intent(this, StartActivity::class.java)
+//            startActivity(intent)
+//        }
+//
+//        before_btn.setOnClickListener {
+//            val intent = Intent(this, StartActivity::class.java)
+//            startActivity(intent)
+//        }
     }
 }

@@ -1,5 +1,6 @@
 package com.example.hackaton
 
+import android.content.Intent
 import android.hardware.Camera
 import android.media.AudioManager
 import java.text.SimpleDateFormat
@@ -9,6 +10,7 @@ import android.media.MediaRecorder
 import android.net.Uri
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.provider.MediaStore
 import android.util.Log
 import android.view.SurfaceHolder
 import android.view.SurfaceView
@@ -16,10 +18,12 @@ import android.view.View
 import android.widget.Button
 import android.widget.Toast
 import android.widget.VideoView
+import androidx.core.content.FileProvider
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.snackbar.Snackbar
 import com.gun0912.tedpermission.PermissionListener
 import com.gun0912.tedpermission.normal.TedPermission
+import java.io.File
 import java.util.Date
 import java.util.Locale
 
@@ -33,8 +37,8 @@ class MainActivity : AppCompatActivity(), SurfaceHolder.Callback {
     private var recording = false
     private val url = "https://www.youtube.com/shorts/Fpmqa_ldQS0"; // your URL here
     private val TAG = "MainActivity.kt"
-
-    private var mediaPlayer: MediaPlayer? = null
+    private var danceVideoUri: Uri? = null
+    private var videoFilePath: String? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -81,6 +85,10 @@ class MainActivity : AppCompatActivity(), SurfaceHolder.Callback {
         // 동영상 재생 완료 시 녹화 중지
         videoOverlay.setOnCompletionListener {
             stopRecording()
+            val intent = Intent(this, ProcessActivity::class.java).apply {
+                putExtra("danceVideoUri", danceVideoUri.toString())
+            }
+            startActivity(intent)
         }
 
         videoOverlay.visibility = View.VISIBLE // 비디오 오버레이를 표시
@@ -88,6 +96,21 @@ class MainActivity : AppCompatActivity(), SurfaceHolder.Callback {
     }
     private fun startRecording() {
         val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
+        val videoFile = File(
+            File("${filesDir}/video").apply {
+                if (!this.exists()) {
+                    this.mkdirs()
+                }
+            },
+            "video_$timeStamp.mp4"
+        )
+
+        videoFilePath = videoFile.absolutePath
+        danceVideoUri = FileProvider.getUriForFile(
+            this,
+            "${packageName}.fileprovider",
+            videoFile
+        )
 
         // 동영상 오버레이 설정
         setupVideoOverlay()
@@ -106,7 +129,7 @@ class MainActivity : AppCompatActivity(), SurfaceHolder.Callback {
                     // 녹화 설정
                     setProfile(CamcorderProfile.get(CamcorderProfile.QUALITY_720P))
                     setOrientationHint(270)
-                    setOutputFile("/storage/emulated/0/Download/video_$timeStamp.mp4")
+                    setOutputFile(videoFile.absoluteFile)
                     setPreviewDisplay(surfaceHolder.surface)
                     prepare()
                     start()
@@ -115,7 +138,7 @@ class MainActivity : AppCompatActivity(), SurfaceHolder.Callback {
                 recording = true
 
             } catch (e: Exception) {
-                Log.e(TAG, "Error in 79: ${e.message}")
+                Log.e(TAG, "Error in startRecording: ${e.message}")
                 e.printStackTrace()
                 mediaRecorder?.release()
                 recording = false
@@ -134,6 +157,7 @@ class MainActivity : AppCompatActivity(), SurfaceHolder.Callback {
             Toast.makeText(this, "녹화가 종료되었습니다.", Toast.LENGTH_SHORT).show()
             // 동영상 오버레이 숨김 처리
             videoOverlay.visibility = View.INVISIBLE
+
         } catch (e: Exception) {
             Log.e(TAG, "녹화 중지 오류: ${e.message}")
             e.printStackTrace()
@@ -219,4 +243,9 @@ class MainActivity : AppCompatActivity(), SurfaceHolder.Callback {
         // Surface가 파괴되었을 때 동작
     }
 
+    private fun newVideoFileName(): String {
+        val sdf = SimpleDateFormat("yyyyMMdd_HHmmss")
+        val filename = sdf.format(System.currentTimeMillis())
+        return "${filename}.mp4"
+    }
 }

@@ -25,15 +25,32 @@
         android:theme="@style/Theme.Hackaton"
         tools:targetApi="31">
         <activity
+            android:name=".ResultActivity"
+            android:exported="false" />
+
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/filepaths" />
+        </provider>
+
+        <activity
+            android:name=".ProcessActivity"
+            android:exported="false" />
+        <activity
             android:name=".SongActivity"
             android:exported="false"
             android:label="@string/title_activity_song" />
         <activity
             android:name=".MainActivity"
-            android:exported="false"/>
+            android:exported="false" />
         <activity
-                android:name=".StartActivity"
-                android:exported="true">
+            android:name=".StartActivity"
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
