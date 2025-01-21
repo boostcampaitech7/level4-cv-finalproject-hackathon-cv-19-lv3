@@ -131,3 +131,26 @@ def image_alpha_control(image, alpha=0.5):
     background = np.zeros_like(image, dtype=np.uint8)  # 검정색 배경 생성
     blended_image = cv2.addWeighted(image, alpha, background, 1 - alpha, 0)
     return blended_image
+
+
+def draw_circle_on_image(image: np.ndarray, normalized_x: float, normalized_y: float, r: int, color=(255, 0, 0), thickness=2):
+    """
+    Draws a circle on a given image at a position defined by normalized coordinates.
+
+    Args:
+        image (np.ndarray): The input image (H, W, C).
+        normalized_x (float): Normalized x-coordinate (0 ~ 1).
+        normalized_y (float): Normalized y-coordinate (0 ~ 1).
+        r (int): Radius of the circle.
+        color (tuple): Color of the circle in BGR format. Default is blue (255, 0, 0).
+        thickness (int): Thickness of the circle outline. Use -1 for a filled circle.
+    """
+    # 이미지 크기 계산
+    height, width = image.shape[:2]
+    
+    # 정규화된 좌표를 실제 픽셀 좌표로 변환
+    x = int(normalized_x * width)
+    y = int(normalized_y * height)
+    
+    # 원 그리기
+    cv2.circle(image, (x, y), r, color, thickness)

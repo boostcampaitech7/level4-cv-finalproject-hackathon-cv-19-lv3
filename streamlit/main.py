@@ -62,6 +62,7 @@ if page_option is None or page_option == page_options[0]:
         if st.session_state['estimation_start_time'] is None:
             st.session_state.estimation_start_time = time.perf_counter()
         if st.session_state["uploaded_file"] is None or uploaded_file.name != st.session_state["uploaded_file"].name:
+            st.session_state['estimate_class'].reset_detector()
             st.session_state["uploaded_file"] = uploaded_file
             st.session_state.original_video_frames, st.session_state.only_skeleton_frames, st.session_state.frames, st.session_state.all_landmarks = st.session_state['estimate_class'].estimPose_video(temp_filepath, thickness=5)
             st.session_state['all_landmarks_dict'] = util.landmarks_to_dict(st.session_state['all_landmarks'])
@@ -222,12 +223,13 @@ elif page_option == 'Image Compare':
             st.image(overlap_img1)
 
 
-
         evaluation_results_2 = scoring.evaluate_everything(pose_landmarks_np_1, b1, scoring.refine_landmarks(pose_landmarks_2), b2, pck_thres=pck_thres, normalize=False, ignore_z=ignore_z)
         overlap_img2 = cv2.cvtColor(cv2.imread(temp_filepath_1), cv2.COLOR_BGR2RGB)
         overlap_img2 = util.image_alpha_control(overlap_img2, alpha=0.4)
         overlap_img2 = util.draw_landmarks_on_image(overlap_img2, pose_landmarks_1)
         overlap_img2 = util.draw_landmarks_on_image(overlap_img2, pose_landmarks_2, landmarks_c=(255, 165, 0), connection_c=(200, 200, 200))
+
+
 
         st.subheader("Normalize를 적용하지 않을 시의 결과: ")
         col5, col6 = st.columns(2)
@@ -237,6 +239,9 @@ elif page_option == 'Image Compare':
             st.image(overlap_img2)
 else:
     frame_option = st.sidebar.slider('frame: ', 10, 30)
+    ignore_z = st.sidebar.slider('ignore_z: ', False, True)
+    pck_thres = st.sidebar.number_input('pck_threshold', min_value=0.0, max_value=1.0, value=0.1, step=0.05)
+
     # 비디오 파일 업로드
     video_1 = st.file_uploader("video_1", type=["mp4", "mov", "avi", "mkv"])
     video_2 = st.file_uploader("video_2", type=["mp4", "mov", "avi", "mkv"])
@@ -252,6 +257,44 @@ else:
             temp_filepath_2 = temp_file_2.name
         
         # landmarks 추출
+        st.session_state['estimate_class'].reset_detector()
         original_frames_1, skeleton_1, ann_1, all_landmarks_1 = st.session_state['estimate_class'].estimPose_video(temp_filepath_1)
         st.session_state['estimate_class'].reset_detector() # timestamp를 초기화해야 다음 동영상 분석 가능
         original_frames_2, skeleton_2, ann_2, all_landmarks_2 = st.session_state['estimate_class'].estimPose_video(temp_filepath_2, landmarks_c=(255, 165, 0), connection_c=(200, 200, 200))
+
+        total_results, low_score_frames = scoring.get_score_from_frames(
+            all_landmarks_1, all_landmarks_2, pck_thres=pck_thres, thres=0.4, ignore_z=ignore_z
+        )
+        for k, v in total_results.items():
+            if k == "matched": continue
+            print(f"{k}: {v}")
+
+
+        matched = total_results['matched']
+        for i, match_dict in enumerate(matched):
+            matched_key_list = [keypoint_map.REVERSE_KEYPOINT_MAPPING[k] for k in match_dict.keys() if match_dict[k]]
+            frame_1_landmarks = all_landmarks_1[i]
+            frame_2_landmarks = all_landmarks_2[i]
+
+            for k in matched_key_list:
+                x1, y1 = frame_1_landmarks[k].x, frame_1_landmarks[k].y 
+                x2, y2 = frame_2_landmarks[k].x, frame_2_landmarks[k].y 
+
+                util.draw_circle_on_image(ann_1[i], x1, y1, r=5)
+                util.draw_circle_on_image(ann_2[i], x2, y2, r=5)
+        
+        new_frames = []
+        for f1, f2 in zip(ann_1, ann_2):
+            new_frames.append(util.concat_frames_with_spacing([f1, f2]))
+
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".mp4") as temp_mp4:
+            # MP4 파일 경로
+            video_path = temp_mp4.name
+            iio.imwrite(video_path, new_frames, fps=frame_option, codec="libx264")
+            end_time = time.perf_counter()
+            st.success("MP4 파일 생성 완료!")
+
+            # Streamlit에서 재생
+            with open(video_path, "rb") as video_file:
+                video_bytes = video_file.read()
+                st.video(video_bytes)

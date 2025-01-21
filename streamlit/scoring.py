@@ -1,6 +1,6 @@
 from keypoint_map import KEYPOINT_MAPPING, SELECTED_KEYPOINTS, SELECTED_SIGMAS, SELECTED_KEYPOINTS_MAPPING
 import numpy as np
-import cv2
+from collections import defaultdict
 
 # refine landmark result to numpy array
 def refine_landmarks(landmarks, target_keys=None):
@@ -178,6 +178,29 @@ def evaluate_everything(landmarks1_np, bs1, landmarks2_np, bs2, pck_thres=0.1, n
         for k, v in results.items():
             print(f"{k}: {v}")
     return results
+
+
+def get_score_from_frames(all_landmarks1, all_landmarks2, score_target='PCK', pck_thres=0.1, thres=0.4, ignore_z=False):
+    total_results = defaultdict(list)
+    low_score_frames = []
+    bs1 = np.array([1, 0, 0])
+    bs2 = np.array([1, 0, 0])
+
+    for frame_num, (landmarks1, landmarks2) in enumerate(zip(all_landmarks1, all_landmarks2)):
+        np_l1 = refine_landmarks(landmarks1)
+        np_l2 = refine_landmarks(landmarks2)
+        results = evaluate_everything(np_l1, bs1, np_l2, bs2, pck_thres=pck_thres, verbose=False, ignore_z=ignore_z)
+        for k, v in results.items():
+            total_results[k].append(v)
+            if score_target in k and results[k] < thres:
+                low_score_frames.append(frame_num)
+    
+    for k in results.keys():
+        if k=="matched":
+            continue
+        total_results[k] = np.mean(total_results[k])
+    
+    return total_results, low_score_frames
 
 
 def main(p1, p2):
