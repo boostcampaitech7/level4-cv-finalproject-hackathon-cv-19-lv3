@@ -139,7 +139,7 @@ if page_option is None or page_option == page_options[0]:
             with tempfile.NamedTemporaryFile(delete=False, suffix=".mp4") as temp_mp4:
                 # MP4 파일 경로
                 video_path = temp_mp4.name
-                iio.imwrite(video_path, new_frames, fps=frame_option)
+                iio.imwrite(video_path, new_frames, fps=frame_option, codec="libx264")
                 end_time = time.perf_counter()
                 elapsed_time = end_time - start_time
                 st.success(f"MP4 파일 생성 완료!: {elapsed_time:.2f}초")
