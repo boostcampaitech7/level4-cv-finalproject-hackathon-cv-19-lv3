@@ -121,8 +121,8 @@ def get_point(data, key1, key2):
     return np.array([data[key1][key2]['x'], data[key1][key2]['y']])
 
 if __name__ == "__main__":
-    standard_landmarks = "stand.json"
-    compare_landmarks = "compare1.json"
+    standard_landmarks = "right_1.json"
+    compare_landmarks = "target_1.json"
 
     with open(standard_landmarks, 'r') as f:
         data1 = json.load(f)
