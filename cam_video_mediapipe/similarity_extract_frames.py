@@ -99,7 +99,7 @@ def save_random_pair_frames(pairs, frames1, frames2, output_dir):
 
 # 비디오 경로
 video1 = "video1.mp4"
-video2 = "challenge.mp4"
+video2 = "video2.mp4"
 
 # keypoints 및 프레임 추출
 keypoints1, frames1 = extract_keypoints_with_frames(video1)
