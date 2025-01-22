@@ -25,6 +25,18 @@
         android:theme="@style/Theme.Hackaton"
         tools:targetApi="31">
         <activity
+            android:name=".CameraActivity5"
+            android:exported="false" />
+        <activity
+            android:name=".CameraActivity4"
+            android:exported="false" />
+        <activity
+            android:name=".CameraActivity3"
+            android:exported="false" />
+        <activity
+            android:name=".CameraActivity2"
+            android:exported="false" />
+        <activity
             android:name=".ResultActivity"
             android:exported="false" />
 
@@ -46,7 +58,7 @@
             android:exported="false"
             android:label="@string/title_activity_song" />
         <activity
-            android:name=".MainActivity"
+            android:name=".CameraActivity1"
             android:exported="false" />
         <activity
             android:name=".StartActivity"

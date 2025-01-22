@@ -55,6 +55,7 @@ dependencies {
     implementation("io.github.ParkSangGwon:tedpermission-normal:3.4.2")
     implementation("androidx.navigation:navigation-fragment-ktx:2.7.5")
     implementation("androidx.navigation:navigation-ui-ktx:2.7.5")
+    implementation("com.arthenica:ffmpeg-kit-full:6.0-2.LTS")
     implementation("com.github.bumptech.glide:glide:4.15.0")
     annotationProcessor("com.github.bumptech.glide:compiler:4.15.0")
     testImplementation("junit:junit:4.13.2")

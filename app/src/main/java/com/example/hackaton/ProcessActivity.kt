@@ -6,17 +6,29 @@ import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.os.Handler
 import android.widget.ImageView
+import android.widget.Toast
+import com.arthenica.ffmpegkit.FFmpegKit
+import com.arthenica.ffmpegkit.ReturnCode
 import com.bumptech.glide.Glide
 
 class ProcessActivity : AppCompatActivity() {
 
     private lateinit var loading: ImageView
+    private var videoFilePath: String? = null
+    private var flippedVideoPath: String? = null
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_process)
 
-        val danceVideoUriString = intent.getStringExtra("danceVideoUri")
-        val danceVideoUri = Uri.parse(danceVideoUriString)
+        videoFilePath = intent.getStringExtra("videoFilePath")
+
+        if (videoFilePath != null) {
+            flipVideoHorizontally(videoFilePath!!)
+        } else {
+            Toast.makeText(this, "영상 경로를 찾을 수 없습니다.", Toast.LENGTH_SHORT).show()
+        }
+
 
         supportFragmentManager.beginTransaction()
             .replace(R.id.topFragmentContainer, TopFragment())
@@ -31,12 +43,35 @@ class ProcessActivity : AppCompatActivity() {
             .asGif()
             .load(R.drawable.loading)
             .into(loading)
+    }
 
-        Handler().postDelayed({
-            val intent = Intent(this@ProcessActivity, ResultActivity::class.java).apply{
-                putExtra("danceVideoUri", danceVideoUri)
+    private fun flipVideoHorizontally(inputPath: String) {
+        flippedVideoPath = inputPath.replace(".mp4", "_flipped.mp4")
+        val command = "-i $inputPath -vf hflip -c:a copy $flippedVideoPath"
+
+        FFmpegKit.executeAsync(command) { session ->
+            val state = session.state
+            val returnCode = session.returnCode
+
+            if (ReturnCode.isSuccess(returnCode)) {
+                // 처리 성공
+                runOnUiThread {
+                    Toast.makeText(this, "좌우 반전 완료: $flippedVideoPath", Toast.LENGTH_LONG).show()
+                    moveToResultActivity()
+                }
+            } else {
+                // 처리 실패
+                runOnUiThread {
+                    Toast.makeText(this, "좌우 반전 실패. FFmpeg 오류 발생.", Toast.LENGTH_SHORT).show()
+                }
             }
-            startActivity(intent)
-        }, 5000)
+        }
+    }
+
+    private fun moveToResultActivity() {
+        val intent = Intent(this, ResultActivity::class.java).apply {
+            putExtra("flippedVideoPath", flippedVideoPath) // 반전된 영상 경로 전달
+        }
+        startActivity(intent)
     }
 }

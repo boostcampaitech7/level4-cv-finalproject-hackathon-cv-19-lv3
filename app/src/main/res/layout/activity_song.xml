@@ -82,20 +82,20 @@
                     android:layout_height="10dp" />
 
                 <Button
-                    android:id="@+id/shanghai_challenge_btn"
+                    android:id="@+id/sticky_challenge_btn"
                     android:layout_width="300dp"
                     android:layout_height="48dp"
-                    android:text="상하이 로맨스 챌린지" />
+                    android:text="Sticky 챌린지" />
 
                 <Space
                     android:layout_width="match_parent"
                     android:layout_height="10dp" />
 
                 <Button
-                    android:id="@+id/hong_challenge_btn"
+                    android:id="@+id/jaessbee_challenge_btn"
                     android:layout_width="300dp"
                     android:layout_height="48dp"
-                    android:text="홍박사 챌린지" />
+                    android:text="너와의 모든 지금 챌린지" />
 
                 <Space
                     android:layout_width="match_parent"
