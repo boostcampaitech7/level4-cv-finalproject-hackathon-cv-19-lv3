@@ -156,8 +156,7 @@ def extract_pose_landmarks(result, image_width, image_height):
     
     return landmarks
 
-
-def make_pose_jsons(img_path_list, model_size=2, result_folder="./results"):
+def get_detector(model_size=2):
     model_path = download_model(model_size=model_size)
     base_options = python.BaseOptions(model_asset_path=model_path)
     options = vision.PoseLandmarkerOptions(
@@ -165,7 +164,10 @@ def make_pose_jsons(img_path_list, model_size=2, result_folder="./results"):
         running_mode=vision.RunningMode.IMAGE
     )
     detector = vision.PoseLandmarker.create_from_options(options)
+    return detector
 
+
+def make_pose_jsons(img_path_list, detector, result_folder="./results"):
     if not os.path.exists(result_folder):
         os.mkdir(result_folder)
 
@@ -203,11 +205,11 @@ def make_pose_jsons(img_path_list, model_size=2, result_folder="./results"):
 
 
 if __name__ == "__main__":
-    idx = 1
+    idx = 2
     labels = ["target", "right", "wrong"]
 
     img_path_list = [f"images/{value}_pose_{idx}.png" for value in labels]
-    make_pose_jsons(img_path_list)
+    make_pose_jsons(img_path_list, get_detector(model_size=2))
 
 
 
