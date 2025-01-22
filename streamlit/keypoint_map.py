@@ -147,6 +147,7 @@ K_I_VALUE = {
     'left_foot_index': 0.072,
     'right_foot_index': 0.072
 }
+NORMALIZED_LANDMARK_KEYS = ['x', 'y', 'z', 'visibility', 'presense']
 
 
 # select for oks calculation

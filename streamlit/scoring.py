@@ -40,7 +40,7 @@ def normalize_landmarks(landmarks_np, box):
     normalized_landmarks[:, :3] /= box  # Normalize x, y, z by dividing by bounding box dimensions
     return normalized_landmarks
 
-def normalize_landmarks_to_range(landmarks_np_1, landmarks_np_2):
+def normalize_landmarks_to_range(landmarks_np_1, landmarks_np_2, eps=1e-7):
     """
     Normalize landmarks2 to match the coordinate range of landmarks1.
 
@@ -59,14 +59,14 @@ def normalize_landmarks_to_range(landmarks_np_1, landmarks_np_2):
     max2 = np.max(landmarks_np_2[:, :3], axis=0)  # (x_max, y_max, z_max) for landmarks2
 
     # Normalize landmarks2 to the range of landmarks1
-    normalized_landmarks2 = (landmarks_np_2[:, :3] - min2) / (max2 - min2) * (max1 - min1) + min1
+    normalized_landmarks2 = (landmarks_np_2[:, :3] - min2) / (max2 - min2 + eps) * (max1 - min1) + min1
 
     # Combine normalized coordinates with the original visibility values
     normalized_landmarks2 = np.hstack((normalized_landmarks2, landmarks_np_2[:, 3:4]))
 
     return normalized_landmarks2
 
-def normalize_landmarks_to_range_by_mean(all_landmarks_np_1, all_landmarks_np_2):
+def normalize_landmarks_to_range_by_mean(all_landmarks_np_1, all_landmarks_np_2, eps=1e-7):
     """
     Normalize landmarks2 to match the coordinate range of landmarks1 using the average min and max values across frames.
 
@@ -86,7 +86,7 @@ def normalize_landmarks_to_range_by_mean(all_landmarks_np_1, all_landmarks_np_2)
     max2_mean = np.mean(np.max(all_landmarks_np_2[:, :, :3], axis=1), axis=0)  # Average of per-frame (x_max, y_max, z_max)
 
     # Normalize all frames of landmarks2 to match the range of landmarks1
-    normalized_landmarks2 = (all_landmarks_np_2[:, :, :3] - min2_mean) / (max2_mean - min2_mean) * (max1_mean - min1_mean) + min1_mean
+    normalized_landmarks2 = (all_landmarks_np_2[:, :, :3] - min2_mean) / (max2_mean - min2_mean + eps) * (max1_mean - min1_mean) + min1_mean
 
     # Combine normalized coordinates with the original visibility values
     normalized_landmarks2 = np.concatenate((normalized_landmarks2, all_landmarks_np_2[:, :, 3:4]), axis=2)

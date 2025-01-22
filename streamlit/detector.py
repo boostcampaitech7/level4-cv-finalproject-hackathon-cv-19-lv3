@@ -35,7 +35,7 @@ class PoseDetector:
     
 
     def get_detection(self, img_path, landmarks_c=(234,63,247), connection_c=(117,249,77), 
-                    thickness=10, circle_r=10, display=False):
+                    thickness=3, circle_r=3, display=False):
         if self.detector._running_mode != vision.RunningMode.IMAGE:
             self.detector._running_mode = vision.RunningMode.IMAGE
 
@@ -71,6 +71,7 @@ class PoseDetector:
                 plt.show()
         else:
             warnings.warn("there is no pose_landmarks in the image!!")
+            return None, None, None, None
         return detection_result.pose_landmarks[0], detection_result.segmentation_masks, annotated_image, boxsize
     
 
@@ -99,7 +100,6 @@ class PoseDetector:
             ok, frame = video.read()
             frame_timestamp_ms = i * frame_duration
             frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-            original_video_frames.append(frame.copy())
 
             # Check if frame is not read properly.
             if not ok:
@@ -112,16 +112,22 @@ class PoseDetector:
             mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=frame)
             pose_landmarker_result = self.detector.detect_for_video(mp_image, frame_timestamp_ms)
 
-            landmarks = pose_landmarker_result.pose_landmarks[0]
-            annotated_image = draw_landmarks_on_image(mp_image.numpy_view(), pose_landmarker_result,
-                                                      landmarks_c=landmarks_c, connection_c=connection_c,
-                                                      thickness=thickness, circle_r=circle_r)
-            skeleton = draw_landmarks_on_image(np.zeros_like(mp_image.numpy_view()), pose_landmarker_result,
-                                               landmarks_c=landmarks_c, connection_c=connection_c,
-                                               thickness=thickness, circle_r=circle_r)
+            if pose_landmarker_result.pose_landmarks:
+                landmarks = pose_landmarker_result.pose_landmarks[0]
 
+                annotated_image = draw_landmarks_on_image(mp_image.numpy_view(), pose_landmarker_result,
+                                                        landmarks_c=landmarks_c, connection_c=connection_c,
+                                                        thickness=thickness, circle_r=circle_r)
+                skeleton = draw_landmarks_on_image(np.zeros_like(mp_image.numpy_view()), pose_landmarker_result,
+                                                landmarks_c=landmarks_c, connection_c=connection_c,
+                                                thickness=thickness, circle_r=circle_r)
+            else:
+                landmarks = None
+                annotated_image = frame.copy()
+                skeleton = np.zeros_like(mp_image.numpy_view())
             
-            
+
+            original_video_frames.append(frame.copy())
             frames.append(annotated_image)
             all_landmarks.append(landmarks)
             only_skeleton_frames.append(skeleton)

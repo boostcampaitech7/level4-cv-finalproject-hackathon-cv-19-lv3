@@ -1,14 +1,15 @@
 import os
-from copy import copy
+from copy import deepcopy
 import platform
 import subprocess
 import shutil
 import numpy as np
-from keypoint_map import KEYPOINT_MAPPING
+from keypoint_map import KEYPOINT_MAPPING, NORMALIZED_LANDMARK_KEYS
 from mediapipe import solutions
 from mediapipe.framework.formats import landmark_pb2
 import random
 import cv2
+from collections import namedtuple
 
 def set_seed(seed):
     random.seed(seed)
@@ -34,7 +35,7 @@ def download_model(model_size):
     model_path = os.path.abspath(os.path.join(model_folder, file_name))
 
     # 모델 파일 이름 지정
-    temp_model_file = copy(file_name)
+    temp_model_file = deepcopy(file_name)
     
     # 모델 경로에 파일이 있는지 확인
     if not os.path.exists(model_path):
@@ -156,3 +157,12 @@ def draw_circle_on_image(image: np.ndarray, normalized_x: float, normalized_y: f
     
     # 원 그리기
     cv2.circle(image, (x, y), r, color, thickness)
+
+
+def fill_None_from_landmarks(all_landmarks, fill_value=1.):
+    NormalizedLandmark = namedtuple('NormalizedLandmark', NORMALIZED_LANDMARK_KEYS)
+    none_fill_value = [NormalizedLandmark(**{k:.0 for k in NORMALIZED_LANDMARK_KEYS}) for _ in range(len(KEYPOINT_MAPPING))]
+    for i in range(len(all_landmarks)):
+        if all_landmarks[i] is None:
+            all_landmarks[i] = none_fill_value
+    return all_landmarks

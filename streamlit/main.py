@@ -7,7 +7,7 @@ import imageio.v3 as iio
 import json
 import cv2
 from copy import deepcopy
-from fastdtw import fastdtw
+from util import fill_None_from_landmarks
 
 # main title
 st.sidebar.success("CV19 영원한종이박")
@@ -39,8 +39,13 @@ if "all_landmarks" not in st.session_state:
 if "all_landmarks_dict" not in st.session_state:
     st.session_state["all_landmarks_dict"] = None
 if "estimate_class" not in st.session_state or (model_size != st.session_state['model_size']):
+    st.session_state['force_inference'] = True
     st.session_state['model_size'] = model_size
     st.session_state['estimate_class'] = detector.PoseDetector(model_size=model_size)
+if "video_1" not in st.session_state:
+    st.session_state["video_1"] = None
+if "video_2" not in st.session_state:
+    st.session_state["video_2"] = None
 
 
 util.set_seed(seed)
@@ -61,11 +66,13 @@ if page_option is None or page_option == page_options[0]:
         # OpenCV로 비디오 읽고 추론
         if st.session_state['estimation_start_time'] is None:
             st.session_state.estimation_start_time = time.perf_counter()
-        if st.session_state["uploaded_file"] is None or uploaded_file.name != st.session_state["uploaded_file"].name:
+        if st.session_state['force_inference'] or st.session_state["uploaded_file"] is None or uploaded_file.name != st.session_state["uploaded_file"].name:
             st.session_state['estimate_class'].reset_detector()
             st.session_state["uploaded_file"] = uploaded_file
             st.session_state.original_video_frames, st.session_state.only_skeleton_frames, st.session_state.frames, st.session_state.all_landmarks = st.session_state['estimate_class'].estimPose_video(temp_filepath, thickness=5)
+            st.session_state.all_landmarks = fill_None_from_landmarks(st.session_state.all_landmarks)
             st.session_state['all_landmarks_dict'] = util.landmarks_to_dict(st.session_state['all_landmarks'])
+        st.session_state['force_inference'] = False
     
         if st.session_state['estimation_end_time'] is None:
             st.session_state.estimation_end_time = time.perf_counter()
@@ -97,6 +104,9 @@ if page_option is None or page_option == page_options[0]:
                 original = st.session_state["original_video_frames"][i]
                 overlap = st.session_state["frames"][i]
                 only_skeleton = st.session_state["only_skeleton_frames"][i]
+
+                if None in original or None in only_skeleton or None in overlap:
+                    continue
 
                 new_frames.append(util.concat_frames_with_spacing([original, only_skeleton, overlap]))
 
@@ -188,6 +198,9 @@ elif page_option == 'Image Compare':
         pose_landmarks_1, segmentation_masks_1, annotated_image_1, b1 = st.session_state['estimate_class'].get_detection(temp_filepath_1, landmarks_c=(234,63,247), connection_c=(117,249,77))
         pose_landmarks_2, segmentation_masks_2, annotated_image_2, b2 = st.session_state['estimate_class'].get_detection(temp_filepath_2, landmarks_c=(255, 165, 0), connection_c=(200, 200, 200))
 
+        if pose_landmarks_1 is None or pose_landmarks_2 is None:
+            raise ValueError("each image has to at least one person in each of them")
+
         col1, col2 = st.columns(2)
         with col1:
             st.image(annotated_image_1)
@@ -258,10 +271,23 @@ else:
             temp_filepath_2 = temp_file_2.name
         
         # landmarks 추출
-        st.session_state['estimate_class'].reset_detector()
-        original_frames_1, skeleton_1, ann_1, all_landmarks_1 = st.session_state['estimate_class'].estimPose_video(temp_filepath_1)
-        st.session_state['estimate_class'].reset_detector() # timestamp를 초기화해야 다음 동영상 분석 가능
-        original_frames_2, skeleton_2, ann_2, all_landmarks_2 = st.session_state['estimate_class'].estimPose_video(temp_filepath_2, landmarks_c=(255, 165, 0), connection_c=(200, 200, 200))
+        if st.session_state['force_inference'] or st.session_state["video_1"] is None or video_1.name != st.session_state["video_1"].name:
+            st.session_state["video_1"] = video_1
+            st.session_state['estimate_class'].reset_detector()
+            original_frames_1, skeleton_1, st.session_state.ann_1, st.session_state.all_landmarks_1 = st.session_state['estimate_class'].estimPose_video(temp_filepath_1)
+            st.session_state.all_landmarks_1 = fill_None_from_landmarks(st.session_state.all_landmarks_1)
+
+        if st.session_state['force_inference'] or st.session_state["video_2"] is None or video_2.name != st.session_state["video_2"].name:
+            st.session_state["video_2"] = video_2
+            st.session_state['estimate_class'].reset_detector() # timestamp를 초기화해야 다음 동영상 분석 가능
+            original_frames_2, skeleton_2, st.session_state.ann_2, st.session_state.all_landmarks_2 = st.session_state['estimate_class'].estimPose_video(temp_filepath_2, landmarks_c=(255, 165, 0), connection_c=(200, 200, 200))
+            st.session_state.all_landmarks_2 = fill_None_from_landmarks(st.session_state.all_landmarks_2)
+        st.session_state['force_inference'] = False
+
+
+        ann_1, all_landmarks_1 = st.session_state["ann_1"], st.session_state["all_landmarks_1"]
+        ann_2, all_landmarks_2 = st.session_state["ann_2"], st.session_state["all_landmarks_2"]
+
 
         total_results, low_score_frames = scoring.get_score_from_frames(
             all_landmarks_1, all_landmarks_2, pck_thres=pck_thres, thres=0.4, ignore_z=ignore_z, use_dtw=use_dtw
@@ -283,6 +309,8 @@ else:
             matched_key_list = [keypoint_map.REVERSE_KEYPOINT_MAPPING[k] for k in match_dict.keys() if match_dict[k]]
             frame_1_landmarks = all_landmarks_1[frame_num_1]
             frame_2_landmarks = all_landmarks_2[frame_num_2]
+            if frame_1_landmarks is None or frame_2_landmarks is None:
+                continue
 
             for k in matched_key_list:
                 x1, y1 = frame_1_landmarks[k].x, frame_1_landmarks[k].y 
