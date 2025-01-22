@@ -21,6 +21,7 @@ def extract_keypoints_with_frames(video_path):
             break
 
         frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        height, width = frame.shape[:2] # 프레임 해상도 (정규화된 좌표를 픽셀 단위로 변환하기 위해서)
 
         # Pose 추론 수행
         result = pose.process(frame_rgb)
@@ -28,7 +29,10 @@ def extract_keypoints_with_frames(video_path):
         if result.pose_landmarks:
             keypoints = []
             for landmark in result.pose_landmarks.landmark:
-                keypoints.append([landmark.x, landmark.y, landmark.z])
+                x = landmark.x * width
+                y = landmark.y * height
+                z = landmark.z
+                keypoints.append([x, y, z])
             keypoints_list.append(np.array(keypoints).flatten())
             frames.append(frame)  # 원본 프레임 저장
 
@@ -99,28 +103,28 @@ def save_random_pair_frames(pairs, frames1, frames2, output_dir):
 
 # 비디오 경로
 video1 = "video1.mp4"
-video2 = "video2.mp4"
+video2 = "kdb2.mp4"
 
 # keypoints 및 프레임 추출
 keypoints1, frames1 = extract_keypoints_with_frames(video1)
 keypoints2, frames2 = extract_keypoints_with_frames(video2)
 
-# 특정 keypoints 인덱스 (예: 어깨와 엉덩이만 사용)
-selected_indices = [11, 12, 23, 24]  # 어깨와 엉덩이 keypoints
-keypoints1_filtered = filter_keypoints(keypoints1, selected_indices)
-keypoints2_filtered = filter_keypoints(keypoints2, selected_indices)
+# 특정 keypoints 인덱스
+selected_indices = [0, 7, 8, 11, 12, 13, 14, 15, 16, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32]
+keypoints1 = filter_keypoints(keypoints1, selected_indices)
+keypoints2 = filter_keypoints(keypoints2, selected_indices)
 
 # keypoints L2 정규화
-keypoints1_filtered = l2_normalize(keypoints1_filtered)
-keypoints2_filtered = l2_normalize(keypoints2_filtered)
+# keypoints1 = l2_normalize(keypoints1)
+# keypoints2 = l2_normalize(keypoints2)
 
 # 유사도 및 시각화 데이터 계산
 distance, avg_cosine, avg_euclidean, pairs = calculate_similarity_with_visualization(
-    keypoints1_filtered, keypoints2_filtered
+    keypoints1, keypoints2
 )
 
 # OKS 계산
-oks = calculate_oks(keypoints1_filtered, keypoints2_filtered, pairs)
+# oks = calculate_oks(keypoints1, keypoints2, pairs)
 
 # 랜덤한 매칭된 프레임 저장
 output_dir = "output_frames"
@@ -130,4 +134,4 @@ print(f"{video1} with {video2}")
 print(f"Initial distance: {distance}")
 print(f"Average Cosine Similarity: {avg_cosine}")
 print(f"Average Euclidean Distance: {avg_euclidean}")
-print(f"Average OKS: {oks}")
+# print(f"Average OKS: {oks}")
