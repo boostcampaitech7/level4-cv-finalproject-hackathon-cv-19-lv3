@@ -1,6 +1,9 @@
 from keypoint_map import KEYPOINT_MAPPING, SELECTED_KEYPOINTS, SELECTED_SIGMAS, SELECTED_KEYPOINTS_MAPPING
 import numpy as np
 from collections import defaultdict
+from scipy.spatial.distance import euclidean
+from fastdtw import fastdtw
+
 
 # refine landmark result to numpy array
 def refine_landmarks(landmarks, target_keys=None):
@@ -155,6 +158,13 @@ def pck(gt, preds, threshold=0.1, ignore_z=False):
 
 
 def evaluate_everything(landmarks1_np, bs1, landmarks2_np, bs2, pck_thres=0.1, normalize=True, verbose=True, ignore_z=False):
+    """
+    landmarks1_np, landmarks2_np: [num_selected_keypoints, 4]의 numpy array
+    pck_thres : pck스코어 계산 시 얼마나 가까워야 match시킬 것인지
+    normalize: minmax 정규화 적용 여부
+    verbose: results 결과 print여부
+    ignore_z: z값을 무시하고 metric을 계산할지 여부
+    """
     target_end = 3-ignore_z
     if normalize:
         l2 = normalize_landmarks_to_range(landmarks1_np, landmarks2_np)
@@ -180,23 +190,58 @@ def evaluate_everything(landmarks1_np, bs1, landmarks2_np, bs2, pck_thres=0.1, n
     return results
 
 
-def get_score_from_frames(all_landmarks1, all_landmarks2, score_target='PCK', pck_thres=0.1, thres=0.4, ignore_z=False):
+def get_score_from_frames(all_landmarks1, all_landmarks2, score_target='PCK', pck_thres=0.1, thres=0.4, ignore_z=False, use_dtw=False):
+    """
+    all_landmarks1, all_landmarks2: list[landmarks]
+    pck_thres : pck스코어 계산 시 얼마나 가까워야 match시킬 것인지
+    thres : score target으로 선정된 metric 값이 해당 thres 이하면 low-score_frames로 분류
+    ignore_z: z값을 무시하고 metric을 계산할지 여부
+    use_dtw: True의 경우 fastdtw를 통해 frame을 매칭해서 스코어를 계산. False의 경우 짧은 영상 기준으로 긴 영상을 자름
+
+    returns:
+        total_results: 각 metric별 score를 담은 dictionary
+        low_score_frames: all_landmarks2기준으로 all_landmarks1과 비교에서 낮은 스코어를 기록한 frame number list
+    """
     total_results = defaultdict(list)
     low_score_frames = []
     bs1 = np.array([1, 0, 0])
     bs2 = np.array([1, 0, 0])
 
-    for frame_num, (landmarks1, landmarks2) in enumerate(zip(all_landmarks1, all_landmarks2)):
-        np_l1 = refine_landmarks(landmarks1)
-        np_l2 = refine_landmarks(landmarks2)
-        results = evaluate_everything(np_l1, bs1, np_l2, bs2, pck_thres=pck_thres, verbose=False, ignore_z=ignore_z)
-        for k, v in results.items():
-            total_results[k].append(v)
-            if score_target in k and results[k] < thres:
-                low_score_frames.append(frame_num)
+    if use_dtw:
+        all_landmarks_np_1 = np.array([refine_landmarks(l) for l in all_landmarks1])
+        all_landmarks_np_2 = np.array([refine_landmarks(l) for l in all_landmarks2])
+        all_landmarks_np_2 = normalize_landmarks_to_range_by_mean(all_landmarks_np_1, all_landmarks_np_2)
+
+        _, path = fastdtw(
+            all_landmarks_np_1[..., :3].reshape(all_landmarks_np_1.shape[0], -1),
+            all_landmarks_np_2[..., :3].reshape(all_landmarks_np_2.shape[0], -1),
+            dist=euclidean
+        )
+
+        for frame_num_1, frame_num_2 in path:
+            np_l1 = all_landmarks_np_1[frame_num_1]
+            np_l2 = all_landmarks_np_2[frame_num_2]
+            results = evaluate_everything(np_l1, bs1, np_l2, bs2, pck_thres=pck_thres, verbose=False, ignore_z=ignore_z)
+            results['matched_frame'] = (frame_num_1, frame_num_2)
+
+            for k, v in results.items():
+                total_results[k].append(v)
+                if score_target in k and results[k] < thres:
+                    low_score_frames.append(frame_num_2)
+    else:
+        for frame_num, (landmarks1, landmarks2) in enumerate(zip(all_landmarks1, all_landmarks2)):
+            np_l1 = refine_landmarks(landmarks1)
+            np_l2 = refine_landmarks(landmarks2)
+            results = evaluate_everything(np_l1, bs1, np_l2, bs2, pck_thres=pck_thres, verbose=False, ignore_z=ignore_z)
+            results['matched_frame'] = (frame_num, frame_num)
+
+            for k, v in results.items():
+                total_results[k].append(v)
+                if score_target in k and results[k] < thres:
+                    low_score_frames.append(frame_num)
     
-    for k in results.keys():
-        if k=="matched":
+    for k in total_results.keys():
+        if "matched" in k:
             continue
         total_results[k] = np.mean(total_results[k])
     

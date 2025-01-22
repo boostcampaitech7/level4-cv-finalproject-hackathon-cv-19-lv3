@@ -18,10 +18,14 @@ def set_seed(seed):
 def download_model(model_size):
     if model_size == 0:
         file_name = "pose_landmarker_lite.task"
+        download_link = "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/latest/pose_landmarker_lite.task"
+
     elif model_size == 1:
         file_name = "pose_landmarker_full.task"
+        download_link = "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_full/float16/latest/pose_landmarker_full.task"
     else:
         file_name = "pose_landmarker_heavy.task"
+        download_link = "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_heavy/float16/latest/pose_landmarker_heavy.task"
 
     current_path = os.getcwd()
     model_folder = os.path.abspath(os.path.join(current_path, 'models'))
@@ -41,13 +45,11 @@ def download_model(model_size):
         
         if system == "Linux":
             command = (
-                f"wget -O {temp_model_file} -q "
-                "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_heavy/float16/1/pose_landmarker_heavy.task"
+                f"wget -O {temp_model_file} -q {download_link}"
             )
         elif system == "Windows":
             command = (
-                f"curl -o {temp_model_file} -s "
-                "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_heavy/float16/1/pose_landmarker_heavy.task"
+                f"curl -o {temp_model_file} -s {download_link}"
             )
         else:
             raise OSError("지원하지 않는 운영 체제입니다.")

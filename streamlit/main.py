@@ -240,6 +240,7 @@ elif page_option == 'Image Compare':
 else:
     frame_option = st.sidebar.slider('frame: ', 10, 30)
     ignore_z = st.sidebar.slider('ignore_z: ', False, True)
+    use_dtw = st.sidebar.slider('use_dtw_to_calculate_video_sim: ', False, True)
     pck_thres = st.sidebar.number_input('pck_threshold', min_value=0.0, max_value=1.0, value=0.1, step=0.05)
 
     # 비디오 파일 업로드
@@ -263,25 +264,32 @@ else:
         original_frames_2, skeleton_2, ann_2, all_landmarks_2 = st.session_state['estimate_class'].estimPose_video(temp_filepath_2, landmarks_c=(255, 165, 0), connection_c=(200, 200, 200))
 
         total_results, low_score_frames = scoring.get_score_from_frames(
-            all_landmarks_1, all_landmarks_2, pck_thres=pck_thres, thres=0.4, ignore_z=ignore_z
+            all_landmarks_1, all_landmarks_2, pck_thres=pck_thres, thres=0.4, ignore_z=ignore_z, use_dtw=use_dtw
         )
         for k, v in total_results.items():
-            if k == "matched": continue
-            print(f"{k}: {v}")
+            if "matched" in k: continue
+            s = f"{k}: {v}"
+
+            print(s)
+            st.write(s)
 
 
         matched = total_results['matched']
-        for i, match_dict in enumerate(matched):
+        matched_frame_list = total_results['matched_frame']
+
+        for i, (frame_num_1, frame_num_2) in enumerate(matched_frame_list):
+            match_dict = matched[i]
+
             matched_key_list = [keypoint_map.REVERSE_KEYPOINT_MAPPING[k] for k in match_dict.keys() if match_dict[k]]
-            frame_1_landmarks = all_landmarks_1[i]
-            frame_2_landmarks = all_landmarks_2[i]
+            frame_1_landmarks = all_landmarks_1[frame_num_1]
+            frame_2_landmarks = all_landmarks_2[frame_num_2]
 
             for k in matched_key_list:
                 x1, y1 = frame_1_landmarks[k].x, frame_1_landmarks[k].y 
                 x2, y2 = frame_2_landmarks[k].x, frame_2_landmarks[k].y 
 
-                util.draw_circle_on_image(ann_1[i], x1, y1, r=5)
-                util.draw_circle_on_image(ann_2[i], x2, y2, r=5)
+                util.draw_circle_on_image(ann_1[frame_num_1], x1, y1, r=5)
+                util.draw_circle_on_image(ann_2[frame_num_2], x2, y2, r=5)
         
         new_frames = []
         for f1, f2 in zip(ann_1, ann_2):
