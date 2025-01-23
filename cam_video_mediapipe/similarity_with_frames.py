@@ -149,7 +149,7 @@ def make_euclidean_similarity(avg_euclidean):
 
 # 비디오 경로
 video1 = "video1.mp4"
-video2 = "video3.mp4"
+video2 = "video5.mp4"
 
 # keypoints 및 프레임 추출
 keypoints1, frames1 = extract_keypoints_with_frames(video1)
@@ -157,8 +157,8 @@ keypoints2, frames2 = extract_keypoints_with_frames(video2)
 
 # 특정 keypoints 인덱스
 selected_indices = [0, 7, 8, 11, 12, 13, 14, 15, 16, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32] # 19개
-# keypoints1 = filter_keypoints(keypoints1, selected_indices)
-# keypoints2 = filter_keypoints(keypoints2, selected_indices)
+keypoints1 = filter_keypoints(keypoints1, selected_indices)
+keypoints2 = filter_keypoints(keypoints2, selected_indices)
 
 # keypoints L2 정규화
 keypoints1 = l2_normalize(keypoints1)
@@ -171,7 +171,7 @@ distance, avg_cosine, avg_euclidean, pairs = calculate_similarity_with_visualiza
 
 # 랜덤한 매칭된 프레임 저장
 output_dir = "output_frames"
-# save_random_pair_frames(pairs, frames1, frames2, output_dir, 100)
+save_random_pair_frames(pairs, frames1, frames2, output_dir, 100)
 
 cosine_similarity = make_cosine_similarity(avg_cosine)
 euclidean_similarity = make_euclidean_similarity(avg_euclidean)
