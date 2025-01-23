@@ -4,10 +4,38 @@ import numpy as np
 from fastdtw import fastdtw 
 from scipy.spatial.distance import euclidean, cosine
 import os
+from keypoint_map import SELECTED_SIGMAS, SELECTED_KEYPOINTS
 
 # MediaPipe Pose 초기화
 mp_pose = mp.solutions.pose
 pose = mp_pose.Pose()
+
+
+# PCK 값 계산 함수
+def pck(gt, preds, threshold=0.1, ignore_z=False):
+    """
+    gt : shape (num_selected, 4) 4 feature is (x, y, z, visibility)
+    preds : shape (num_selected, 4) 4 feature is (x, y, z, visibility)
+    """
+    target_end = 3-ignore_z
+    distance = np.linalg.norm(gt[:, :target_end] - preds[:, :target_end], axis=1)
+    matched = distance < threshold
+    pck_score = np.mean(matched)
+    return pck_score, matched
+
+# OKS 값 계산 함수
+def oks(gt, preds, ignore_z=False):
+    """
+    gt : shape (num_selected, 4) 4 feature is (x, y, z, visibility)
+    preds : shape (num_selected, 4) 4 feature is (x, y, z, visibility)
+    """
+    target_end = 3-ignore_z
+    sigmas = np.array(SELECTED_SIGMAS)
+    distance = np.linalg.norm(gt[:, :target_end] - preds[:, :target_end], axis=1)
+
+    kp_c = sigmas * 2
+    return np.mean(np.exp(-(distance ** 2) / (2 * (kp_c ** 2))))
+
 
 def extract_keypoints_with_frames(video_path):
     cap = cv2.VideoCapture(video_path)
@@ -30,6 +58,37 @@ def extract_keypoints_with_frames(video_path):
             for landmark in result.pose_landmarks.landmark:
                 x = landmark.x * width
                 y = landmark.y * height
+                z = landmark.z
+                keypoints.append([x, y, z])
+            keypoints_list.append(np.array(keypoints))
+            frames.append(frame)  # 원본 프레임 저장
+
+    cap.release()
+    return np.array(keypoints_list), frames
+
+def extract_keypoints_with_frames_without_denormalization(video_path):
+    cap = cv2.VideoCapture(video_path)
+    keypoints_list = []
+    frames = []
+
+    while cap.isOpened():
+        success, frame = cap.read()
+        if not success:
+            break
+        
+        height, width = frame.shape[:2] # 프레임 해상도 (정규화된 좌표를 픽셀 단위로 변환하기 위해서)
+        frame = cv2.resize(frame, (int(width * (640 / height)), 640))
+        frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        
+
+        # Pose 추론 수행
+        result = pose.process(frame_rgb)
+
+        if result.pose_landmarks:
+            keypoints = []
+            for landmark in result.pose_landmarks.landmark:
+                x = landmark.x
+                y = landmark.y
                 z = landmark.z
                 keypoints.append([x, y, z])
             keypoints_list.append(np.array(keypoints))
@@ -78,6 +137,8 @@ def calculate_similarity_with_visualization(keypoints1, keypoints2):
 
     cosine_similarities = []
     euclidean_distances = []
+    oks_list = []
+    pck_list = []
 
     for idx1, idx2 in pairs:
         # 각 프레임에서 keypoints의 Cosine Similarity와 Euclidean Distance 계산
@@ -87,6 +148,8 @@ def calculate_similarity_with_visualization(keypoints1, keypoints2):
         # 벡터 차원을 유지한 상태로 유사도 계산
         frame_cosine_similarities = []
         frame_euclidean_distances = []
+        oks_list.append(oks(kp1, kp2))
+        pck_list.append(pck(kp1, kp2, threshold=0.1)[0])
 
         for p1, p2 in zip(kp1, kp2):
             # 코사인 유사도 계산
@@ -104,6 +167,8 @@ def calculate_similarity_with_visualization(keypoints1, keypoints2):
     # 전체 프레임에 대한 평균 값을 계산
     average_cosine_similarity = np.mean(cosine_similarities)
     average_euclidean_distance = np.mean(euclidean_distances)
+    print("oks 점수: ", np.mean(oks_list))
+    print("pck 점수: ", np.mean(pck_list))
 
     return distance, average_cosine_similarity, average_euclidean_distance, pairs
 
@@ -139,7 +204,8 @@ def save_random_pair_frames(pairs, frames1, frames2, output_dir, keypoint2_index
             print(f"Invalid keypoint1 index: {idx1}")
 
 def make_cosine_similarity(avg_cosine):
-    cos = (avg_cosine * 1000) % 100
+    # cos = (avg_cosine * 1000) % 100
+    cos = (1 + avg_cosine) / 2 * 100
     return cos
 
 def make_euclidean_similarity(avg_euclidean):
@@ -149,14 +215,14 @@ def make_euclidean_similarity(avg_euclidean):
 def main():
     # 비디오 경로
     video1 = "videos/video1.mp4"
-    video2 = "videos/video2.mp4"
+    video2 = "videos/video5.mp4"
 
     # keypoints 및 프레임 추출
     keypoints1, frames1 = extract_keypoints_with_frames(video1)
     keypoints2, frames2 = extract_keypoints_with_frames(video2)
 
     # 특정 keypoints 인덱스
-    selected_indices = [0, 7, 8, 11, 12, 13, 14, 15, 16, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32] # 19개
+    selected_indices = SELECTED_KEYPOINTS
     keypoints1 = filter_keypoints(keypoints1, selected_indices)
     keypoints2 = filter_keypoints(keypoints2, selected_indices)
 
