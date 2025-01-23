@@ -95,28 +95,6 @@ if page_option is None or page_option == page_options[0]:
             
 
         original_video_frames, only_skeleton_frames, frames, all_landmarks = st.session_state.original_video_frames, st.session_state.only_skeleton_frames, st.session_state.frames, st.session_state.all_landmarks
-        new_frames = []
-        # 옵션에 따라 gif를 keypoint와 image가 겹쳐진 것만 보여줄지, 분리된 것도 보여줄 지 선택
-        if gif_option == "only overlap":
-            new_frames = st.session_state["frames"]
-        else:
-            max_frame_height = util.get_max_height_from_frames([
-                original_video_frames[0],
-                frames[0],
-                only_skeleton_frames[0]
-            ])
-
-            for i in range(len(frames)):
-                original = original_video_frames[i]
-                overlap = frames[i]
-                only_skeleton = only_skeleton_frames[i]
-
-                if None in original or None in only_skeleton or None in overlap:
-                    continue
-
-                new_frames.append(util.concat_frames_with_spacing([original, only_skeleton, overlap], max_frame_height))
-
-
         ## gif또는 mp4로 표시
         col1, col2, col3 = st.columns(3)
         with col1:
@@ -126,62 +104,85 @@ if page_option is None or page_option == page_options[0]:
         with col3:
             raw_button = st.button("frame으로부터 가져오기")
         
+        if gif_button or mp4_button or raw_button:
+            new_frames = []
+            # 옵션에 따라 gif를 keypoint와 image가 겹쳐진 것만 보여줄지, 분리된 것도 보여줄 지 선택
+            if gif_option == "only overlap":
+                new_frames = st.session_state["frames"]
+            else:
+                max_frame_height = util.get_max_height_from_frames([
+                    original_video_frames[0],
+                    frames[0],
+                    only_skeleton_frames[0]
+                ])
 
-        # 프레임 표시 영역
-        placeholder = st.empty()
+                for i in range(len(frames)):
+                    original = original_video_frames[i]
+                    overlap = frames[i]
+                    only_skeleton = only_skeleton_frames[i]
 
-        # GIF로 저장
-        start_time = time.perf_counter()
-        if gif_button:
-            with tempfile.NamedTemporaryFile(delete=False, suffix=".gif") as temp_gif:
-                gif_path = temp_gif.name
-                imageio.mimsave(gif_path, new_frames, format="GIF", fps=frame_option, loop=0)  # FPS 설정
-                end_time = time.perf_counter()
-                elapsed_time = end_time - start_time
-                st.success(f"GIF 파일 생성 완료! 수행시간: {elapsed_time:.2f}초")
-                st.image(gif_path, caption="생성된 GIF")
+                    if None in original or None in only_skeleton or None in overlap:
+                        continue
+
+                    new_frames.append(util.concat_frames_with_spacing([original, only_skeleton, overlap], max_frame_height))
             
-            # 다운로드 버튼
-            with open(gif_path, "rb") as gif_file:
-                gif_bytes = gif_file.read()
-                st.download_button(
-                    label="다운로드 GIF 파일",
-                    data=gif_bytes,
-                    file_name="output.gif",
-                    mime="image/gif"
-                )
-        
 
-        if mp4_button:
-            with tempfile.NamedTemporaryFile(delete=False, suffix=".mp4") as temp_mp4:
-                # MP4 파일 경로
-                video_path = temp_mp4.name
-                iio.imwrite(video_path, new_frames, fps=frame_option, codec="libx264")
-                end_time = time.perf_counter()
-                elapsed_time = end_time - start_time
-                st.success(f"MP4 파일 생성 완료!: {elapsed_time:.2f}초")
+            # 프레임 표시 영역
+            placeholder = st.empty()
 
-                # Streamlit에서 재생
+            # GIF로 저장
+            start_time = time.perf_counter()
+            if gif_button:
+                with tempfile.NamedTemporaryFile(delete=False, suffix=".gif") as temp_gif:
+                    gif_path = temp_gif.name
+                    imageio.mimsave(gif_path, new_frames, format="GIF", fps=frame_option, loop=0)  # FPS 설정
+                    end_time = time.perf_counter()
+                    elapsed_time = end_time - start_time
+                    st.success(f"GIF 파일 생성 완료! 수행시간: {elapsed_time:.2f}초")
+                    st.image(gif_path, caption="생성된 GIF")
+                
+                # 다운로드 버튼
+                with open(gif_path, "rb") as gif_file:
+                    gif_bytes = gif_file.read()
+                    st.download_button(
+                        label="다운로드 GIF 파일",
+                        data=gif_bytes,
+                        file_name="output.gif",
+                        mime="image/gif"
+                    )
+            
+
+            if mp4_button:
+                with tempfile.NamedTemporaryFile(delete=False, suffix=".mp4") as temp_mp4:
+                    # MP4 파일 경로
+                    video_path = temp_mp4.name
+                    iio.imwrite(video_path, new_frames, fps=frame_option, codec="libx264")
+                    end_time = time.perf_counter()
+                    elapsed_time = end_time - start_time
+                    st.success(f"MP4 파일 생성 완료!: {elapsed_time:.2f}초")
+
+                    # Streamlit에서 재생
+                    with open(video_path, "rb") as video_file:
+                        video_bytes = video_file.read()
+                        st.video(video_bytes)
+                
+                # 다운로드 버튼
                 with open(video_path, "rb") as video_file:
                     video_bytes = video_file.read()
-                    st.video(video_bytes)
-            
-            # 다운로드 버튼
-            with open(video_path, "rb") as video_file:
-                video_bytes = video_file.read()
-                st.download_button(
-                    label="다운로드 MP4 파일",
-                    data=video_bytes,
-                    file_name="output.mp4",
-                    mime="video/mp4"
-                )
+                    st.download_button(
+                        label="다운로드 MP4 파일",
+                        data=video_bytes,
+                        file_name="output.mp4",
+                        mime="video/mp4"
+                    )
 
-        if raw_button:
-            # 비디오 플레이어 컨트롤러
-            placeholder = st.empty()  # 빈 컨테이너 생성
-            for frame in new_frames:
-                placeholder.image(frame, channels="RGB")  # 프레임 표시
-                time.sleep(1 / frame_option)  # 프레임 속도에 맞춰 대기
+            if raw_button:
+                # 비디오 플레이어 컨트롤러
+                placeholder = st.empty()  # 빈 컨테이너 생성
+                for frame in new_frames:
+                    placeholder.image(frame, channels="RGB")  # 프레임 표시
+                    time.sleep(1 / frame_option)  # 프레임 속도에 맞춰 대기
+
 
 
 elif page_option == 'Image Compare':
