@@ -98,13 +98,14 @@ class PoseDetector:
         for i in tqdm(range(total_frames)):
             # Read a frame.
             ok, frame = video.read()
-            frame_timestamp_ms = i * frame_duration
-            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
             # Check if frame is not read properly.
             if not ok:
                 # Break the loop.
                 break
+            
+            frame_timestamp_ms = i * frame_duration
+            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             # Get the width and height of the frame
             frame_height, frame_width, _ =  frame.shape
             # Resize the frame while keeping the aspect ratio.
