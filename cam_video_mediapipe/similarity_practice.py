@@ -59,7 +59,7 @@ def calculate_similarity(keypoints1, keypoints2):
 
 # 비디오 경로
 video1 = "video1.mp4"
-video2 = "challenge.mp4"
+video2 = "video2.mp4"
 
 # keypoints 추출
 keypoints1 = extract_keypoints(video1)
