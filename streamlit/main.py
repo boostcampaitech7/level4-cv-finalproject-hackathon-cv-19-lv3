@@ -93,22 +93,28 @@ if page_option is None or page_option == page_options[0]:
                 mime="application/json",
             )
             
-        
 
+        original_video_frames, only_skeleton_frames, frames, all_landmarks = st.session_state.original_video_frames, st.session_state.only_skeleton_frames, st.session_state.frames, st.session_state.all_landmarks
         new_frames = []
         # 옵션에 따라 gif를 keypoint와 image가 겹쳐진 것만 보여줄지, 분리된 것도 보여줄 지 선택
         if gif_option == "only overlap":
             new_frames = st.session_state["frames"]
         else:
-            for i in range(len(st.session_state["frames"])):
-                original = st.session_state["original_video_frames"][i]
-                overlap = st.session_state["frames"][i]
-                only_skeleton = st.session_state["only_skeleton_frames"][i]
+            max_frame_height = util.get_max_height_from_frames([
+                original_video_frames[0],
+                frames[0],
+                only_skeleton_frames[0]
+            ])
+
+            for i in range(len(frames)):
+                original = original_video_frames[i]
+                overlap = frames[i]
+                only_skeleton = only_skeleton_frames[i]
 
                 if None in original or None in only_skeleton or None in overlap:
                     continue
 
-                new_frames.append(util.concat_frames_with_spacing([original, only_skeleton, overlap]))
+                new_frames.append(util.concat_frames_with_spacing([original, only_skeleton, overlap], max_frame_height))
 
 
         ## gif또는 mp4로 표시
@@ -276,12 +282,14 @@ else:
             st.session_state['estimate_class'].reset_detector()
             original_frames_1, skeleton_1, st.session_state.ann_1, st.session_state.all_landmarks_1 = st.session_state['estimate_class'].estimPose_video(temp_filepath_1)
             st.session_state.all_landmarks_1 = fill_None_from_landmarks(st.session_state.all_landmarks_1)
+        height_1, width_1 = st.session_state['estimate_class'].last_shape
 
         if st.session_state['force_inference'] or st.session_state["video_2"] is None or video_2.name != st.session_state["video_2"].name:
             st.session_state["video_2"] = video_2
             st.session_state['estimate_class'].reset_detector() # timestamp를 초기화해야 다음 동영상 분석 가능
             original_frames_2, skeleton_2, st.session_state.ann_2, st.session_state.all_landmarks_2 = st.session_state['estimate_class'].estimPose_video(temp_filepath_2, landmarks_c=(255, 165, 0), connection_c=(200, 200, 200))
             st.session_state.all_landmarks_2 = fill_None_from_landmarks(st.session_state.all_landmarks_2)
+        height_2, width_2 = st.session_state['estimate_class'].last_shape
         st.session_state['force_inference'] = False
 
 
@@ -320,8 +328,9 @@ else:
                 util.draw_circle_on_image(ann_2[frame_num_2], x2, y2, r=5)
         
         new_frames = []
+        max_frame_height = util.get_max_height_from_frames([ann_1[0], ann_2[0]])
         for f1, f2 in zip(ann_1, ann_2):
-            new_frames.append(util.concat_frames_with_spacing([f1, f2]))
+            new_frames.append(util.concat_frames_with_spacing([f1, f2], max_frame_height))
 
         with tempfile.NamedTemporaryFile(delete=False, suffix=".mp4") as temp_mp4:
             # MP4 파일 경로

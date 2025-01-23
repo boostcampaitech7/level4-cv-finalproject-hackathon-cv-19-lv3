@@ -29,7 +29,17 @@ class PoseDetector:
                 base_options=self.base_options,
                 output_segmentation_masks=True, running_mode=vision.RunningMode.VIDEO)
         self.detector = vision.PoseLandmarker.create_from_options(self.options)
+        self._last_shape = (None, None)
     
+    @property
+    def last_shape(self):
+        return self._last_shape
+    @last_shape.setter
+    def last_shape(self, shape):
+        if len(shape) != 2:
+            raise ValueError("shape should be (H, W) Tuple")
+        self._last_shape = shape
+
     def reset_detector(self):
         self.detector = vision.PoseLandmarker.create_from_options(self.options)
     
@@ -108,6 +118,8 @@ class PoseDetector:
             frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             # Get the width and height of the frame
             frame_height, frame_width, _ =  frame.shape
+            self.last_shape = (frame_height, frame_width)
+
             # Resize the frame while keeping the aspect ratio.
             frame = cv2.resize(frame, (int(frame_width * (640 / frame_height)), 640))
             mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=frame)
