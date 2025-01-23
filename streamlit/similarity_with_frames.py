@@ -5,10 +5,7 @@ from fastdtw import fastdtw
 from scipy.spatial.distance import euclidean, cosine
 import os
 from keypoint_map import SELECTED_SIGMAS, SELECTED_KEYPOINTS
-
-# MediaPipe Pose 초기화
-mp_pose = mp.solutions.pose
-pose = mp_pose.Pose()
+from random import choice
 
 
 # PCK 값 계산 함수
@@ -36,66 +33,6 @@ def oks(gt, preds, ignore_z=False):
     kp_c = sigmas * 2
     return np.mean(np.exp(-(distance ** 2) / (2 * (kp_c ** 2))))
 
-
-def extract_keypoints_with_frames(video_path):
-    cap = cv2.VideoCapture(video_path)
-    keypoints_list = []
-    frames = []
-
-    while cap.isOpened():
-        success, frame = cap.read()
-        if not success:
-            break
-
-        frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        height, width = frame.shape[:2] # 프레임 해상도 (정규화된 좌표를 픽셀 단위로 변환하기 위해서)
-
-        # Pose 추론 수행
-        result = pose.process(frame_rgb)
-
-        if result.pose_landmarks:
-            keypoints = []
-            for landmark in result.pose_landmarks.landmark:
-                x = landmark.x * width
-                y = landmark.y * height
-                z = landmark.z
-                keypoints.append([x, y, z])
-            keypoints_list.append(np.array(keypoints))
-            frames.append(frame)  # 원본 프레임 저장
-
-    cap.release()
-    return np.array(keypoints_list), frames
-
-def extract_keypoints_with_frames_without_denormalization(video_path):
-    cap = cv2.VideoCapture(video_path)
-    keypoints_list = []
-    frames = []
-
-    while cap.isOpened():
-        success, frame = cap.read()
-        if not success:
-            break
-        
-        height, width = frame.shape[:2] # 프레임 해상도 (정규화된 좌표를 픽셀 단위로 변환하기 위해서)
-        frame = cv2.resize(frame, (int(width * (640 / height)), 640))
-        frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        
-
-        # Pose 추론 수행
-        result = pose.process(frame_rgb)
-
-        if result.pose_landmarks:
-            keypoints = []
-            for landmark in result.pose_landmarks.landmark:
-                x = landmark.x
-                y = landmark.y
-                z = landmark.z
-                keypoints.append([x, y, z])
-            keypoints_list.append(np.array(keypoints))
-            frames.append(frame)  # 원본 프레임 저장
-
-    cap.release()
-    return np.array(keypoints_list), frames
 
 def l2_normalize(keypoints):
     norms = np.linalg.norm(keypoints, axis=2, keepdims=True)
@@ -167,41 +104,22 @@ def calculate_similarity_with_visualization(keypoints1, keypoints2):
     # 전체 프레임에 대한 평균 값을 계산
     average_cosine_similarity = np.mean(cosine_similarities)
     average_euclidean_distance = np.mean(euclidean_distances)
-    print("oks 점수: ", np.mean(oks_list))
-    print("pck 점수: ", np.mean(pck_list))
+    average_oks = np.mean(oks_list)
+    average_pck = np.mean(pck_list)
 
-    return distance, average_cosine_similarity, average_euclidean_distance, pairs
+    return distance, average_cosine_similarity, average_euclidean_distance, average_oks, average_pck, pairs
 
-def save_random_pair_frames(pairs, frames1, frames2, output_dir, keypoint2_index):
-    if not os.path.exists(output_dir):
-        os.makedirs(output_dir)
-
+def get_random_pair_frames(pairs, keypoint2_index):
     # keypoint2_index와 매칭된 keypoint1의 모든 인덱스를 찾음
     matching_pairs = [pair for pair in pairs if pair[1] == keypoint2_index]
 
     if not matching_pairs:
         print(f"No matching pairs found for keypoint2 index: {keypoint2_index}")
-        return
+        return (0, 0)
 
-    # keypoint2 인덱스에 해당하는 프레임 저장
-    if keypoint2_index < len(frames2):
-        frame2 = frames2[keypoint2_index]
-        frame2_path = os.path.join(output_dir, f"frame_video2_{keypoint2_index}.jpg")
-        cv2.imwrite(frame2_path, frame2)
-        print(f"Saved keypoint2 frame: {frame2_path}")
-    else:
-        print(f"Invalid keypoint2 index: {keypoint2_index}")
-        return
-
-    # keypoint1 매칭된 모든 프레임 저장
-    for idx1, idx2 in matching_pairs:
-        if idx1 < len(frames1):
-            frame1 = frames1[idx1]
-            frame1_path = os.path.join(output_dir, f"frame_video1_{idx1}_matched_to_s{keypoint2_index}.jpg")
-            cv2.imwrite(frame1_path, frame1)
-            print(f"Saved keypoint1 frame: {frame1_path}")
-        else:
-            print(f"Invalid keypoint1 index: {idx1}")
+    # keypoint1 매칭된 프레임 중 랜덤 번호 하나 return
+    return choice([idx1 for idx1, idx2 in matching_pairs])
+    
 
 def make_cosine_similarity(avg_cosine):
     # cos = (avg_cosine * 1000) % 100
@@ -211,41 +129,3 @@ def make_cosine_similarity(avg_cosine):
 def make_euclidean_similarity(avg_euclidean):
     euc = 100 - (avg_euclidean * 100)
     return euc
-
-def main():
-    # 비디오 경로
-    video1 = "videos/video1.mp4"
-    video2 = "videos/video5.mp4"
-
-    # keypoints 및 프레임 추출
-    keypoints1, frames1 = extract_keypoints_with_frames(video1)
-    keypoints2, frames2 = extract_keypoints_with_frames(video2)
-
-    # 특정 keypoints 인덱스
-    selected_indices = SELECTED_KEYPOINTS
-    keypoints1 = filter_keypoints(keypoints1, selected_indices)
-    keypoints2 = filter_keypoints(keypoints2, selected_indices)
-
-    # keypoints L2 정규화
-    keypoints1 = l2_normalize(keypoints1)
-    keypoints2 = l2_normalize(keypoints2)
-
-    # 유사도 및 시각화 데이터 계산
-    distance, avg_cosine, avg_euclidean, pairs = calculate_similarity_with_visualization(
-        keypoints1, keypoints2
-    )
-
-    # 랜덤한 매칭된 프레임 저장
-    output_dir = "output_frames"
-    save_random_pair_frames(pairs, frames1, frames2, output_dir, 100)
-
-    cosine_similarity = make_cosine_similarity(avg_cosine)
-    euclidean_similarity = make_euclidean_similarity(avg_euclidean)
-
-
-    print(f"{video1} pairing with {video2}")
-    print(f"Average Cosine Similarity score: {cosine_similarity}")
-    print(f"Average Euclidean Distance score: {euclidean_similarity}")
-
-if __name__ == "__main__":
-    main()

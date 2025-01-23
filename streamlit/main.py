@@ -7,7 +7,8 @@ import imageio.v3 as iio
 import json
 import cv2
 from copy import deepcopy
-from util import fill_None_from_landmarks
+from util import fill_None_from_landmarks, draw_landmarks_on_image, get_closest_frame
+from similarity_with_frames import l2_normalize, calculate_similarity_with_visualization, make_euclidean_similarity, make_cosine_similarity, get_random_pair_frames
 
 
 # main title
@@ -16,7 +17,7 @@ st.markdown("<h2 style='text-align: center;'>Dance Pose Estimation Demo</h2>", u
 
 
 # sidebar
-page_options = ['Single Video Pose Estimation', 'Image Compare', 'Video Compare']
+page_options = ['Single Video Pose Estimation', 'Image Compare', 'Video Compare', 'User Feedback Demo']
 page_option = st.sidebar.selectbox("태스크 선택: ", page_options)
 model_size = st.sidebar.slider('model_size: ', 0, 2) # 0 ~ 2 큰 숫자일수록 큰모델
 seed = st.sidebar.number_input('random seed ', min_value=0, max_value=2024, step=1) #random seed
@@ -239,7 +240,7 @@ elif page_option == 'Image Compare':
             st.image(overlap_img2)
 
 
-else:
+elif page_option=="Video Compare":
     frame_option = st.sidebar.slider('frame: ', 10, 30) # 보여질 동영상의 프레임 설정
     ignore_z = st.sidebar.slider('ignore_z: ', False, True) # pose기반 difference 계산 시 z좌표를 사용할지 여부
     use_dtw = st.sidebar.slider('use_dtw_to_calculate_video_sim: ', False, True) # frame간 점수계산을 위한 매칭에서 dtw를 사용할지 여부
@@ -324,3 +325,109 @@ else:
             with open(video_path, "rb") as video_file:
                 video_bytes = video_file.read()
                 st.video(video_bytes)
+else:
+    # 비디오 파일 업로드
+    video_1 = st.file_uploader("video_1", type=["mp4", "mov", "avi", "mkv"])
+    video_2 = st.file_uploader("video_2", type=["mp4", "mov", "avi", "mkv"])
+
+    # estimation 수행
+    if video_1 and video_2:
+        # 업로드된 파일을 임시 파일로 저장
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".mp4") as temp_file_1:
+            temp_file_1.write(video_1.read())
+            temp_filepath_1 = temp_file_1.name
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".mp4") as temp_file_2:
+            temp_file_2.write(video_2.read())
+            temp_filepath_2 = temp_file_2.name
+
+        st.session_state['estimate_class'].reset_detector()
+        pose_landmarker_results1, keypoints1, frames1, fps1 = st.session_state['estimate_class'].estimPose_video_for_dtw(temp_filepath_1)
+        st.session_state['estimate_class'].reset_detector()
+        pose_landmarker_results2, keypoints2, frames2, fps2 = st.session_state['estimate_class'].estimPose_video_for_dtw(temp_filepath_2)
+
+        # keypoints L2 정규화
+        keypoints1 = l2_normalize(keypoints1)
+        keypoints2 = l2_normalize(keypoints2)
+
+        # 유사도 및 시각화 데이터 계산
+        distance, average_cosine_similarity, average_euclidean_distance, average_oks, average_pck, pairs = calculate_similarity_with_visualization(
+            keypoints1, keypoints2
+        )
+
+        # HTML과 CSS를 사용해 배경색 부여
+        st.markdown(
+            """
+            <style>
+            .score-card {
+                background-color: #6e65c2; /* 배경색 */
+                padding: 20px;
+                border-radius: 10px; /* 모서리 둥글게 */
+                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* 그림자 효과 */
+                margin-bottom: 20px;
+            }
+            .score-title {
+                font-size: 24px;
+                font-weight: bold;
+                color: #333;
+                text-align: center;
+            }
+            .metric {
+                font-size: 18px;
+                margin: 10px 0;
+                text-align: left;
+            }
+            </style>
+            """,
+            unsafe_allow_html=True,
+        )
+        # HTML 성적표 동적 생성
+        st.markdown(
+            f"""
+            <div class="score-card">
+                <div class="score-title">성적표</div>
+                <div class="metric">📌 Average Cosine Similarity: <b>{make_cosine_similarity(average_cosine_similarity):.2f}</b></div>
+                <div class="metric">📌 Average Euclidean Similarity: <b>{make_euclidean_similarity(average_euclidean_distance):.2f}</b></div>
+                <div class="metric">📌 Average OKS: <b>{average_oks:.2f}</b></div>
+                <div class="metric">📌 Average PCK: <b>{average_pck:.2f}</b></div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+        for idx2, frame in enumerate(frames2):
+            idx1 = get_random_pair_frames(pairs, idx2)
+            frames2[idx2] = draw_landmarks_on_image(frame, pose_landmarker_results1[idx1])
+        
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".mp4") as temp_mp4:
+            # MP4 파일 경로
+            video_path = temp_mp4.name
+            iio.imwrite(video_path, frames2, fps=fps2, codec="libx264")
+            end_time = time.perf_counter()
+            st.success("MP4 파일 생성 완료!")
+
+            # Streamlit에서 재생
+            with open(video_path, "rb") as video_file:
+                video_bytes = video_file.read()
+                st.video(video_bytes)
+        
+        total_frame_len = len(frames2)
+        total_time = int(total_frame_len / fps2)
+
+        st.title("피드백을 받을 시간을 선택해주세요")
+        # 슬라이더 추가
+        target_time = st.slider(
+            "값을 선택하세요:",  # 슬라이더 레이블
+            min_value=1,        # 최소 값
+            max_value=total_time,      # 최대 값
+            value=(total_time + 1) // 2            # 기본 값
+        )
+        target_frame = get_closest_frame(target_time, total_frame_len, fps2)
+
+        # 확인 버튼
+        if st.button("확인"):
+            # 슬라이더 값을 기반으로 프레임 계산
+            target_frame = (target_time * fps2) if target_time else 0
+            st.write(f"선택된 시간: {target_time}초")
+            st.write(f"해당 프레임: {target_frame}")
+
+            

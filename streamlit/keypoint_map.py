@@ -152,7 +152,8 @@ NORMALIZED_LANDMARK_KEYS = ['x', 'y', 'z', 'visibility', 'presense']
 
 # select for oks calculation
 TOTAL_KEYPOINTS = [i for i in KEYPOINT_MAPPING.keys()]
-SELECTED_KEYPOINTS = [0, 7, 8, 11, 12, 13, 14, 15, 16, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32] # 해당 부분을 제외하고는 절대 바꾸면 안됩니다
+# SELECTED_KEYPOINTS = [0, 7, 8, 11, 12, 13, 14, 15, 16, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32] # 해당 부분을 제외하고는 절대 바꾸면 안됩니다
+SELECTED_KEYPOINTS = TOTAL_KEYPOINTS
 SELECTED_KEYPOINTS_MAPPING = {KEYPOINT_MAPPING[SELECTED_KEYPOINTS[i]]: i for i in range(len(SELECTED_KEYPOINTS))}
 SELECTED_SIGMAS = [K_I_VALUE[k] for k in SELECTED_KEYPOINTS_MAPPING.keys()]
 TOTAL_SIGMAS = [v for v in K_I_VALUE.values()]

@@ -126,6 +126,46 @@ class PoseDetector:
             pose_landmarker_results.append(pose_landmarker_result)
 
         return original_video_frames, pose_landmarker_results
+    
+    def estimPose_video_for_dtw(self, video_path):
+        if self.detector._running_mode != vision.RunningMode.VIDEO:
+            self.detector._running_mode = vision.RunningMode.VIDEO
+
+        cap = cv2.VideoCapture(video_path)
+        fps = int(cap.get(cv2.CAP_PROP_FPS))
+        frame_duration = int(1000 / fps)
+        total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+        pose_landmarker_results = []
+        keypoints_list = []
+        frames = []
+
+        for i in tqdm(range(total_frames)):
+            success, frame = cap.read()
+            if not success:
+                break
+            
+            frame_timestamp_ms = i * frame_duration
+            frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            height, width = frame.shape[:2] # 프레임 해상도 (정규화된 좌표를 픽셀 단위로 변환하기 위해서)
+
+            # Pose 추론 수행
+            mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=frame_rgb)
+            result = self.detector.detect_for_video(mp_image, frame_timestamp_ms)
+            pose_landmarker_results.append(result)
+
+            if result.pose_landmarks:
+                keypoints = []
+                for landmark in result.pose_landmarks[0]:
+                    x = landmark.x * width
+                    y = landmark.y * height
+                    z = landmark.z
+                    keypoints.append([x, y, z])
+                keypoints_list.append(np.array(keypoints))
+                frames.append(frame_rgb)  # 원본 프레임 저장
+
+        cap.release()
+        return pose_landmarker_results, np.array(keypoints_list), frames, fps
+
 
 
 def get_overlap_from_landmarks(
@@ -143,6 +183,7 @@ def get_overlap_from_landmarks(
     if return_shape:
         ann_image = cv2.resize(ann_image, return_shape)
     return ann_image
+
 
 def get_skeleton_from_landmarks(
         pose_landmarker_result,

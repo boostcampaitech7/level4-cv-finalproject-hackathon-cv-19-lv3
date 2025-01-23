@@ -181,3 +181,24 @@ def fill_None_from_landmarks(all_landmarks, fill_value=1.):
         if all_landmarks[i] is None:
             all_landmarks[i] = none_fill_value
     return all_landmarks
+
+
+def get_closest_frame(time_in_seconds, total_frames, fps):
+    """
+    주어진 시간과 FPS, 총 프레임 수를 기반으로 가장 가까운 프레임 번호를 계산합니다.
+    
+    Parameters:
+    - time_in_seconds (int): 시간 (초 단위)
+    - total_frames (int): 총 프레임 수
+    - fps (int): 초당 프레임 수 (Frames Per Second)
+    
+    Returns:
+    - closest_frame (int): 주어진 시간에 가장 가까운 프레임 번호
+    """
+    # 계산된 프레임 번호
+    calculated_frame = time_in_seconds * fps
+    
+    # 프레임 번호가 총 프레임 범위를 초과하지 않도록 조정
+    closest_frame = min(max(0, round(calculated_frame)), total_frames - 1)
+    
+    return closest_frame
