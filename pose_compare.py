@@ -154,11 +154,11 @@ def extract_pose_landmarks(result, image_width, image_height):
     
     return landmarks
 
-input_pose1 = "stand.png"
-input_pose2 = "compare1.png"
+input_pose1 = "1.png"
+input_pose2 = "2.png"
 
-output_pose1 = "stand.json"
-output_pose2 = "compare1.json"
+output_pose1 = "1.json"
+output_pose2 = "2.json"
 
 image1 = cv2.imread(input_pose1)
 image2 = cv2.imread(input_pose2)

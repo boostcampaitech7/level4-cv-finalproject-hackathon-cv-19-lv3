@@ -7,7 +7,6 @@ import matplotlib.pyplot as plt
 def calculate_two_points_angle(point1, point2):
     vector = point2 - point1
     angle = math.degrees(math.atan2(vector[1], vector[0]))
-    angle = angle if angle >= 0 else angle + 360
 
     return angle
 
@@ -19,7 +18,6 @@ def calculate_three_points_angle(point1, point2, point3):
 
     magnitude1 = np.linalg.norm(vector1)
     magnitude2 = np.linalg.norm(vector2)
-    
 
     cos_angle = dot_product / (magnitude1 * magnitude2)
 
@@ -121,8 +119,8 @@ def get_point(data, key1, key2):
     return np.array([data[key1][key2]['x'], data[key1][key2]['y']])
 
 if __name__ == "__main__":
-    standard_landmarks = "stand.json"
-    compare_landmarks = "compare1.json"
+    standard_landmarks = "1.json"
+    compare_landmarks = "2.json"
 
     with open(standard_landmarks, 'r') as f:
         data1 = json.load(f)
@@ -136,9 +134,9 @@ if __name__ == "__main__":
     print("shoudler difference :", int(pose1.get_shoulder_height_difference() - pose2.get_shoulder_height_difference()))
     print("left arm angle difference :", int(pose1.get_left_arm_angle() - pose2.get_left_arm_angle()))
     print("right arm angle difference :", -int(pose1.get_right_arm_angle() - pose2.get_right_arm_angle()))
-    print("left elbow angle difference :", int(pose1.get_left_elbow_angle() - pose2.get_left_elbow_angle()))
-    print("right elbow angle difference :", int(pose1.get_right_elbow_angle() - pose2.get_right_elbow_angle()))
+    print("left elbow angle difference :", -int(pose1.get_left_elbow_angle() - pose2.get_left_elbow_angle()))
+    print("right elbow angle difference :", -int(pose1.get_right_elbow_angle() - pose2.get_right_elbow_angle()))
     print("left leg angle difference :", int(pose1.get_left_leg_angle() - pose2.get_left_leg_angle()))
-    print("right leg angle difference :", int(pose1.get_right_leg_angle() - pose2.get_right_leg_angle()))
-    print("left knee angle difference :", int(pose1.get_left_knee_angle() - pose2.get_left_knee_angle()))
-    print("right knee angle difference :", int(pose1.get_right_knee_angle() - pose2.get_right_knee_angle()))
+    print("right leg angle difference :", -int(pose1.get_right_leg_angle() - pose2.get_right_leg_angle()))
+    print("left knee angle difference :", -int(pose1.get_left_knee_angle() - pose2.get_left_knee_angle()))
+    print("right knee angle difference :", -int(pose1.get_right_knee_angle() - pose2.get_right_knee_angle()))
