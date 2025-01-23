@@ -35,7 +35,6 @@ def main():
     # target - wrong 비교 -> prompt생성
     idx = 1
     folder_names = [os.path.splitext(os.path.basename(p))[0] for p in image_files]
-    print(folder_names)
 
     while True:
         target_pose_path = os.path.join(json_result_folder, f"target_pose_{idx}", "result.json")

@@ -133,30 +133,56 @@ def json_to_prompt(target_landmarks_json_path, compare_landmarks_json_path, resu
     pose1 = frame_pose(data1)
     pose2 = frame_pose(data2)
 
-    result_string = (
-        f"face difference: {int(pose1.get_ear_height_difference() - pose2.get_ear_height_difference())}\n"
-        f"shoulder difference: {int(pose1.get_shoulder_height_difference() - pose2.get_shoulder_height_difference())}\n"
-        f"left arm angle difference: {int(pose1.get_left_arm_angle() - pose2.get_left_arm_angle())}\n"
-        f"right arm angle difference: {-int(pose1.get_right_arm_angle() - pose2.get_right_arm_angle())}\n"
-        f"left elbow angle difference: {-int(pose1.get_left_elbow_angle() - pose2.get_left_elbow_angle())}\n"
-        f"right elbow angle difference: {-int(pose1.get_right_elbow_angle() - pose2.get_right_elbow_angle())}\n"
-        f"left leg angle difference: {int(pose1.get_left_leg_angle() - pose2.get_left_leg_angle())}\n"
-        f"right leg angle difference: {-int(pose1.get_right_leg_angle() - pose2.get_right_leg_angle())}\n"
-        f"left knee angle difference: {-int(pose1.get_left_knee_angle() - pose2.get_left_knee_angle())}\n"
-        f"right knee angle difference: {-int(pose1.get_right_knee_angle() - pose2.get_right_knee_angle())}"
-    )
-    print(result_string)
+    # result_string = (
+    #     f"face difference: {int(pose1.get_ear_height_difference() - pose2.get_ear_height_difference())}\n"
+    #     f"shoulder difference: {int(pose1.get_shoulder_height_difference() - pose2.get_shoulder_height_difference())}\n"
+    #     f"left arm angle difference: {int(pose1.get_left_arm_angle() - pose2.get_left_arm_angle())}\n"
+    #     f"right arm angle difference: {-int(pose1.get_right_arm_angle() - pose2.get_right_arm_angle())}\n"
+    #     f"left elbow angle difference: {-int(pose1.get_left_elbow_angle() - pose2.get_left_elbow_angle())}\n"
+    #     f"right elbow angle difference: {-int(pose1.get_right_elbow_angle() - pose2.get_right_elbow_angle())}\n"
+    #     f"left leg angle difference: {int(pose1.get_left_leg_angle() - pose2.get_left_leg_angle())}\n"
+    #     f"right leg angle difference: {-int(pose1.get_right_leg_angle() - pose2.get_right_leg_angle())}\n"
+    #     f"left knee angle difference: {-int(pose1.get_left_knee_angle() - pose2.get_left_knee_angle())}\n"
+    #     f"right knee angle difference: {-int(pose1.get_right_knee_angle() - pose2.get_right_knee_angle())}"
+    # )
+    # print(result_string)
 
-    # PROMPTING을 위해 txt로 저장
+    # # PROMPTING을 위해 txt로 저장
+    # if not os.path.exists(result_folder):
+    #     os.mkdir(result_folder)
+    # target_data_name = list(Path(target_landmarks_json_path).parts)[-2]
+    # compare_data_name = list(Path(compare_landmarks_json_path).parts)[-2]
+    # text_file_name = f"{target_data_name.split('_')[0]}_{compare_data_name.split('_')[0]}_{target_data_name.split('_')[-1]}.txt"
+    # text_file_path = os.path.join(result_folder, text_file_name)
+    # with open(text_file_path, 'wt') as f:
+    #     f.write(result_string)
+    # return result_string
+    
+    # result_json 생성 및 저장
+    result_json = {
+        "face_difference": int(pose1.get_ear_height_difference() - pose2.get_ear_height_difference()),
+        "shoulder_difference": int(pose1.get_shoulder_height_difference() - pose2.get_shoulder_height_difference()),
+        "left_arm_angle_difference": int(pose1.get_left_arm_angle() - pose2.get_left_arm_angle()),
+        "right_arm_angle_difference": -int(pose1.get_right_arm_angle() - pose2.get_right_arm_angle()),
+        "left_elbow_angle_difference": -int(pose1.get_left_elbow_angle() - pose2.get_left_elbow_angle()),
+        "right_elbow_angle_difference": -int(pose1.get_right_elbow_angle() - pose2.get_right_elbow_angle()),
+        "left_leg_angle_difference": int(pose1.get_left_leg_angle() - pose2.get_left_leg_angle()),
+        "right_leg_angle_difference": -int(pose1.get_right_leg_angle() - pose2.get_right_leg_angle()),
+        "left_knee_angle_difference": -int(pose1.get_left_knee_angle() - pose2.get_left_knee_angle()),
+        "right_knee_angle_difference": -int(pose1.get_right_knee_angle() - pose2.get_right_knee_angle()),
+    }
+
+    # JSON 파일명 생성
     if not os.path.exists(result_folder):
         os.mkdir(result_folder)
     target_data_name = list(Path(target_landmarks_json_path).parts)[-2]
     compare_data_name = list(Path(compare_landmarks_json_path).parts)[-2]
-    text_file_name = f"{target_data_name.split('_')[0]}_{compare_data_name.split('_')[0]}_{target_data_name.split('_')[-1]}.txt"
-    text_file_path = os.path.join(result_folder, text_file_name)
-    with open(text_file_path, 'wt') as f:
-        f.write(result_string)
-    return result_string
+    json_file_name = f"{target_data_name.split('_')[0]}_{compare_data_name.split('_')[0]}_{target_data_name.split('_')[-1]}.json"
+    json_file_path = os.path.join(result_folder, json_file_name)
+
+    # JSON 파일 저장
+    with open(json_file_path, 'w') as f:
+        json.dump(result_json, f, indent=4)
 
 
 
