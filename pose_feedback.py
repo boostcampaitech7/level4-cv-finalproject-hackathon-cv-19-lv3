@@ -138,12 +138,12 @@ def json_to_prompt(target_landmarks_json_path, compare_landmarks_json_path, resu
         f"shoulder difference: {int(pose1.get_shoulder_height_difference() - pose2.get_shoulder_height_difference())}\n"
         f"left arm angle difference: {int(pose1.get_left_arm_angle() - pose2.get_left_arm_angle())}\n"
         f"right arm angle difference: {-int(pose1.get_right_arm_angle() - pose2.get_right_arm_angle())}\n"
-        f"left elbow angle difference: {int(pose1.get_left_elbow_angle() - pose2.get_left_elbow_angle())}\n"
-        f"right elbow angle difference: {int(pose1.get_right_elbow_angle() - pose2.get_right_elbow_angle())}\n"
+        f"left elbow angle difference: {-int(pose1.get_left_elbow_angle() - pose2.get_left_elbow_angle())}\n"
+        f"right elbow angle difference: {-int(pose1.get_right_elbow_angle() - pose2.get_right_elbow_angle())}\n"
         f"left leg angle difference: {int(pose1.get_left_leg_angle() - pose2.get_left_leg_angle())}\n"
-        f"right leg angle difference: {int(pose1.get_right_leg_angle() - pose2.get_right_leg_angle())}\n"
-        f"left knee angle difference: {int(pose1.get_left_knee_angle() - pose2.get_left_knee_angle())}\n"
-        f"right knee angle difference: {int(pose1.get_right_knee_angle() - pose2.get_right_knee_angle())}"
+        f"right leg angle difference: {-int(pose1.get_right_leg_angle() - pose2.get_right_leg_angle())}\n"
+        f"left knee angle difference: {-int(pose1.get_left_knee_angle() - pose2.get_left_knee_angle())}\n"
+        f"right knee angle difference: {-int(pose1.get_right_knee_angle() - pose2.get_right_knee_angle())}"
     )
     print(result_string)
 
