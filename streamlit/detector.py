@@ -85,7 +85,7 @@ class PoseDetector:
         return detection_result.pose_landmarks[0], detection_result.segmentation_masks, annotated_image, boxsize
     
 
-    def estimPose_video(self, input_file, landmarks_c=(234,63,247), connection_c=(117,249,77), 
+    def estimPose_video(self, input_file, do_resize=True, landmarks_c=(234,63,247), connection_c=(117,249,77), 
                     thickness=1, circle_r=1):
         if self.detector._running_mode != vision.RunningMode.VIDEO:
             self.detector._running_mode = vision.RunningMode.VIDEO
@@ -121,7 +121,8 @@ class PoseDetector:
             self.last_shape = (frame_height, frame_width)
 
             # Resize the frame while keeping the aspect ratio.
-            frame = cv2.resize(frame, (int(frame_width * (640 / frame_height)), 640))
+            if do_resize:
+                frame = cv2.resize(frame, (int(frame_width * (640 / frame_height)), 640))
             mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=frame)
             pose_landmarker_result = self.detector.detect_for_video(mp_image, frame_timestamp_ms)
 

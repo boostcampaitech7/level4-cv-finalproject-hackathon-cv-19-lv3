@@ -9,6 +9,7 @@ import cv2
 from copy import deepcopy
 from util import fill_None_from_landmarks
 
+
 # main title
 st.sidebar.success("CV19 영원한종이박")
 st.markdown("<h2 style='text-align: center;'>Dance Pose Estimation Demo</h2>", unsafe_allow_html=True)
@@ -17,23 +18,26 @@ st.markdown("<h2 style='text-align: center;'>Dance Pose Estimation Demo</h2>", u
 # sidebar
 page_options = ['Single Video Pose Estimation', 'Image Compare', 'Video Compare']
 page_option = st.sidebar.selectbox("태스크 선택: ", page_options)
-model_size = st.sidebar.slider('model_size: ', 0, 2)
-seed = st.sidebar.number_input('random seed ', min_value=0, max_value=2024, step=1)
-
+model_size = st.sidebar.slider('model_size: ', 0, 2) # 0 ~ 2 큰 숫자일수록 큰모델
+seed = st.sidebar.number_input('random seed ', min_value=0, max_value=2024, step=1) #random seed
+util.set_seed(seed)
 
 # session state
-if "uploaded_file" not in st.session_state:
+# used in Single Video Pose Estimation
+if "uploaded_file" not in st.session_state: # 업로드된 파일 저장
     st.session_state["uploaded_file"] = None
-if "original_video_frames" not in st.session_state:
+if "original_video_frames" not in st.session_state: # estimation 결과 저장해서 같은 비디오의 경우 빠르게 보여줄 수 있도록
     st.session_state["original_video_frames"] = None
 if "only_skeleton_frames" not in st.session_state:
     st.session_state["only_skeleton_frames"] = None
 if "frames" not in st.session_state:
     st.session_state["frames"] = None
-if "estimation_start_time" not in st.session_state:
+if "estimation_start_time" not in st.session_state: # 모델 estimation 시간 추정을 위한 변수
     st.session_state["estimation_start_time"] = None
 if "estimation_end_time" not in st.session_state:
     st.session_state["estimation_end_time"] = None
+
+# used in Video Compare
 if "all_landmarks" not in st.session_state:
     st.session_state["all_landmarks"] = None
 if "all_landmarks_dict" not in st.session_state:
@@ -46,13 +50,15 @@ if "video_1" not in st.session_state:
     st.session_state["video_1"] = None
 if "video_2" not in st.session_state:
     st.session_state["video_2"] = None
+if "do_resize" not in st.session_state:
+    st.session_state["do_resize"] = None
 
 
-util.set_seed(seed)
 if page_option is None or page_option == page_options[0]:
     frame_option = st.sidebar.slider('frame: ', 10, 30)
     gif_options = ["only overlap", "All"]
     gif_option = st.sidebar.selectbox("예측 결과 표시 옵션: ", gif_options)
+    do_resize = st.sidebar.slider('do resize(640): ', False, True) # height를 강제로 640으로 resize할지 여부
     
     # 비디오 파일 업로드
     uploaded_file = st.file_uploader("", type=["mp4", "mov", "avi", "mkv"])
@@ -66,10 +72,11 @@ if page_option is None or page_option == page_options[0]:
         # OpenCV로 비디오 읽고 추론
         if st.session_state['estimation_start_time'] is None:
             st.session_state.estimation_start_time = time.perf_counter()
-        if st.session_state['force_inference'] or st.session_state["uploaded_file"] is None or uploaded_file.name != st.session_state["uploaded_file"].name:
-            st.session_state['estimate_class'].reset_detector()
+        if st.session_state['force_inference'] or st.session_state["uploaded_file"] is None or uploaded_file.name != st.session_state["uploaded_file"].name or do_resize != st.session_state["do_resize"]:
             st.session_state["uploaded_file"] = uploaded_file
-            st.session_state.original_video_frames, st.session_state.only_skeleton_frames, st.session_state.frames, st.session_state.all_landmarks = st.session_state['estimate_class'].estimPose_video(temp_filepath, thickness=5)
+            st.session_state["do_resize"] = do_resize
+            st.session_state['estimate_class'].reset_detector()
+            st.session_state.original_video_frames, st.session_state.only_skeleton_frames, st.session_state.frames, st.session_state.all_landmarks = st.session_state['estimate_class'].estimPose_video(temp_filepath, do_resize=do_resize, thickness=5)
             st.session_state.all_landmarks = fill_None_from_landmarks(st.session_state.all_landmarks)
             st.session_state['all_landmarks_dict'] = util.landmarks_to_dict(st.session_state['all_landmarks'])
         st.session_state['force_inference'] = False
@@ -189,6 +196,7 @@ elif page_option == 'Image Compare':
     ignore_z = st.sidebar.slider('ignore_z: ', False, True)
     pck_thres = st.sidebar.number_input('pck_threshold', min_value=0.0, max_value=1.0, value=0.1, step=0.05)
 
+    # image upload
     image_1 = st.file_uploader("input_1", type=["jpg", "png", "jpeg"])
     image_2 = st.file_uploader("input_2", type=["jpg", "png", "jpeg"])
 
@@ -197,17 +205,18 @@ elif page_option == 'Image Compare':
         with tempfile.NamedTemporaryFile(delete=False, suffix=".jpg") as temp_file_1:
             temp_file_1.write(image_1.read())
             temp_filepath_1 = temp_file_1.name
-        
         with tempfile.NamedTemporaryFile(delete=False, suffix=".jpg") as temp_file_2:
             temp_file_2.write(image_2.read())
             temp_filepath_2 = temp_file_2.name
         
+        # pose estimate
         pose_landmarks_1, segmentation_masks_1, annotated_image_1, b1 = st.session_state['estimate_class'].get_detection(temp_filepath_1, landmarks_c=(234,63,247), connection_c=(117,249,77))
         pose_landmarks_2, segmentation_masks_2, annotated_image_2, b2 = st.session_state['estimate_class'].get_detection(temp_filepath_2, landmarks_c=(255, 165, 0), connection_c=(200, 200, 200))
 
         if pose_landmarks_1 is None or pose_landmarks_2 is None:
             raise ValueError("each image has to at least one person in each of them")
 
+        # annotated image 각각 표시
         col1, col2 = st.columns(2)
         with col1:
             st.image(annotated_image_1)
@@ -243,12 +252,12 @@ elif page_option == 'Image Compare':
             st.image(overlap_img1)
 
 
+        # normalize를 진행하지 않은 경우에 대한 overlap image와 점수 계산
         evaluation_results_2 = scoring.evaluate_everything(pose_landmarks_np_1, b1, scoring.refine_landmarks(pose_landmarks_2), b2, pck_thres=pck_thres, normalize=False, ignore_z=ignore_z)
         overlap_img2 = cv2.cvtColor(cv2.imread(temp_filepath_1), cv2.COLOR_BGR2RGB)
         overlap_img2 = util.image_alpha_control(overlap_img2, alpha=0.4)
         overlap_img2 = util.draw_landmarks_on_image(overlap_img2, pose_landmarks_1)
         overlap_img2 = util.draw_landmarks_on_image(overlap_img2, pose_landmarks_2, landmarks_c=(255, 165, 0), connection_c=(200, 200, 200))
-
 
 
         st.subheader("Normalize를 적용하지 않을 시의 결과: ")
@@ -257,10 +266,13 @@ elif page_option == 'Image Compare':
             st.json(evaluation_results_2)
         with col6:
             st.image(overlap_img2)
+
+
 else:
-    frame_option = st.sidebar.slider('frame: ', 10, 30)
-    ignore_z = st.sidebar.slider('ignore_z: ', False, True)
-    use_dtw = st.sidebar.slider('use_dtw_to_calculate_video_sim: ', False, True)
+    frame_option = st.sidebar.slider('frame: ', 10, 30) # 보여질 동영상의 프레임 설정
+    ignore_z = st.sidebar.slider('ignore_z: ', False, True) # pose기반 difference 계산 시 z좌표를 사용할지 여부
+    do_resize = st.sidebar.slider('do resize(640): ', False, True) # height를 강제로 640으로 resize할지 여부
+    use_dtw = st.sidebar.slider('use_dtw_to_calculate_video_sim: ', False, True) # frame간 점수계산을 위한 매칭에서 dtw를 사용할지 여부
     pck_thres = st.sidebar.number_input('pck_threshold', min_value=0.0, max_value=1.0, value=0.1, step=0.05)
 
     # 비디오 파일 업로드
@@ -278,17 +290,19 @@ else:
             temp_filepath_2 = temp_file_2.name
         
         # landmarks 추출
-        if st.session_state['force_inference'] or st.session_state["video_1"] is None or video_1.name != st.session_state["video_1"].name:
+        if st.session_state['force_inference'] or st.session_state["video_1"] is None or video_1.name != st.session_state["video_1"].name or do_resize != st.session_state["do_resize"]:
             st.session_state["video_1"] = video_1
+            st.session_state["do_resize"] = do_resize
             st.session_state['estimate_class'].reset_detector()
-            original_frames_1, skeleton_1, st.session_state.ann_1, st.session_state.all_landmarks_1 = st.session_state['estimate_class'].estimPose_video(temp_filepath_1)
+            original_frames_1, skeleton_1, st.session_state.ann_1, st.session_state.all_landmarks_1 = st.session_state['estimate_class'].estimPose_video(temp_filepath_1, do_resize=do_resize)
             st.session_state.all_landmarks_1 = fill_None_from_landmarks(st.session_state.all_landmarks_1)
         height_1, width_1 = st.session_state['estimate_class'].last_shape
 
-        if st.session_state['force_inference'] or st.session_state["video_2"] is None or video_2.name != st.session_state["video_2"].name:
+        if st.session_state['force_inference'] or st.session_state["video_2"] is None or video_2.name != st.session_state["video_2"].name or do_resize != st.session_state["do_resize"]:
             st.session_state["video_2"] = video_2
+            st.session_state["do_resize"] = do_resize
             st.session_state['estimate_class'].reset_detector() # timestamp를 초기화해야 다음 동영상 분석 가능
-            original_frames_2, skeleton_2, st.session_state.ann_2, st.session_state.all_landmarks_2 = st.session_state['estimate_class'].estimPose_video(temp_filepath_2, landmarks_c=(255, 165, 0), connection_c=(200, 200, 200))
+            original_frames_2, skeleton_2, st.session_state.ann_2, st.session_state.all_landmarks_2 = st.session_state['estimate_class'].estimPose_video(temp_filepath_2, do_resize=do_resize, landmarks_c=(255, 165, 0), connection_c=(200, 200, 200))
             st.session_state.all_landmarks_2 = fill_None_from_landmarks(st.session_state.all_landmarks_2)
         height_2, width_2 = st.session_state['estimate_class'].last_shape
         st.session_state['force_inference'] = False
@@ -304,7 +318,6 @@ else:
         for k, v in total_results.items():
             if "matched" in k: continue
             s = f"{k}: {v}"
-
             print(s)
             st.write(s)
 
