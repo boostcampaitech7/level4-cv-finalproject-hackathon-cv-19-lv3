@@ -79,16 +79,18 @@ def get_max_height_from_frames(frames):
 
 
 # 간격 추가하여 두 프레임 이어붙이기
-def concat_frames_with_spacing(frames, max_frame_height, spacing=20, color=(0, 0, 0)):
+def concat_frames_with_spacing(frames, max_frame_height=None, spacing=20, color=(0, 0, 0)):
     # 서로 height가 다른 경우를 위한 패딩
-    for i, frame in enumerate(frames):
-        total_pad_length = max_frame_height - frame.shape[0]
-        if total_pad_length > 0:
-            frames[i] = np.pad(frame, ([total_pad_length//2, total_pad_length//2 + total_pad_length%2], [0, 0]), mode='constant')
+    if max_frame_height:
+        for i, frame in enumerate(frames):
+            total_pad_length = max_frame_height - frame.shape[0]
+            if total_pad_length > 0:
+                frames[i] = np.pad(frame, ([total_pad_length//2, total_pad_length//2 + total_pad_length%2], [0, 0]), mode='constant')
     
-    # 프레임 높이와 동일한 간격 이미지를 생성
-    spacer = np.full((max_frame_height, spacing, 3), color, dtype=np.uint8)
-
+        # 프레임 높이와 동일한 간격 이미지를 생성
+        spacer = np.full((max_frame_height, spacing, 3), color, dtype=np.uint8)
+    else:
+        spacer = np.full((frames[0].shape[0], spacing, 3), color, dtype=np.uint8)
 
     # 프레임 + 간격 + 프레임 이어붙이기
     final_frames = []

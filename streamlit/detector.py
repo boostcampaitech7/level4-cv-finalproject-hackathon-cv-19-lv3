@@ -85,8 +85,7 @@ class PoseDetector:
         return detection_result.pose_landmarks[0], detection_result.segmentation_masks, annotated_image, boxsize
     
 
-    def estimPose_video(self, input_file, do_resize=True, landmarks_c=(234,63,247), connection_c=(117,249,77), 
-                    thickness=1, circle_r=1):
+    def estimPose_video(self, input_file, do_resize=True, resize_shape=None):
         if self.detector._running_mode != vision.RunningMode.VIDEO:
             self.detector._running_mode = vision.RunningMode.VIDEO
 
@@ -100,11 +99,9 @@ class PoseDetector:
         print("total frame length: ", total_frames)
 
         frame_duration = int(1000 / fps)
-        frames = []
         original_video_frames = []
-        only_skeleton_frames = []
-        
-        all_landmarks = []
+        pose_landmarker_results = []
+
         for i in tqdm(range(total_frames)):
             # Read a frame.
             ok, frame = video.read()
@@ -121,28 +118,47 @@ class PoseDetector:
             self.last_shape = (frame_height, frame_width)
 
             # Resize the frame while keeping the aspect ratio.
-            if do_resize:
-                frame = cv2.resize(frame, (int(frame_width * (640 / frame_height)), 640))
+            frame = cv2.resize(frame, (int(frame_width * (640 / frame_height)), 640))
+
             mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=frame)
             pose_landmarker_result = self.detector.detect_for_video(mp_image, frame_timestamp_ms)
-
-            if pose_landmarker_result.pose_landmarks:
-                landmarks = pose_landmarker_result.pose_landmarks[0]
-
-                annotated_image = draw_landmarks_on_image(mp_image.numpy_view(), pose_landmarker_result,
-                                                        landmarks_c=landmarks_c, connection_c=connection_c,
-                                                        thickness=thickness, circle_r=circle_r)
-                skeleton = draw_landmarks_on_image(np.zeros_like(mp_image.numpy_view()), pose_landmarker_result,
-                                                landmarks_c=landmarks_c, connection_c=connection_c,
-                                                thickness=thickness, circle_r=circle_r)
-            else:
-                landmarks = None
-                annotated_image = frame.copy()
-                skeleton = np.zeros_like(mp_image.numpy_view())
-            
-
             original_video_frames.append(frame.copy())
-            frames.append(annotated_image)
-            all_landmarks.append(landmarks)
-            only_skeleton_frames.append(skeleton)
-        return original_video_frames, only_skeleton_frames, frames, all_landmarks
+            pose_landmarker_results.append(pose_landmarker_result)
+
+        return original_video_frames, pose_landmarker_results
+
+
+def get_overlap_from_landmarks(
+        pose_landmarker_result, 
+        original_video_frame,
+        return_shape=None,
+        landmarks_c=(234,63,247), connection_c=(117,249,77), 
+        thickness=1, circle_r=1
+    ):
+    ann_image = draw_landmarks_on_image(
+        original_video_frame, pose_landmarker_result,
+        landmarks_c=landmarks_c, connection_c=connection_c,
+        thickness=thickness, circle_r=circle_r
+    )
+    if return_shape:
+        ann_image = cv2.resize(ann_image, return_shape)
+    return ann_image
+
+def get_skeleton_from_landmarks(
+        pose_landmarker_result,
+        original_video_frame,
+        return_shape=None,
+        landmarks_c=(234,63,247), connection_c=(117,249,77), 
+        thickness=1, circle_r=1
+    ):
+    skeleton_image = draw_landmarks_on_image(
+        np.zeros_like(original_video_frame), pose_landmarker_result,
+        landmarks_c=landmarks_c, connection_c=connection_c,
+        thickness=thickness, circle_r=circle_r
+    )
+    if return_shape:
+        ann_image = cv2.resize(ann_image, return_shape)
+    return skeleton_image
+
+def get_pose_landmark_from_detect_result(pose_landmarker_results):
+    return [res.pose_landmarks[0] for res in pose_landmarker_results if res.pose_landmarks]

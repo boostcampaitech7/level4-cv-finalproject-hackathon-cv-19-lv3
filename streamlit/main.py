@@ -23,75 +23,58 @@ seed = st.sidebar.number_input('random seed ', min_value=0, max_value=2024, step
 util.set_seed(seed)
 
 # session state
-# used in Single Video Pose Estimation
-if "uploaded_file" not in st.session_state: # 업로드된 파일 저장
-    st.session_state["uploaded_file"] = None
-if "original_video_frames" not in st.session_state: # estimation 결과 저장해서 같은 비디오의 경우 빠르게 보여줄 수 있도록
-    st.session_state["original_video_frames"] = None
-if "only_skeleton_frames" not in st.session_state:
-    st.session_state["only_skeleton_frames"] = None
-if "frames" not in st.session_state:
-    st.session_state["frames"] = None
-if "estimation_start_time" not in st.session_state: # 모델 estimation 시간 추정을 위한 변수
-    st.session_state["estimation_start_time"] = None
-if "estimation_end_time" not in st.session_state:
-    st.session_state["estimation_end_time"] = None
-
-# used in Video Compare
-if "all_landmarks" not in st.session_state:
-    st.session_state["all_landmarks"] = None
-if "all_landmarks_dict" not in st.session_state:
-    st.session_state["all_landmarks_dict"] = None
 if "estimate_class" not in st.session_state or (model_size != st.session_state['model_size']):
-    st.session_state['force_inference'] = True
     st.session_state['model_size'] = model_size
     st.session_state['estimate_class'] = detector.PoseDetector(model_size=model_size)
-if "video_1" not in st.session_state:
-    st.session_state["video_1"] = None
-if "video_2" not in st.session_state:
-    st.session_state["video_2"] = None
-if "do_resize" not in st.session_state:
-    st.session_state["do_resize"] = None
 
 
 if page_option is None or page_option == page_options[0]:
     frame_option = st.sidebar.slider('frame: ', 10, 30)
     gif_options = ["only overlap", "All"]
     gif_option = st.sidebar.selectbox("예측 결과 표시 옵션: ", gif_options)
-    do_resize = st.sidebar.slider('do resize(640): ', False, True) # height를 강제로 640으로 resize할지 여부
     
     # 비디오 파일 업로드
     uploaded_file = st.file_uploader("", type=["mp4", "mov", "avi", "mkv"])
+    ## gif또는 mp4로 표시
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        gif_button = st.button("GIF 생성 및 보기")
+    with col2:
+        mp4_button = st.button("MP4 생성 및 보기")
+    with col3:
+        raw_button = st.button("frame으로부터 가져오기")
 
-    if uploaded_file is not None:
+    if uploaded_file is not None and(gif_button or mp4_button or raw_button):
         # 업로드된 파일을 임시 파일로 저장
         with tempfile.NamedTemporaryFile(delete=False, suffix=".mp4") as temp_file:
             temp_file.write(uploaded_file.read())
             temp_filepath = temp_file.name
         
+
         # OpenCV로 비디오 읽고 추론
-        if st.session_state['estimation_start_time'] is None:
-            st.session_state.estimation_start_time = time.perf_counter()
-        if st.session_state['force_inference'] or st.session_state["uploaded_file"] is None or uploaded_file.name != st.session_state["uploaded_file"].name or do_resize != st.session_state["do_resize"]:
-            st.session_state["uploaded_file"] = uploaded_file
-            st.session_state["do_resize"] = do_resize
-            st.session_state['estimate_class'].reset_detector()
-            st.session_state.original_video_frames, st.session_state.only_skeleton_frames, st.session_state.frames, st.session_state.all_landmarks = st.session_state['estimate_class'].estimPose_video(temp_filepath, do_resize=do_resize, thickness=5)
-            st.session_state.all_landmarks = fill_None_from_landmarks(st.session_state.all_landmarks)
-            st.session_state['all_landmarks_dict'] = util.landmarks_to_dict(st.session_state['all_landmarks'])
-        st.session_state['force_inference'] = False
-    
-        if st.session_state['estimation_end_time'] is None:
-            st.session_state.estimation_end_time = time.perf_counter()
-        st.session_state.estimation_elapsed_time = st.session_state['estimation_end_time'] - st.session_state['estimation_start_time']
-        st.success(f"pose estimation 완료. 수행시간: {st.session_state['estimation_elapsed_time']:.2f}초")
+        st.info("모델로 비디오 keypoint를 추론하는 중입니다.")
+        estimation_start_time = time.perf_counter()
+        st.session_state['estimate_class'].reset_detector()
+        original_video_frames, pose_landmarker_results = st.session_state['estimate_class'].estimPose_video(temp_filepath)
+
+        all_landmarks = detector.get_pose_landmark_from_detect_result(pose_landmarker_results)
+        all_landmarks = fill_None_from_landmarks(all_landmarks)
+        all_landmarks_dict = util.landmarks_to_dict(all_landmarks)
+        del all_landmarks
+
+        estimation_end_time = time.perf_counter()
+        estimation_elapsed_time = estimation_end_time - estimation_start_time
+        st.success(f"pose estimation 완료. 수행시간: {estimation_elapsed_time:.2f}초")
+
+
         # 임시 파일 생성
         with tempfile.NamedTemporaryFile("w", delete=False, suffix=".json") as tmp_file:
             # 딕셔너리를 JSON 형식으로 임시 파일에 저장
-            json.dump(st.session_state['all_landmarks_dict'], tmp_file, indent=4)
+            json.dump(all_landmarks_dict, tmp_file, indent=4)
             tmp_file_path = tmp_file.name  # 임시 파일 경로
-            
-        # Streamlit 다운로드 버튼 추가
+        
+
+        # Json 다운로드 버튼
         with open(tmp_file_path, "r") as file:
             st.download_button(
                 label="Download JSON (Tempfile)",
@@ -99,96 +82,83 @@ if page_option is None or page_option == page_options[0]:
                 file_name="data.json",
                 mime="application/json",
             )
-            
 
-        original_video_frames, only_skeleton_frames, frames, all_landmarks = st.session_state.original_video_frames, st.session_state.only_skeleton_frames, st.session_state.frames, st.session_state.all_landmarks
-        ## gif또는 mp4로 표시
-        col1, col2, col3 = st.columns(3)
-        with col1:
-            gif_button = st.button("GIF 생성 및 보기")
-        with col2:
-            mp4_button = st.button("MP4 생성 및 보기")
-        with col3:
-            raw_button = st.button("frame으로부터 가져오기")
-        
-        if gif_button or mp4_button or raw_button:
+
+        # 옵션에 따라 gif를 keypoint와 image가 겹쳐진 것만 보여줄지, 분리된 것도 보여줄 지 선택
+        if gif_option == "only overlap":
+            new_frames = [
+                detector.get_overlap_from_landmarks(lm, orig) 
+                for orig, lm in zip(original_video_frames, pose_landmarker_results)
+            ]
+        else:
             new_frames = []
-            # 옵션에 따라 gif를 keypoint와 image가 겹쳐진 것만 보여줄지, 분리된 것도 보여줄 지 선택
-            if gif_option == "only overlap":
-                new_frames = st.session_state["frames"]
-            else:
-                max_frame_height = util.get_max_height_from_frames([
-                    original_video_frames[0],
-                    frames[0],
-                    only_skeleton_frames[0]
-                ])
+            height, width = original_video_frames[0].shape[:-1]
 
-                for i in range(len(frames)):
-                    original = original_video_frames[i]
-                    overlap = frames[i]
-                    only_skeleton = only_skeleton_frames[i]
+            for orig, lm in zip(original_video_frames, pose_landmarker_results):
+                original = orig
+                overlap = detector.get_overlap_from_landmarks(lm, orig)
+                only_skeleton = detector.get_skeleton_from_landmarks(lm, orig)
 
-                    if None in original or None in only_skeleton or None in overlap:
-                        continue
+                if None in original or None in only_skeleton or None in overlap:
+                    continue
+                new_frames.append(util.concat_frames_with_spacing([original, only_skeleton, overlap]))
+        
 
-                    new_frames.append(util.concat_frames_with_spacing([original, only_skeleton, overlap], max_frame_height))
+        # 프레임 표시 영역
+        placeholder = st.empty()
+
+        # GIF로 저장
+        start_time = time.perf_counter()
+        if gif_button:
+            with tempfile.NamedTemporaryFile(delete=False, suffix=".gif") as temp_gif:
+                gif_path = temp_gif.name
+                imageio.mimsave(gif_path, new_frames, format="GIF", fps=frame_option, loop=0)  # FPS 설정
+                end_time = time.perf_counter()
+                elapsed_time = end_time - start_time
+                st.success(f"GIF 파일 생성 완료! 수행시간: {elapsed_time:.2f}초")
+                st.image(gif_path, caption="생성된 GIF")
             
+            # 다운로드 버튼
+            with open(gif_path, "rb") as gif_file:
+                gif_bytes = gif_file.read()
+                st.download_button(
+                    label="다운로드 GIF 파일",
+                    data=gif_bytes,
+                    file_name="output.gif",
+                    mime="image/gif"
+                )
+        
 
-            # 프레임 표시 영역
-            placeholder = st.empty()
+        if mp4_button:
+            with tempfile.NamedTemporaryFile(delete=False, suffix=".mp4") as temp_mp4:
+                # MP4 파일 경로
+                video_path = temp_mp4.name
+                iio.imwrite(video_path, new_frames, fps=frame_option, codec="libx264")
+                end_time = time.perf_counter()
+                elapsed_time = end_time - start_time
+                st.success(f"MP4 파일 생성 완료!: {elapsed_time:.2f}초")
 
-            # GIF로 저장
-            start_time = time.perf_counter()
-            if gif_button:
-                with tempfile.NamedTemporaryFile(delete=False, suffix=".gif") as temp_gif:
-                    gif_path = temp_gif.name
-                    imageio.mimsave(gif_path, new_frames, format="GIF", fps=frame_option, loop=0)  # FPS 설정
-                    end_time = time.perf_counter()
-                    elapsed_time = end_time - start_time
-                    st.success(f"GIF 파일 생성 완료! 수행시간: {elapsed_time:.2f}초")
-                    st.image(gif_path, caption="생성된 GIF")
-                
-                # 다운로드 버튼
-                with open(gif_path, "rb") as gif_file:
-                    gif_bytes = gif_file.read()
-                    st.download_button(
-                        label="다운로드 GIF 파일",
-                        data=gif_bytes,
-                        file_name="output.gif",
-                        mime="image/gif"
-                    )
-            
-
-            if mp4_button:
-                with tempfile.NamedTemporaryFile(delete=False, suffix=".mp4") as temp_mp4:
-                    # MP4 파일 경로
-                    video_path = temp_mp4.name
-                    iio.imwrite(video_path, new_frames, fps=frame_option, codec="libx264")
-                    end_time = time.perf_counter()
-                    elapsed_time = end_time - start_time
-                    st.success(f"MP4 파일 생성 완료!: {elapsed_time:.2f}초")
-
-                    # Streamlit에서 재생
-                    with open(video_path, "rb") as video_file:
-                        video_bytes = video_file.read()
-                        st.video(video_bytes)
-                
-                # 다운로드 버튼
+                # Streamlit에서 재생
                 with open(video_path, "rb") as video_file:
                     video_bytes = video_file.read()
-                    st.download_button(
-                        label="다운로드 MP4 파일",
-                        data=video_bytes,
-                        file_name="output.mp4",
-                        mime="video/mp4"
-                    )
+                    st.video(video_bytes)
+            
+            # 다운로드 버튼
+            with open(video_path, "rb") as video_file:
+                video_bytes = video_file.read()
+                st.download_button(
+                    label="다운로드 MP4 파일",
+                    data=video_bytes,
+                    file_name="output.mp4",
+                    mime="video/mp4"
+                )
 
-            if raw_button:
-                # 비디오 플레이어 컨트롤러
-                placeholder = st.empty()  # 빈 컨테이너 생성
-                for frame in new_frames:
-                    placeholder.image(frame, channels="RGB")  # 프레임 표시
-                    time.sleep(1 / frame_option)  # 프레임 속도에 맞춰 대기
+        if raw_button:
+            # 비디오 플레이어 컨트롤러
+            placeholder = st.empty()  # 빈 컨테이너 생성
+            for frame in new_frames:
+                placeholder.image(frame, channels="RGB")  # 프레임 표시
+                time.sleep(1 / frame_option)  # 프레임 속도에 맞춰 대기
 
 
 
@@ -210,8 +180,9 @@ elif page_option == 'Image Compare':
             temp_filepath_2 = temp_file_2.name
         
         # pose estimate
-        pose_landmarks_1, segmentation_masks_1, annotated_image_1, b1 = st.session_state['estimate_class'].get_detection(temp_filepath_1, landmarks_c=(234,63,247), connection_c=(117,249,77))
-        pose_landmarks_2, segmentation_masks_2, annotated_image_2, b2 = st.session_state['estimate_class'].get_detection(temp_filepath_2, landmarks_c=(255, 165, 0), connection_c=(200, 200, 200))
+        pose_landmarks_1, _, annotated_image_1, b1 = st.session_state['estimate_class'].get_detection(temp_filepath_1, landmarks_c=(234,63,247), connection_c=(117,249,77))
+        pose_landmarks_2, _, annotated_image_2, b2 = st.session_state['estimate_class'].get_detection(temp_filepath_2, landmarks_c=(255, 165, 0), connection_c=(200, 200, 200))
+        del _
 
         if pose_landmarks_1 is None or pose_landmarks_2 is None:
             raise ValueError("each image has to at least one person in each of them")
@@ -271,7 +242,6 @@ elif page_option == 'Image Compare':
 else:
     frame_option = st.sidebar.slider('frame: ', 10, 30) # 보여질 동영상의 프레임 설정
     ignore_z = st.sidebar.slider('ignore_z: ', False, True) # pose기반 difference 계산 시 z좌표를 사용할지 여부
-    do_resize = st.sidebar.slider('do resize(640): ', False, True) # height를 강제로 640으로 resize할지 여부
     use_dtw = st.sidebar.slider('use_dtw_to_calculate_video_sim: ', False, True) # frame간 점수계산을 위한 매칭에서 dtw를 사용할지 여부
     pck_thres = st.sidebar.number_input('pck_threshold', min_value=0.0, max_value=1.0, value=0.1, step=0.05)
 
@@ -289,27 +259,17 @@ else:
             temp_file_2.write(video_2.read())
             temp_filepath_2 = temp_file_2.name
         
-        # landmarks 추출
-        if st.session_state['force_inference'] or st.session_state["video_1"] is None or video_1.name != st.session_state["video_1"].name or do_resize != st.session_state["do_resize"]:
-            st.session_state["video_1"] = video_1
-            st.session_state["do_resize"] = do_resize
-            st.session_state['estimate_class'].reset_detector()
-            original_frames_1, skeleton_1, st.session_state.ann_1, st.session_state.all_landmarks_1 = st.session_state['estimate_class'].estimPose_video(temp_filepath_1, do_resize=do_resize)
-            st.session_state.all_landmarks_1 = fill_None_from_landmarks(st.session_state.all_landmarks_1)
+        # 1번 비디오 landmarks 추출
+        st.session_state['estimate_class'].reset_detector()
+        original_video_frames_1, pose_landmarker_results_1 = st.session_state['estimate_class'].estimPose_video(temp_filepath_1)
+        all_landmarks_1 = fill_None_from_landmarks(detector.get_pose_landmark_from_detect_result(pose_landmarker_results_1))
         height_1, width_1 = st.session_state['estimate_class'].last_shape
 
-        if st.session_state['force_inference'] or st.session_state["video_2"] is None or video_2.name != st.session_state["video_2"].name or do_resize != st.session_state["do_resize"]:
-            st.session_state["video_2"] = video_2
-            st.session_state["do_resize"] = do_resize
-            st.session_state['estimate_class'].reset_detector() # timestamp를 초기화해야 다음 동영상 분석 가능
-            original_frames_2, skeleton_2, st.session_state.ann_2, st.session_state.all_landmarks_2 = st.session_state['estimate_class'].estimPose_video(temp_filepath_2, do_resize=do_resize, landmarks_c=(255, 165, 0), connection_c=(200, 200, 200))
-            st.session_state.all_landmarks_2 = fill_None_from_landmarks(st.session_state.all_landmarks_2)
+        # 2번 비디오 landmarks 추출
+        st.session_state['estimate_class'].reset_detector() # timestamp를 초기화해야 다음 동영상 분석 가능
+        original_video_frames_2, pose_landmarker_results_2 = st.session_state['estimate_class'].estimPose_video(temp_filepath_2)
+        all_landmarks_2 = fill_None_from_landmarks(detector.get_pose_landmark_from_detect_result(pose_landmarker_results_2))
         height_2, width_2 = st.session_state['estimate_class'].last_shape
-        st.session_state['force_inference'] = False
-
-
-        ann_1, all_landmarks_1 = st.session_state["ann_1"], st.session_state["all_landmarks_1"]
-        ann_2, all_landmarks_2 = st.session_state["ann_2"], st.session_state["all_landmarks_2"]
 
 
         total_results, low_score_frames = scoring.get_score_from_frames(
@@ -325,6 +285,14 @@ else:
         matched = total_results['matched']
         matched_frame_list = total_results['matched_frame']
 
+        ann_1 = [
+            detector.get_overlap_from_landmarks(lm, orig) 
+            for orig, lm in zip(original_video_frames_1, pose_landmarker_results_1)
+        ]
+        ann_2 = [
+            detector.get_overlap_from_landmarks(lm, orig) 
+            for orig, lm in zip(original_video_frames_2, pose_landmarker_results_2)
+        ]
         for i, (frame_num_1, frame_num_2) in enumerate(matched_frame_list):
             match_dict = matched[i]
 
@@ -337,7 +305,6 @@ else:
             for k in matched_key_list:
                 x1, y1 = frame_1_landmarks[k].x, frame_1_landmarks[k].y 
                 x2, y2 = frame_2_landmarks[k].x, frame_2_landmarks[k].y 
-
                 util.draw_circle_on_image(ann_1[frame_num_1], x1, y1, r=5)
                 util.draw_circle_on_image(ann_2[frame_num_2], x2, y2, r=5)
         
