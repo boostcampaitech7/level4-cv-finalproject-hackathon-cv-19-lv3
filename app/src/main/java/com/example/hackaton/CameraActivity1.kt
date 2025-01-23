@@ -168,7 +168,7 @@ class CameraActivity1 : AppCompatActivity(), SurfaceHolder.Callback {
                 Toast.makeText(this@CameraActivity1, "전면 카메라를 찾을 수 없습니다.", Toast.LENGTH_SHORT).show()
                 return
             }
-            surfaceView = findViewById(R.id.surfaceView5)
+            surfaceView = findViewById(R.id.surfaceView)
             surfaceHolder = surfaceView.holder
             surfaceHolder.addCallback(this@CameraActivity1)
             surfaceHolder.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS)

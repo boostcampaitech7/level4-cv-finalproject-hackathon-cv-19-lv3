@@ -49,7 +49,7 @@ class CameraActivity3 : AppCompatActivity(), SurfaceHolder.Callback {
             .check()
 
         btnRecord = findViewById(R.id.record_btn3)
-        surfaceView = findViewById(R.id.surfaceView5)
+        surfaceView = findViewById(R.id.surfaceView3)
         videoOverlay = findViewById(R.id.videoOverlay3)
 
         // SurfaceHolder 초기화

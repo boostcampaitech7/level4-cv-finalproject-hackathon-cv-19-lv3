@@ -25,6 +25,12 @@
         android:theme="@style/Theme.Hackaton"
         tools:targetApi="31">
         <activity
+            android:name=".ScoreActivity"
+            android:exported="false" />
+        <activity
+            android:name=".FeedbackActivity"
+            android:exported="false" />
+        <activity
             android:name=".CameraActivity5"
             android:exported="false" />
         <activity

@@ -6,23 +6,68 @@
     android:layout_height="match_parent"
     tools:context=".ResultActivity">
 
+    <FrameLayout
+        android:id="@+id/topFragmentContainer"
+        android:layout_width="415dp"
+        android:layout_height="88dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
     <LinearLayout
-        xmlns:android="http://schemas.android.com/apk/res/android"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:orientation="vertical">
 
         <VideoView
             android:id="@+id/video_preview"
-            android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_weight="1" />
+            android:layout_marginTop="100dp"
+            android:layout_width="311dp"
+            android:layout_height="476dp"
+            android:layout_gravity="center" />
 
-        <Button
-            android:id="@+id/save_btn"
+        <SeekBar
+            android:id="@+id/video_seek_bar"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Save to Gallery" />
+            android:layout_alignParentBottom="true"
+            android:layout_marginBottom="50dp" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="66dp"
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/feedback_btn"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:text="피드백 요청하기" />
+
+            <Space
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:layout_weight="1" />
+
+            <Button
+                android:id="@+id/play_pause_btn"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:text="재생" />
+
+            <Space
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:layout_weight="1" />
+
+            <Button
+                android:id="@+id/save_btn"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:text="갤러리에 영상 저장" />
+
+        </LinearLayout>
+
     </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>
