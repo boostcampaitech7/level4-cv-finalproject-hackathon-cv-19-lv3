@@ -421,7 +421,7 @@ else:
             max_value=total_time,      # 최대 값
             value=(total_time + 1) // 2            # 기본 값
         )
-        target_frame = get_closest_frame(target_time, total_frame_len, fps2)
+        idx2 = get_closest_frame(target_time, total_frame_len, fps2)
 
         # 확인 버튼
         if st.button("확인"):
