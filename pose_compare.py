@@ -1,9 +1,11 @@
+import os
 import cv2
 import json
 import mediapipe as mp
 from mediapipe.framework.formats import landmark_pb2
 from mediapipe.tasks import python
 from mediapipe.tasks.python import vision
+from util import download_model
 
 def draw_landmarks_on_image(rgb_image, detection_result, landmark_color, connection_color):
     pose_landmarks_list = detection_result.pose_landmarks
@@ -23,7 +25,7 @@ def draw_landmarks_on_image(rgb_image, detection_result, landmark_color, connect
         thickness=10
     )
 
-    # 각 포즈의 랜드마크 그리기
+    # 각 포즈의 랜드마크 그리기aaaaaaaaaaaaaaaaaaaaaaaaa
     for pose_landmarks in pose_landmarks_list:
         # 랜드마크를 정규화된 프로토콜 버퍼에서 이미지 좌표로 변환
         pose_landmarks_proto = landmark_pb2.NormalizedLandmarkList()
@@ -154,57 +156,116 @@ def extract_pose_landmarks(result, image_width, image_height):
     
     return landmarks
 
-input_pose1 = "1.png"
-input_pose2 = "2.png"
+def get_detector(model_size=2):
+    model_path = download_model(model_size=model_size)
+    base_options = python.BaseOptions(model_asset_path=model_path)
+    options = vision.PoseLandmarkerOptions(
+        base_options=base_options,
+        running_mode=vision.RunningMode.IMAGE
+    )
+    detector = vision.PoseLandmarker.create_from_options(options)
+    return detector
 
-output_pose1 = "1.json"
-output_pose2 = "2.json"
 
-image1 = cv2.imread(input_pose1)
-image2 = cv2.imread(input_pose2)
+def make_pose_jsons(img_path_list, detector, result_folder="./results"):
+    if not os.path.exists(result_folder):
+        os.mkdir(result_folder)
 
-image1_height, image1_width = image1.shape[:2]
-image2_height, image2_width = image2.shape[:2]
 
-image1_rgb = cv2.cvtColor(image1, cv2.COLOR_BGR2RGB)
-image2_rgb = cv2.cvtColor(image2, cv2.COLOR_BGR2RGB)
+    for p in img_path_list:
+        image = cv2.imread(p)
+        image_height, image_width = image.shape[:2]
+        image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
-mp_image1 = mp.Image(image_format=mp.ImageFormat.SRGB, data=image1_rgb)
-mp_image2 = mp.Image(image_format=mp.ImageFormat.SRGB, data=image2_rgb)
+        mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=image_rgb)
+        result = detector.detect(mp_image)
+        pose_landmarks = extract_pose_landmarks(result, image_width, image_height)
 
-base_options = python.BaseOptions(model_asset_path='pose_landmarker_heavy.task')
-options = vision.PoseLandmarkerOptions(
-    base_options=base_options,
-    running_mode=vision.RunningMode.IMAGE
-)
-detector = vision.PoseLandmarker.create_from_options(options)
 
-result1 = detector.detect(mp_image1)
-result2 = detector.detect(mp_image2)
+        # make save folders
+        file_name = os.path.splitext(os.path.basename(p))[0]
+        result_path = os.path.join(result_folder, file_name)
+        if not os.path.exists(result_path):
+            os.mkdir(result_path)
 
-pose1_landmarks = extract_pose_landmarks(result1, image1_width, image1_height)
-pose2_landmarks = extract_pose_landmarks(result2, image2_width, image2_height)
+        # json dumping
+        json_path = os.path.join(result_path, "result.json")
+        with open(json_path, 'w') as f:
+            json.dump(pose_landmarks, f, indent=4)
+        
+        # save annotated image
+        img_path = os.path.join(result_path, "result.png")
+        output_image = draw_landmarks_on_image(
+            image.copy(), 
+            result, 
+            landmark_color=(255, 0, 0),
+            connection_color=(255, 150, 150) 
+        )
+        cv2.imwrite(img_path, output_image)
 
-with open(output_pose1, 'w') as f:
-    json.dump(pose1_landmarks, f, indent=4)
 
-with open(output_pose2, 'w') as f:
-    json.dump(pose2_landmarks, f, indent=4)
+if __name__ == "__main__":
+    idx = 2
+    labels = ["target", "right", "wrong"]
 
-output_image = draw_landmarks_on_image(
-    image1_rgb.copy(), 
-    result1, 
-    landmark_color=(255, 0, 0),
-    connection_color=(255, 150, 150) 
-)
+    img_path_list = [f"images/{value}_pose_{idx}.png" for value in labels]
+    make_pose_jsons(img_path_list, get_detector(model_size=2))
 
-output_image = draw_landmarks_on_image(
-    output_image, 
-    result2, 
-    landmark_color=(0, 0, 255),
-    connection_color=(150, 150, 255) 
-)
 
-final_output = cv2.cvtColor(output_image, cv2.COLOR_RGB2BGR)
 
-cv2.imwrite('overlaid_poses.png', final_output)
+# model_path = download_model(model_size=2)
+
+# input_pose1 = "images/right_pose_1.png"
+# input_pose2 = "images/target_pose_1.png"
+
+# output_pose1 = "right_1.json"
+# output_pose2 = "target_1.json"
+
+# image1 = cv2.imread(input_pose1)
+# image2 = cv2.imread(input_pose2)
+
+# image1_height, image1_width = image1.shape[:2]
+# image2_height, image2_width = image2.shape[:2]
+
+# image1_rgb = cv2.cvtColor(image1, cv2.COLOR_BGR2RGB)
+# image2_rgb = cv2.cvtColor(image2, cv2.COLOR_BGR2RGB)
+
+# mp_image1 = mp.Image(image_format=mp.ImageFormat.SRGB, data=image1_rgb)
+# mp_image2 = mp.Image(image_format=mp.ImageFormat.SRGB, data=image2_rgb)
+
+# base_options = python.BaseOptions(model_asset_path=model_path)
+# options = vision.PoseLandmarkerOptions(
+#     base_options=base_options,
+#     running_mode=vision.RunningMode.IMAGE
+# )
+# detector = vision.PoseLandmarker.create_from_options(options)
+
+# result1 = detector.detect(mp_image1)
+# result2 = detector.detect(mp_image2)
+
+# pose1_landmarks = extract_pose_landmarks(result1, image1_width, image1_height)
+# pose2_landmarks = extract_pose_landmarks(result2, image2_width, image2_height)
+
+# with open(output_pose1, 'w') as f:
+#     json.dump(pose1_landmarks, f, indent=4)
+
+# with open(output_pose2, 'w') as f:
+#     json.dump(pose2_landmarks, f, indent=4)
+
+# output_image = draw_landmarks_on_image(
+#     image1_rgb.copy(), 
+#     result1, 
+#     landmark_color=(255, 0, 0),
+#     connection_color=(255, 150, 150) 
+# )
+
+# output_image = draw_landmarks_on_image(
+#     output_image, 
+#     result2, 
+#     landmark_color=(0, 0, 255),
+#     connection_color=(150, 150, 255) 
+# )
+
+# final_output = cv2.cvtColor(output_image, cv2.COLOR_RGB2BGR)
+
+# cv2.imwrite('overlaid_poses.png', final_output)
