@@ -5,8 +5,8 @@ from mediapipe.tasks.python import vision
 import numpy as np
 
 # 동영상 경로 설정
-input_video_path = "video.mp4"  # 입력 동영상 파일 경로
-output_video_path = "segmentation_mask_output.mp4"  # 출력 동영상 파일 경로
+input_video_path = "video_chal.mp4"  # 입력 동영상 파일 경로
+output_video_path = "video_chal_seg.mp4"  # 출력 동영상 파일 경로
 
 # 동영상 읽기
 cap = cv2.VideoCapture(input_video_path)
@@ -19,7 +19,7 @@ fourcc = cv2.VideoWriter_fourcc(*'mp4v')  # mp4 코덱
 out = cv2.VideoWriter(output_video_path, fourcc, fps, (frame_width, frame_height), isColor=False)
 
 # Mediapipe PoseLandmarker 설정
-base_options = python.BaseOptions(model_asset_path='models/pose_landmarker_lite.task')
+base_options = python.BaseOptions(model_asset_path='pose_landmarker_lite.task')
 options = vision.PoseLandmarkerOptions(
     base_options=base_options,
     output_segmentation_masks=True,

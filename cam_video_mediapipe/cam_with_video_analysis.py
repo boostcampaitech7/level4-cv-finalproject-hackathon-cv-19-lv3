@@ -3,14 +3,12 @@ import time
 import numpy as np
 import json
 
-
 camera = cv2.VideoCapture(0)
-overlay_video = cv2.VideoCapture('hong.mp4')
+overlay_video = cv2.VideoCapture('video_chal.mp4')
 
 # 동영상 크기 가져오기
 overlay_width = int(overlay_video.get(cv2.CAP_PROP_FRAME_WIDTH))
 overlay_height = int(overlay_video.get(cv2.CAP_PROP_FRAME_HEIGHT))
-
 
 # 동영상 FPS 가져오기
 overlay_fps = overlay_video.get(cv2.CAP_PROP_FPS)
@@ -22,13 +20,10 @@ frame_delay = int(1000 / overlay_fps)  # FPS 기반 대기 시간 계산
 frame_count = overlay_video.get(cv2.CAP_PROP_FRAME_COUNT)
 total_duration = frame_count / overlay_fps
 
-
 # 카메라 해상도를 동영상 크기에 맞춤
 camera.set(cv2.CAP_PROP_FRAME_WIDTH, overlay_width)
 camera.set(cv2.CAP_PROP_FRAME_HEIGHT, overlay_height)
 camera.set(cv2.CAP_PROP_FPS, overlay_fps)
-
-
 
 # 시작 시간 기록
 start_time = time.time()

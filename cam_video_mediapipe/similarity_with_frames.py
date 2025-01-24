@@ -148,8 +148,8 @@ def make_euclidean_similarity(avg_euclidean):
     return euc
 
 # 비디오 경로
-video1 = "video1.mp4"
-video2 = "video5.mp4"
+video1 = "video_reverse1.mp4"
+video2 = "video_reverse2.mp4"
 
 # keypoints 및 프레임 추출
 keypoints1, frames1 = extract_keypoints_with_frames(video1)
