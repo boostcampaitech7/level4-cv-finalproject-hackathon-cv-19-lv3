@@ -9,6 +9,8 @@ import cv2
 from copy import deepcopy
 from util import fill_None_from_landmarks, draw_landmarks_on_image, get_closest_frame
 from similarity_with_frames import l2_normalize, calculate_similarity_with_visualization, make_euclidean_similarity, make_cosine_similarity, get_random_pair_frames
+from prompting.pose_compare import extract_pose_landmarks
+from prompting.pose_feedback import json_to_prompt
 
 
 # main title
@@ -342,8 +344,10 @@ else:
 
         st.session_state['estimate_class'].reset_detector()
         pose_landmarker_results1, keypoints1, frames1, fps1 = st.session_state['estimate_class'].estimPose_video_for_dtw(temp_filepath_1)
+        height1, width1 = st.session_state['estimate_class'].last_shape
         st.session_state['estimate_class'].reset_detector()
         pose_landmarker_results2, keypoints2, frames2, fps2 = st.session_state['estimate_class'].estimPose_video_for_dtw(temp_filepath_2)
+        height2, width2 = st.session_state['estimate_class'].last_shape
 
         # keypoints L2 정규화
         keypoints1 = l2_normalize(keypoints1)
@@ -394,8 +398,10 @@ else:
             unsafe_allow_html=True,
         )
 
+        random_matched_list = []
         for idx2, frame in enumerate(frames2):
             idx1 = get_random_pair_frames(pairs, idx2)
+            random_matched_list.append(idx1)
             frames2[idx2] = draw_landmarks_on_image(frame, pose_landmarker_results1[idx1])
         
         with tempfile.NamedTemporaryFile(delete=False, suffix=".mp4") as temp_mp4:
@@ -415,19 +421,36 @@ else:
 
         st.title("피드백을 받을 시간을 선택해주세요")
         # 슬라이더 추가
-        target_time = st.slider(
-            "값을 선택하세요:",  # 슬라이더 레이블
-            min_value=1,        # 최소 값
-            max_value=total_time,      # 최대 값
-            value=(total_time + 1) // 2            # 기본 값
-        )
-        idx2 = get_closest_frame(target_time, total_frame_len, fps2)
+        # 슬라이더와 버튼을 폼 내부에 배치
+        with st.form("time_selection_form"):
+            st.title("Select a Time")
+            target_time = st.slider(
+                "Select a value:",       # Slider label
+                min_value=1,             # Minimum value
+                max_value=total_time,    # Maximum value
+                value=(total_time + 1) // 2  # Default value
+            )
+            # 확인 버튼
+            submit_button = st.form_submit_button("Confirm")
 
-        # 확인 버튼
-        if st.button("확인"):
+        if submit_button:
+            user_idx = get_closest_frame(target_time, total_frame_len, fps2)
+            user_landmark = pose_landmarker_results2[user_idx]
+            target_idx = random_matched_list[user_idx]
+            target_landmark = pose_landmarker_results1[target_idx]
+
+
             # 슬라이더 값을 기반으로 프레임 계산
             target_frame = (target_time * fps2) if target_time else 0
             st.write(f"선택된 시간: {target_time}초")
             st.write(f"해당 프레임: {target_frame}")
 
-            
+            user_pose_landmarks_json = extract_pose_landmarks(user_landmark, width2, height2)
+            target_pose_landmarks_json = extract_pose_landmarks(target_landmark, width1, height1)
+            feedback = json_to_prompt(target_pose_landmarks_json, user_pose_landmarks_json)
+
+            col1, col2 = st.columns(2)
+            with col1:
+                st.json(feedback)
+            with col2:
+                st.image(frames2[user_idx])

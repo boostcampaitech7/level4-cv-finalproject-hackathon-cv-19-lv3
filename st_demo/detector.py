@@ -147,6 +147,7 @@ class PoseDetector:
             frame_timestamp_ms = i * frame_duration
             frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             height, width = frame.shape[:2] # 프레임 해상도 (정규화된 좌표를 픽셀 단위로 변환하기 위해서)
+            self.last_shape = (height, width)
 
             # Pose 추론 수행
             mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=frame_rgb)

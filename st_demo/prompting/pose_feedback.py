@@ -168,11 +168,17 @@ if __name__ == "__main__":
     compare_landmarks = "2.json"
 
 def json_to_prompt(target_landmarks_json_path, compare_landmarks_json_path, result_folder="./prompts"):
-    with open(target_landmarks_json_path, 'r') as f:
-        data1 = json.load(f)
-    with open(compare_landmarks_json_path, 'r') as f:
-        data2 = json.load(f)
+    if isinstance(target_landmarks_json_path, str):
+        with open(target_landmarks_json_path, 'r') as f:
+            data1 = json.load(f)
+    else:
+        data1 = target_landmarks_json_path
     
+    if isinstance(compare_landmarks_json_path, str):
+        with open(compare_landmarks_json_path, 'r') as f:
+            data2 = json.load(f)
+    else:
+        data2 = compare_landmarks_json_path
 
     pose1 = frame_pose(data1)
     pose2 = frame_pose(data2)
@@ -190,19 +196,20 @@ def json_to_prompt(target_landmarks_json_path, compare_landmarks_json_path, resu
         "left_knee_angle_difference": -int(pose1.get_left_knee_angle() - pose2.get_left_knee_angle()),
         "right_knee_angle_difference": -int(pose1.get_right_knee_angle() - pose2.get_right_knee_angle()),
     }
+    result_json = generate_feedback(result_json)
+    return result_json
 
     # JSON 파일명 생성
-    if not os.path.exists(result_folder):
-        os.mkdir(result_folder)
-    target_data_name = list(Path(target_landmarks_json_path).parts)[-2]
-    compare_data_name = list(Path(compare_landmarks_json_path).parts)[-2]
-    json_file_name = f"{target_data_name.split('_')[0]}_{compare_data_name.split('_')[0]}_{target_data_name.split('_')[-1]}.json"
-    json_file_path = os.path.join(result_folder, json_file_name)
+    # if not os.path.exists(result_folder):
+    #     os.mkdir(result_folder)
+    # target_data_name = list(Path(target_landmarks_json_path).parts)[-2]
+    # compare_data_name = list(Path(compare_landmarks_json_path).parts)[-2]
+    # json_file_name = f"{target_data_name.split('_')[0]}_{compare_data_name.split('_')[0]}_{target_data_name.split('_')[-1]}.json"
+    # json_file_path = os.path.join(result_folder, json_file_name)
 
-    # JSON 파일 저장
-    with open(json_file_path, 'w') as f:
-        json.dump(result_json, f, indent=4)
-
+    # # JSON 파일 저장
+    # with open(json_file_path, 'w') as f:
+    #     json.dump(result_json, f, indent=4)
 
 
 
