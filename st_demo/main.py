@@ -6,10 +6,11 @@ import imageio
 import imageio.v3 as iio
 import json
 import cv2
+from collections import namedtuple
 from copy import deepcopy
 from util import fill_None_from_landmarks, draw_landmarks_on_image, get_closest_frame
 from similarity_with_frames import l2_normalize, calculate_similarity_with_visualization, make_euclidean_similarity, make_cosine_similarity
-from similarity_with_frames import get_random_pair_frames, get_all_pair_frames
+from similarity_with_frames import get_center_pair_frames, get_all_pair_frames
 from prompting.pose_compare import extract_pose_landmarks
 from prompting.pose_feedback import json_to_prompt
 
@@ -423,7 +424,7 @@ else:
 
         random_matched_list = []
         for idx2, frame in enumerate(frames2):
-            idx1 = get_random_pair_frames(pairs, idx2)
+            idx1 = get_center_pair_frames(pairs, idx2)
             random_matched_list.append(idx1)
             
             landmarks1 = pose_landmarker_results1[idx1].pose_landmarks[0]
