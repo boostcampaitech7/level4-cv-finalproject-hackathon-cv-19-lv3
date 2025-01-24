@@ -8,7 +8,8 @@ import json
 import cv2
 from copy import deepcopy
 from util import fill_None_from_landmarks, draw_landmarks_on_image, get_closest_frame
-from similarity_with_frames import l2_normalize, calculate_similarity_with_visualization, make_euclidean_similarity, make_cosine_similarity, get_random_pair_frames
+from similarity_with_frames import l2_normalize, calculate_similarity_with_visualization, make_euclidean_similarity, make_cosine_similarity
+from similarity_with_frames import get_random_pair_frames, get_all_pair_frames
 from prompting.pose_compare import extract_pose_landmarks
 from prompting.pose_feedback import json_to_prompt
 

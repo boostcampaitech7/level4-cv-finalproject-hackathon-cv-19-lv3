@@ -5,7 +5,7 @@ import mediapipe as mp
 from mediapipe.framework.formats import landmark_pb2
 from mediapipe.tasks import python
 from mediapipe.tasks.python import vision
-from util import download_model
+from ..util import download_model
 
 def draw_landmarks_on_image(rgb_image, detection_result, landmark_color, connection_color):
     pose_landmarks_list = detection_result.pose_landmarks

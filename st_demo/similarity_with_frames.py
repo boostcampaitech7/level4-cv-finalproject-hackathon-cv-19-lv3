@@ -119,7 +119,18 @@ def get_random_pair_frames(pairs, keypoint2_index):
 
     # keypoint1 매칭된 프레임 중 랜덤 번호 하나 return
     return choice([idx1 for idx1, idx2 in matching_pairs])
-    
+
+def get_all_pair_frames(pairs, keypoint2_index):
+    # keypoint2_index와 매칭된 keypoint1의 모든 인덱스를 찾음
+    matching_pairs = [pair for pair in pairs if pair[1] == keypoint2_index]
+
+    if not matching_pairs:
+        print(f"No matching pairs found for keypoint2 index: {keypoint2_index}")
+        return (0, 0)
+
+    # keypoint1 매칭된 프레임 번호 모두 return
+    return matching_pairs
+
 
 def make_cosine_similarity(avg_cosine):
     # cos = (avg_cosine * 1000) % 100

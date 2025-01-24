@@ -10,6 +10,7 @@ from mediapipe.framework.formats import landmark_pb2
 import random
 import cv2
 from collections import namedtuple
+from pathlib import Path
 
 def set_seed(seed):
     random.seed(seed)
@@ -202,3 +203,20 @@ def get_closest_frame(time_in_seconds, total_frames, fps):
     closest_frame = min(max(0, round(calculated_frame)), total_frames - 1)
     
     return closest_frame
+
+def find_image_files(directory):
+    """
+    주어진 폴더 경로 내의 모든 이미지 파일을 찾아 리스트로 반환하는 함수.
+    
+    Args:
+        directory (str or Path): 폴더 경로.
+        
+    Returns:
+        list: 이미지 파일들의 경로 리스트.
+    """
+    image_extensions = {'.png', '.jpg', '.jpeg', '.gif', '.bmp', '.tiff', '.webp'}
+    directory = Path(directory)  # Path 객체로 변환
+    image_files = [str(file) for file in directory.rglob("*")  # 모든 파일을 검색
+                   if file.suffix.lower() in image_extensions]  # 확장자 확인
+    
+    return image_files
