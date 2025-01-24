@@ -29,8 +29,16 @@ util.set_seed(seed)
 if "estimate_class" not in st.session_state or (model_size != st.session_state['model_size']):
     st.session_state['model_size'] = model_size
     st.session_state['estimate_class'] = detector.PoseDetector(model_size=model_size)
+if "feedback_info_1" not in st.session_state:
+    st.session_state['feedback_info_1'] = None
+if "feedback_info_2" not in st.session_state:
+    st.session_state['feedback_info_2'] = None
+if "video_names" not in st.session_state:
+    st.session_state["video_names"] = ["", ""]
 
 
+
+# start of pages
 if page_option is None or page_option == page_options[0]:
     frame_option = st.sidebar.slider('frame: ', 10, 30)
     gif_options = ["only overlap", "All"]
@@ -341,13 +349,26 @@ else:
         with tempfile.NamedTemporaryFile(delete=False, suffix=".mp4") as temp_file_2:
             temp_file_2.write(video_2.read())
             temp_filepath_2 = temp_file_2.name
-
-        st.session_state['estimate_class'].reset_detector()
-        pose_landmarker_results1, keypoints1, frames1, fps1 = st.session_state['estimate_class'].estimPose_video_for_dtw(temp_filepath_1)
-        height1, width1 = st.session_state['estimate_class'].last_shape
-        st.session_state['estimate_class'].reset_detector()
-        pose_landmarker_results2, keypoints2, frames2, fps2 = st.session_state['estimate_class'].estimPose_video_for_dtw(temp_filepath_2)
-        height2, width2 = st.session_state['estimate_class'].last_shape
+        
+        if st.session_state["video_names"][0] != video_1.name or st.session_state['feedback_info_1'] is None:
+            st.session_state['estimate_class'].reset_detector()
+            pose_landmarker_results1, keypoints1, frames1, fps1 = st.session_state['estimate_class'].estimPose_video_for_dtw(temp_filepath_1)
+            height1, width1 = st.session_state['estimate_class'].last_shape
+            # session state 설정
+            st.session_state["video_names"][0] = video_1.name
+            st.session_state['feedback_info_1'] = (pose_landmarker_results1, keypoints1, frames1, fps1, height1, width1)
+        else:
+            pose_landmarker_results1, keypoints1, frames1, fps1, height1, width1 = st.session_state['feedback_info_1']
+        
+        if st.session_state["video_names"][1] != video_2.name or st.session_state['feedback_info_2'] is None:
+            st.session_state['estimate_class'].reset_detector()
+            pose_landmarker_results2, keypoints2, frames2, fps2 = st.session_state['estimate_class'].estimPose_video_for_dtw(temp_filepath_2)
+            height2, width2 = st.session_state['estimate_class'].last_shape
+            # session state 설정
+            st.session_state["video_names"][1] = video_2.name
+            st.session_state['feedback_info_2'] = (pose_landmarker_results2, keypoints2, frames2, fps2, height2, width2)
+        else:
+            pose_landmarker_results2, keypoints2, frames2, fps2, height2, width2 = st.session_state['feedback_info_2']
 
         # keypoints L2 정규화
         keypoints1 = l2_normalize(keypoints1)
@@ -398,10 +419,23 @@ else:
             unsafe_allow_html=True,
         )
 
+
         random_matched_list = []
         for idx2, frame in enumerate(frames2):
             idx1 = get_random_pair_frames(pairs, idx2)
             random_matched_list.append(idx1)
+            
+            landmarks1 = pose_landmarker_results1[idx1].pose_landmarks[0]
+            landmarks2 = pose_landmarker_results2[idx2].pose_landmarks[0]
+            normalized_pose_landmarks_np_1 = scoring.normalize_landmarks_to_range(
+                scoring.refine_landmarks(landmarks2, target_keys=keypoint_map.TOTAL_KEYPOINTS), 
+                scoring.refine_landmarks(landmarks1, target_keys=keypoint_map.TOTAL_KEYPOINTS)
+            )
+            
+            for i, landmarks in enumerate(pose_landmarker_results1[idx1].pose_landmarks[0]):
+                landmarks.x = normalized_pose_landmarks_np_1[i, 0]
+                landmarks.y = normalized_pose_landmarks_np_1[i, 1]
+                landmarks.z = normalized_pose_landmarks_np_1[i, 2]
             frames2[idx2] = draw_landmarks_on_image(frame, pose_landmarker_results1[idx1])
         
         with tempfile.NamedTemporaryFile(delete=False, suffix=".mp4") as temp_mp4:

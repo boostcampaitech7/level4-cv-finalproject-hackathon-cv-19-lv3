@@ -118,7 +118,7 @@ def landmarks_to_dict(all_landmarks):
     return landmark_dict
 
 
-def draw_landmarks_on_image(rgb_image, detection_result, landmarks_c=(234,63,247), connection_c=(117,249,77), 
+def draw_landmarks_on_image(rgb_image, detection_result, h_ratio=1.0, w_ratio=1.0, landmarks_c=(234,63,247), connection_c=(117,249,77), 
                     thickness=10, circle_r=10):
   try:
       pose_landmarks_list = detection_result.pose_landmarks
@@ -133,7 +133,7 @@ def draw_landmarks_on_image(rgb_image, detection_result, landmarks_c=(234,63,247
     # Draw the pose landmarks.
     pose_landmarks_proto = landmark_pb2.NormalizedLandmarkList()
     pose_landmarks_proto.landmark.extend([
-      landmark_pb2.NormalizedLandmark(x=landmark.x, y=landmark.y, z=landmark.z) for landmark in pose_landmarks
+      landmark_pb2.NormalizedLandmark(x=landmark.x*w_ratio, y=landmark.y*h_ratio, z=landmark.z) for landmark in pose_landmarks
     ])
     solutions.drawing_utils.draw_landmarks(
       annotated_image,
