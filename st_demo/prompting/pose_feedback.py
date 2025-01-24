@@ -163,9 +163,6 @@ class frame_pose:
 def get_point(data, key1, key2):
     return np.array([data[key1][key2]['x'], data[key1][key2]['y']])
 
-if __name__ == "__main__":
-    standard_landmarks = "1.json"
-    compare_landmarks = "2.json"
 
 def json_to_prompt(target_landmarks_json_path, compare_landmarks_json_path, result_folder="./prompts"):
     if isinstance(target_landmarks_json_path, str):
@@ -210,10 +207,3 @@ def json_to_prompt(target_landmarks_json_path, compare_landmarks_json_path, resu
     # # JSON 파일 저장
     # with open(json_file_path, 'w') as f:
     #     json.dump(result_json, f, indent=4)
-
-
-
-if __name__ == "__main__":
-    standard_landmarks = "results/target_pose_1/result.json"
-    compare_landmarks = "results/wrong_pose_1/result.json"
-    json_to_prompt(standard_landmarks, compare_landmarks)

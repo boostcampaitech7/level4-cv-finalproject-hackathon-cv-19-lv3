@@ -3,9 +3,7 @@ import cv2
 import json
 import mediapipe as mp
 from mediapipe.framework.formats import landmark_pb2
-from mediapipe.tasks import python
-from mediapipe.tasks.python import vision
-from ..util import download_model
+
 
 def draw_landmarks_on_image(rgb_image, detection_result, landmark_color, connection_color):
     pose_landmarks_list = detection_result.pose_landmarks
@@ -156,16 +154,6 @@ def extract_pose_landmarks(result, image_width, image_height):
     
     return landmarks
 
-def get_detector(model_size=2):
-    model_path = download_model(model_size=model_size)
-    base_options = python.BaseOptions(model_asset_path=model_path)
-    options = vision.PoseLandmarkerOptions(
-        base_options=base_options,
-        running_mode=vision.RunningMode.IMAGE
-    )
-    detector = vision.PoseLandmarker.create_from_options(options)
-    return detector
-
 
 def make_pose_jsons(img_path_list, detector, result_folder="./results"):
     if not os.path.exists(result_folder):
@@ -202,11 +190,3 @@ def make_pose_jsons(img_path_list, detector, result_folder="./results"):
             connection_color=(255, 150, 150) 
         )
         cv2.imwrite(img_path, output_image)
-
-
-if __name__ == "__main__":
-    idx = 2
-    labels = ["target", "right", "wrong"]
-
-    img_path_list = [f"images/{value}_pose_{idx}.png" for value in labels]
-    make_pose_jsons(img_path_list, get_detector(model_size=2))
