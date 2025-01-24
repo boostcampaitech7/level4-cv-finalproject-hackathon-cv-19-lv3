@@ -203,4 +203,4 @@ def get_skeleton_from_landmarks(
     return skeleton_image
 
 def get_pose_landmark_from_detect_result(pose_landmarker_results):
-    return [res.pose_landmarks[0] for res in pose_landmarker_results if res.pose_landmarks]
+    return [res.pose_landmarks[0] if res.pose_landmarks else None for res in pose_landmarker_results]

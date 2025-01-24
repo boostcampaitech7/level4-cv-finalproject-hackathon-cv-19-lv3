@@ -6,6 +6,7 @@ import imageio
 import imageio.v3 as iio
 import json
 import cv2
+import numpy as np
 from collections import namedtuple
 from copy import deepcopy
 from util import fill_None_from_landmarks, draw_landmarks_on_image, get_closest_frame
@@ -421,24 +422,26 @@ else:
             unsafe_allow_html=True,
         )
 
+        # min max normalize for all frames
+        all_landmarks1 = fill_None_from_landmarks(detector.get_pose_landmark_from_detect_result(pose_landmarker_results1))
+        all_landmarks2 = fill_None_from_landmarks(detector.get_pose_landmark_from_detect_result(pose_landmarker_results2))
+        normalized_all_landmarks1 = scoring.normalize_landmarks_to_range_by_mean(
+            np.array([scoring.refine_landmarks(l) for l in all_landmarks2]), np.array([scoring.refine_landmarks(l) for l in all_landmarks1])
+        )
+        del all_landmarks1, all_landmarks2
+
 
         random_matched_list = []
         for idx2, frame in enumerate(frames2):
             idx1 = get_center_pair_frames(pairs, idx2)
             random_matched_list.append(idx1)
             
-            landmarks1 = pose_landmarker_results1[idx1].pose_landmarks[0]
-            landmarks2 = pose_landmarker_results2[idx2].pose_landmarks[0]
-            normalized_pose_landmarks_np_1 = scoring.normalize_landmarks_to_range(
-                scoring.refine_landmarks(landmarks2, target_keys=keypoint_map.TOTAL_KEYPOINTS), 
-                scoring.refine_landmarks(landmarks1, target_keys=keypoint_map.TOTAL_KEYPOINTS)
-            )
-            
             for i, landmarks in enumerate(pose_landmarker_results1[idx1].pose_landmarks[0]):
-                landmarks.x = normalized_pose_landmarks_np_1[i, 0]
-                landmarks.y = normalized_pose_landmarks_np_1[i, 1]
-                landmarks.z = normalized_pose_landmarks_np_1[i, 2]
+                landmarks.x = normalized_all_landmarks1[idx1, i, 0]
+                landmarks.y = normalized_all_landmarks1[idx1, i, 1]
+                landmarks.z = normalized_all_landmarks1[idx1, i, 2]
             frames2[idx2] = draw_landmarks_on_image(frame, pose_landmarker_results1[idx1])
+        del normalized_all_landmarks1
         
         with tempfile.NamedTemporaryFile(delete=False, suffix=".mp4") as temp_mp4:
             # MP4 파일 경로

@@ -177,7 +177,7 @@ def draw_circle_on_image(image: np.ndarray, normalized_x: float, normalized_y: f
 
 def fill_None_from_landmarks(all_landmarks, fill_value=1.):
     NormalizedLandmark = namedtuple('NormalizedLandmark', NORMALIZED_LANDMARK_KEYS)
-    none_fill_value = [NormalizedLandmark(**{k:.0 for k in NORMALIZED_LANDMARK_KEYS}) for _ in range(len(KEYPOINT_MAPPING))]
+    none_fill_value = [NormalizedLandmark(**{k:fill_value for k in NORMALIZED_LANDMARK_KEYS}) for _ in range(len(KEYPOINT_MAPPING))]
     for i in range(len(all_landmarks)):
         if all_landmarks[i] is None:
             all_landmarks[i] = none_fill_value
