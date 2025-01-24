@@ -57,7 +57,7 @@ class ProcessActivity : AppCompatActivity() {
                 // 처리 성공
                 runOnUiThread {
                     Toast.makeText(this, "좌우 반전 완료: $flippedVideoPath", Toast.LENGTH_LONG).show()
-                    moveToResultActivity()
+                    moveToScoreActivity()
                 }
             } else {
                 // 처리 실패
@@ -68,8 +68,8 @@ class ProcessActivity : AppCompatActivity() {
         }
     }
 
-    private fun moveToResultActivity() {
-        val intent = Intent(this, ResultActivity::class.java).apply {
+    private fun moveToScoreActivity() {
+        val intent = Intent(this, ScoreActivity::class.java).apply {
             putExtra("flippedVideoPath", flippedVideoPath) // 반전된 영상 경로 전달
         }
         startActivity(intent)
