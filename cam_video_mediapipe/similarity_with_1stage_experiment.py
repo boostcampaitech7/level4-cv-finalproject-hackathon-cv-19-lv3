@@ -47,7 +47,7 @@ def filter_keypoints(keypoints, indices):
     return keypoints[:, np.array(indices), :]
 
 # keypoint1의 프레임에 맞춰서 keypoint2의 프레임을 정규화
-# 하나의 프레임만 진행해야함 -> 1의 프레임에 맞춰서 2의 프레임을 정규화
+# 하나의 프레임만 진행해야함 -> 1의 프레임에 맞춰서 2의 프레임을 정규화 하므로
 def normalize_landmarks_to_range(keypoints1, keypoints2, eps=1e-7):
         """
         Normalize landmarks2 to match the coordinate range of landmarks1.
@@ -74,6 +74,32 @@ def normalize_landmarks_to_range(keypoints1, keypoints2, eps=1e-7):
 
         return np.linalg.norm(keypoints1 - keypoints2)
 
+def normalize_landmarks_to_pair(landmarks_np_1, landmarks_np_2, eps=1e-7):
+    """
+    Normalize landmarks2 to match the coordinate range of landmarks1.
+
+    Parameters:
+        landmarks_np_1 (numpy array): Keypoints array for the first pose (num_selected_point, 4).
+        landmarks_np_2 (numpy array): Keypoints array for the second pose (num_selected_point, 4).
+
+    Returns:
+        numpy array: Normalized landmarks2 matching the range of landmarks1.
+    """
+    # Calculate min and max for landmarks1 and landmarks2
+    min1 = np.min(landmarks_np_1[:, :3], axis=0)  # (x_min, y_min, z_min) for landmarks1
+    max1 = np.max(landmarks_np_1[:, :3], axis=0)  # (x_max, y_max, z_max) for landmarks1
+
+    min2 = np.min(landmarks_np_2[:, :3], axis=0)  # (x_min, y_min, z_min) for landmarks2
+    max2 = np.max(landmarks_np_2[:, :3], axis=0)  # (x_max, y_max, z_max) for landmarks2
+
+    # Normalize landmarks2 to the range of landmarks1
+    normalized_landmarks2 = (landmarks_np_2[:, :3] - min2) / (max2 - min2 + eps) * (max1 - min1) + min1
+
+    # Combine normalized coordinates with the original visibility values
+    normalized_landmarks2 = np.hstack((normalized_landmarks2, landmarks_np_2[:, 3:4]))
+
+    return normalized_landmarks2
+
 def calculate_similarity_with_visualization(keypoints1, keypoints2):
     # FastDTW로 DTW 거리와 매칭된 인덱스 쌍(pairs) 계산
     distance, pairs = fastdtw(keypoints1, keypoints2, dist=normalize_landmarks_to_range)
@@ -85,6 +111,7 @@ def calculate_similarity_with_visualization(keypoints1, keypoints2):
         # 각 프레임에서 keypoints의 Cosine Similarity와 Euclidean Distance 계산
         kp1 = keypoints1[idx1]  # shape: (keypoint_count, 3)
         kp2 = keypoints2[idx2]  # shape: (keypoint_count, 3)
+        kp2 = normalize_landmarks_to_pair(kp1, kp2)
 
         # 벡터 차원을 유지한 상태로 유사도 계산
         frame_cosine_similarities = []
@@ -167,6 +194,6 @@ distance, avg_cosine, avg_euclidean, pairs = calculate_similarity_with_visualiza
 output_dir = "output_frames"
 save_random_pair_frames(pairs, frames1, frames2, output_dir, 200)
 
-print(f"{video1} pairing with {video2} in in 1-stage")
+print(f"{video1} pairing with {video2} in in 1-stage experiment")
 print(f"Average Cosine Similarity score: {avg_cosine}")
 print(f"Average Euclidean Similarity score: {avg_euclidean}")
