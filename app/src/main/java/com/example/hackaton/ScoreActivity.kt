@@ -11,6 +11,7 @@ class ScoreActivity : AppCompatActivity() {
 
     private lateinit var feedbackBtn: Button
     private var flippedVideoPath: String? = null
+    private var originalVideo: String? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -21,6 +22,7 @@ class ScoreActivity : AppCompatActivity() {
             .commit()
 
         flippedVideoPath = intent.getStringExtra("flippedVideoPath")
+        originalVideo = intent.getStringExtra("originalVideo")
 
         val numberRange = (0..100)
         val num = numberRange.random()
@@ -50,6 +52,7 @@ class ScoreActivity : AppCompatActivity() {
     private fun moveToResultActivity() {
         val intent = Intent(this, ResultActivity::class.java).apply {
             putExtra("flippedVideoPath", flippedVideoPath) // 반전된 영상 경로 전달
+            putExtra("originalVideo", originalVideo)
         }
         startActivity(intent)
     }

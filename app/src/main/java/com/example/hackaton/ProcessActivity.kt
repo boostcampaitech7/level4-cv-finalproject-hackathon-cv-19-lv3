@@ -15,6 +15,7 @@ class ProcessActivity : AppCompatActivity() {
 
     private lateinit var loading: ImageView
     private var videoFilePath: String? = null
+    private var originalVideo: String? = null
     private var flippedVideoPath: String? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -22,6 +23,7 @@ class ProcessActivity : AppCompatActivity() {
         setContentView(R.layout.activity_process)
 
         videoFilePath = intent.getStringExtra("videoFilePath")
+        originalVideo = intent.getStringExtra("originalVideo")
 
         if (videoFilePath != null) {
             flipVideoHorizontally(videoFilePath!!)
@@ -71,6 +73,7 @@ class ProcessActivity : AppCompatActivity() {
     private fun moveToScoreActivity() {
         val intent = Intent(this, ScoreActivity::class.java).apply {
             putExtra("flippedVideoPath", flippedVideoPath) // 반전된 영상 경로 전달
+            putExtra("originalVideo", originalVideo)
         }
         startActivity(intent)
     }

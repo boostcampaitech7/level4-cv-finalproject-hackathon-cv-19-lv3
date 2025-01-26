@@ -15,7 +15,7 @@ class FeedbackActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_feedback)
 
-        frameImageView = findViewById(R.id.frameImageView)
+        frameImageView = findViewById(R.id.frameImageView2)
 
         supportFragmentManager.beginTransaction()
             .replace(R.id.topFragmentContainer, TopFragment())

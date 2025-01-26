@@ -78,6 +78,7 @@ class CameraActivity3 : AppCompatActivity(), SurfaceHolder.Callback {
             stopRecording()
             val intent = Intent(this, ProcessActivity::class.java).apply {
                 putExtra("videoFilePath", videoFilePath)
+                putExtra("originalVideo", videoUri.toString())
             }
             startActivity(intent)
         }

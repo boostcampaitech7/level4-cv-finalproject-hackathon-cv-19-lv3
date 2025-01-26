@@ -1,29 +1,31 @@
 package com.example.hackaton
 
-import android.content.ContentValues
 import android.content.Intent
 import android.graphics.Bitmap
 import android.media.MediaMetadataRetriever
 import android.net.Uri
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import android.provider.MediaStore
 import android.util.Log
+import android.view.View
 import android.widget.Button
+import android.widget.FrameLayout
+import android.widget.ImageView
 import android.widget.SeekBar
 import android.widget.Toast
 import android.widget.VideoView
 import java.io.File
-import java.io.FileInputStream
 import java.io.FileOutputStream
 
 class ResultActivity : AppCompatActivity() {
     private lateinit var videoView: VideoView
-    private lateinit var saveButton: Button
+    private lateinit var finishFeedbackButton: Button
     private lateinit var playPauseButton: Button
     private lateinit var feedbackButton: Button
     private lateinit var seekBar: SeekBar
+    private lateinit var frameImageView: ImageView
     private var flippedVideoPath: String? = null
+    private var originalVideo: String? = null
     private var isPlaying = false
     private val handler = android.os.Handler()
 
@@ -31,26 +33,35 @@ class ResultActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_result)
         videoView = findViewById(R.id.video_preview)
-        saveButton = findViewById(R.id.save_btn)
+        finishFeedbackButton = findViewById(R.id.finishFeedbackBtn)
         playPauseButton = findViewById(R.id.play_pause_btn)
         feedbackButton = findViewById(R.id.feedback_btn)
         seekBar = findViewById(R.id.video_seek_bar)
+        frameImageView = findViewById(R.id.frameImageView)
 
         supportFragmentManager.beginTransaction()
             .replace(R.id.topFragmentContainer, TopFragment())
             .commit()
 
+        supportFragmentManager.beginTransaction()
+            .replace(R.id.bottomFragmentContainer, BottomFragment())
+            .commit()
+
         flippedVideoPath = intent.getStringExtra("flippedVideoPath")
+        originalVideo = intent.getStringExtra("originalVideo")
+
         if (flippedVideoPath != null) {
             playFlippedVideo(flippedVideoPath!!)
         } else {
             Toast.makeText(this, "반전된 영상 경로를 찾을 수 없습니다.", Toast.LENGTH_SHORT).show()
         }
 
-        saveButton.setOnClickListener {
-            flippedVideoPath?.let { path ->
-                saveVideoToGallery(path)
+        finishFeedbackButton.setOnClickListener {
+            val intent = Intent(this, FinalActivity::class.java).apply {
+                putExtra("flippedVideoPath", flippedVideoPath)
+                putExtra("originalVideo", originalVideo)
             }
+            startActivity(intent)
         }
 
         playPauseButton.setOnClickListener {
@@ -67,13 +78,11 @@ class ResultActivity : AppCompatActivity() {
                     retriever.setDataSource(path)
                     val frameBitmap = retriever.getFrameAtTime(frameIndex * 1000L, MediaMetadataRetriever.OPTION_CLOSEST_SYNC)
                     val frameUri = frameBitmap?.let { saveFrameToCache(it) }
+                    val frameIndexInt = (frameIndex / (1000 / 30f)).toInt()
 
                     if (frameUri != null) {
-                        val intent = Intent(this, FeedbackActivity::class.java).apply {
-                            putExtra("frameIndex", (frameIndex / (1000 / 30f)).toInt()) // 인덱스를 전달
-                            putExtra("frameUri", frameUri.toString()) // Uri를 전달
-                        }
-                        startActivity(intent)
+                        findViewById<FrameLayout>(R.id.feedbackFrameLayout).visibility = View.VISIBLE
+                        frameImageView.setImageURI(frameUri)
                     } else {
                         Toast.makeText(this, "프레임을 저장할 수 없습니다.", Toast.LENGTH_SHORT).show()
                     }
@@ -175,28 +184,5 @@ class ResultActivity : AppCompatActivity() {
                 }
             }
         }, 1000) // 1초 간격으로 업데이트
-    }
-
-    private fun saveVideoToGallery(videoPath: String) {
-        val videoFile = File(videoPath)
-        if (!videoFile.exists()) {
-            Toast.makeText(this, "비디오 파일이 존재하지 않습니다.", Toast.LENGTH_SHORT).show()
-            return
-        }
-
-        val resolver = contentResolver
-        val contentValues = ContentValues().apply {
-            put(MediaStore.Video.Media.DISPLAY_NAME, "Flipped_Video_${System.currentTimeMillis()}.mp4")
-            put(MediaStore.Video.Media.MIME_TYPE, "video/mp4")
-            put(MediaStore.Video.Media.RELATIVE_PATH, "Movies/Hackaton")
-        }
-        resolver.insert(MediaStore.Video.Media.EXTERNAL_CONTENT_URI, contentValues)?.let { galleryUri ->
-            resolver.openOutputStream(galleryUri).use { outputStream ->
-                FileInputStream(videoFile).use { inputStream ->
-                    inputStream.copyTo(outputStream!!)
-                }
-            }
-            Toast.makeText(this, "갤러리에 저장되었습니다.", Toast.LENGTH_SHORT).show()
-        }
     }
 }
