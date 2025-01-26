@@ -140,7 +140,7 @@ def save_random_pair_frames(pairs, frames1, frames2, output_dir, keypoint2_index
 
 # 비디오 경로
 video1 = "video_kdb1.mp4"
-video2 = "video_kdb3.mp4"
+video2 = "video_kdb2.mp4"
 
 # keypoints 및 프레임 추출
 keypoints1, frames1 = extract_keypoints_with_frames(video1)
@@ -163,8 +163,8 @@ distance, avg_cosine, avg_euclidean, pairs = calculate_similarity_with_visualiza
 
 # 랜덤한 매칭된 프레임 저장
 output_dir = "output_frames"
-save_random_pair_frames(pairs, frames1, frames2, output_dir, 100)
+save_random_pair_frames(pairs, frames1, frames2, output_dir, 200)
 
-print(f"{video1} pairing with {video2}")
+print(f"{video1} pairing with {video2} in in 1-stage")
 print(f"Average Cosine Similarity score: {avg_cosine}")
 print(f"Average Euclidean Similarity score: {avg_euclidean}")
