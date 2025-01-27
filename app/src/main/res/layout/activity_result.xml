@@ -98,24 +98,12 @@
                         android:layout_height="wrap_content"
                         android:layout_weight="1" />
 
-                    <LinearLayout
+
+                    <TextView
+                        android:id="@+id/feedbackTxt"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginLeft="10dp"
-                        android:orientation="vertical">
-
-                        <TextView
-                            android:id="@+id/feedbackTxt1"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="자세가 거의 완벽해요!" />
-
-                        <TextView
-                            android:id="@+id/feedbackTxt2"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="오른쪽 팔을 조금만 올리면 더 좋을 것 같아요." />
-                    </LinearLayout>
+                        android:text="자세가 거의 완벽해요! 오른쪽 팔을 조금만 올리면 더 좋을 것 같아요." />
 
                 </LinearLayout>
             </FrameLayout>

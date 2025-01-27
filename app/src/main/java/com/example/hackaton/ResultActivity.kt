@@ -12,8 +12,12 @@ import android.widget.Button
 import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.SeekBar
+import android.widget.TextView
 import android.widget.Toast
 import android.widget.VideoView
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
 import java.io.File
 import java.io.FileOutputStream
 
@@ -24,6 +28,7 @@ class ResultActivity : AppCompatActivity() {
     private lateinit var feedbackButton: Button
     private lateinit var seekBar: SeekBar
     private lateinit var frameImageView: ImageView
+    private lateinit var feedbackTextView: TextView
     private var flippedVideoPath: String? = null
     private var originalVideo: String? = null
     private var isPlaying = false
@@ -38,6 +43,7 @@ class ResultActivity : AppCompatActivity() {
         feedbackButton = findViewById(R.id.feedback_btn)
         seekBar = findViewById(R.id.video_seek_bar)
         frameImageView = findViewById(R.id.frameImageView)
+        feedbackTextView = findViewById(R.id.feedbackTxt)
 
         supportFragmentManager.beginTransaction()
             .replace(R.id.topFragmentContainer, TopFragment())
@@ -83,6 +89,9 @@ class ResultActivity : AppCompatActivity() {
                     if (frameUri != null) {
                         findViewById<FrameLayout>(R.id.feedbackFrameLayout).visibility = View.VISIBLE
                         frameImageView.setImageURI(frameUri)
+
+                        // 서버에 피드백 요청 함수 실행
+//                        feedbackRequest(frameIndexInt, path)
                     } else {
                         Toast.makeText(this, "프레임을 저장할 수 없습니다.", Toast.LENGTH_SHORT).show()
                     }
@@ -184,5 +193,24 @@ class ResultActivity : AppCompatActivity() {
                 }
             }
         }, 1000) // 1초 간격으로 업데이트
+    }
+
+    private fun feedbackRequest(frame: Int, videoPath: String) {
+        val api = RetrofitAPI.create("http://localhost:8000")
+        
+        api.getFeedback(frame, videoPath).enqueue(object : Callback<FeedbackResponse> {
+            override fun onResponse(call: Call<FeedbackResponse>, response: Response<FeedbackResponse>) {
+                if (response.isSuccessful) {
+                    val feedback = response.body()?.feedback
+                    feedbackTextView.text = feedback // 피드백 텍스트를 화면에 표시
+                } else {
+                    Toast.makeText(this@ResultActivity, "피드백을 받을 수 없습니다.", Toast.LENGTH_SHORT).show()
+                }
+            }
+
+            override fun onFailure(call: Call<FeedbackResponse>, t: Throwable) {
+                Toast.makeText(this@ResultActivity, "서버 연결 실패", Toast.LENGTH_SHORT).show()
+            }
+        })
     }
 }
