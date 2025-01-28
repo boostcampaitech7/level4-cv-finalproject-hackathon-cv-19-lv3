@@ -114,11 +114,8 @@ def get_center_pair_frames(pairs, keypoint2_index, matched_idx=1):
         print(f"No matching pairs found for keypoint2 index: {keypoint2_index}")
         return (0, 0)
 
-    # keypoint1 매칭된 프레임 중 랜덤 번호 하나 return
-    # return choice([idx1 for idx1, idx2 in matching_pairs])
-
     # 매칭된 프레임 중 시간축 기준 중간에 위치하는 것을 추출
-    return matching_pairs[num_total_pairs // 2][0]
+    return matching_pairs[num_total_pairs // 2][not matched_idx]
 
 def get_all_pair_frames(pairs, keypoint2_index, matched_idx=1):
     # keypoint2_index와 매칭된 keypoint1의 모든 인덱스를 찾음

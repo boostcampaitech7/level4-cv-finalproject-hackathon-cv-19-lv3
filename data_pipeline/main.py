@@ -63,7 +63,7 @@ def main():
         df = make_dataset(matched_dict_list, system_prompt, len(total_result))
         total_result = pd.concat([total_result, df], axis=0, ignore_index=True)
     
-    total_result.to_csv(output_csv_path)
+    total_result.to_csv(output_csv_path, index=False)
 
 if __name__ == "__main__":
     main()

@@ -27,8 +27,8 @@ def compare_video_pair(right_video_path, wrong_video_path, frame_interval=0.5):
     )
 
     # keypoint 결과 저장하기 편하도록 정제하는 과정
-    right_pose_landmarker_results = fill_None_from_landmarks(right_pose_landmarker_results)
-    wrong_pose_landmarker_results = fill_None_from_landmarks(wrong_pose_landmarker_results)
+    right_pose_landmarker_results = fill_None_from_landmarks(get_pose_landmark_from_detect_result(right_pose_landmarker_results))
+    wrong_pose_landmarker_results = fill_None_from_landmarks(get_pose_landmark_from_detect_result(wrong_pose_landmarker_results))
     
     # 매치된 pair끼리 frame, keypoint 저장
     matched_dict_list = []
