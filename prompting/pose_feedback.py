@@ -190,8 +190,8 @@ def json_to_prompt(target_landmarks_json_path, compare_landmarks_json_path, resu
         "left_knee_angle_difference": -int(pose1.get_left_knee_angle() - pose2.get_left_knee_angle()),
         "right_knee_angle_difference": -int(pose1.get_right_knee_angle() - pose2.get_right_knee_angle()),
     }
-    result_json = generate_feedback(result_json)
-    return result_json
+    natural_language_json = generate_feedback(result_json)
+    return result_json, natural_language_json
 
     # JSON 파일명 생성
     # if not os.path.exists(result_folder):

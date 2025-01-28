@@ -485,7 +485,7 @@ else:
 
             user_pose_landmarks_json = extract_pose_landmarks(user_landmark, width2, height2)
             target_pose_landmarks_json = extract_pose_landmarks(target_landmark, width1, height1)
-            feedback = json_to_prompt(target_pose_landmarks_json, user_pose_landmarks_json)
+            _, feedback = json_to_prompt(target_pose_landmarks_json, user_pose_landmarks_json)
 
             col1, col2 = st.columns(2)
             with col1:
