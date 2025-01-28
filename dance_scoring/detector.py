@@ -1,11 +1,10 @@
-import os
 import cv2
 import mediapipe as mp
 import numpy as np
 import matplotlib.pyplot as plt
 from mediapipe.tasks import python
 from mediapipe.tasks.python import vision
-from util import draw_landmarks_on_image, download_model
+from .util import draw_landmarks_on_image, download_model
 import warnings
 from tqdm import tqdm
 

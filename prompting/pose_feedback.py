@@ -1,9 +1,6 @@
-import os
-from pathlib import Path
 import math
 import json
 import numpy as np
-import matplotlib.pyplot as plt
 import random
 
 def generate_feedback(feature_differences, threshold = 30):

@@ -1,11 +1,7 @@
-import cv2
-import mediapipe as mp
 import numpy as np
 from fastdtw import fastdtw 
 from scipy.spatial.distance import euclidean, cosine
-import os
-from keypoint_map import SELECTED_SIGMAS, SELECTED_KEYPOINTS
-from random import choice
+from .keypoint_map import SELECTED_SIGMAS
 
 
 # PCK 값 계산 함수

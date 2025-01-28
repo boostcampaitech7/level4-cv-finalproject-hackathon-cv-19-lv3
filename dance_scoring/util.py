@@ -4,7 +4,7 @@ import platform
 import subprocess
 import shutil
 import numpy as np
-from keypoint_map import KEYPOINT_MAPPING, NORMALIZED_LANDMARK_KEYS
+from .keypoint_map import KEYPOINT_MAPPING, NORMALIZED_LANDMARK_KEYS
 from mediapipe import solutions
 from mediapipe.framework.formats import landmark_pb2
 import random
