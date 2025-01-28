@@ -188,3 +188,6 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
+
+# dtw 매칭 프레임 생성 폴더
+/output_frames
