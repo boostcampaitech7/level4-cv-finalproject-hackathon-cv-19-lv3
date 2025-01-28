@@ -1,3 +1,6 @@
+# data
+*.csv
+
 # audio
 *.mp3
 *.wav

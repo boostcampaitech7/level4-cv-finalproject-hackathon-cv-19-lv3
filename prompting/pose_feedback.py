@@ -204,7 +204,7 @@ def get_point(data, key1, key2):
     return np.array([data[key1][key2]['x'], data[key1][key2]['y']])
 
 
-def json_to_prompt(target_landmarks_json_path, compare_landmarks_json_path, result_folder="./prompts"):
+def json_to_prompt(target_landmarks_json_path, compare_landmarks_json_path, result_folder="./prompts", threshold=30):
     if isinstance(target_landmarks_json_path, str):
         with open(target_landmarks_json_path, 'r') as f:
             data1 = json.load(f)
@@ -233,7 +233,7 @@ def json_to_prompt(target_landmarks_json_path, compare_landmarks_json_path, resu
         "left_knee_angle_difference": int(pose1.get_left_knee_angle() - pose2.get_left_knee_angle()),
         "right_knee_angle_difference": -int(pose1.get_right_knee_angle() - pose2.get_right_knee_angle()),
     }
-    natural_language_json = generate_feedback(result_json)
+    natural_language_json = generate_feedback(result_json, threshold=threshold)
     return result_json, natural_language_json
 
     # JSON 파일명 생성
