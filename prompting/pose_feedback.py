@@ -31,17 +31,60 @@ def generate_feedback(feature_differences, threshold = 30):
                 feedback_dict[feature.replace("_angle_difference", "")] = f"Lower your {side} arm." if difference > 0 else f"Raise your {side} arm."
             elif feature in ["left_elbow_angle_difference", "right_elbow_angle_difference"]:
                 side = "left" if "left" in feature else "right"
-                feedback_dict[feature.replace("_angle_difference", "")] = f"Bend your {side} elbow." if difference > 0 else f"Straighten your {side} elbow."
+                feedback_dict[feature.replace("_angle_difference", "")] = f"Straighten your {side} elbow." if difference > 0 else f"Bend your {side} elbow."
             elif feature in ["left_leg_angle_difference", "right_leg_angle_difference"]:
                 side = "left" if "left" in feature else "right"
                 feedback_dict[feature.replace("_angle_difference", "")] = f"Lower your {side} leg." if difference > 0 else f"Raise your {side} leg."
             elif feature in ["left_knee_angle_difference", "right_knee_angle_difference"]:
                 side = "left" if "left" in feature else "right"
-                feedback_dict[feature.replace("_angle_difference", "")] = f"Bend your {side} knee." if difference > 0 else f"Straighten your {side} knee."
+                feedback_dict[feature.replace("_angle_difference", "")] = f"Straighten your {side} knee." if difference > 0 else f"Bend your {side} knee."
     
     # If no features exceed the threshold, return a default success message
     if not feedback_dict:
         return {"result": "Great job! Your posture is perfect!"}
+    
+    return feedback_dict
+
+def generate_korean_feedback(feature_differences, threshold = 30):
+    """
+    주어진 특징 차이에 따라 피드백을 생성합니다.
+
+    Parameters:
+    - feature_differences (dict): 특징 차이를 저장한 딕셔너리.
+    - threshold (int): 피드백을 생성할 최소 차이값 기준 (기본값: 30).
+
+    Returns:
+    - dict: 기준값을 초과한 각 특징에 대한 피드백.
+    """
+    feedback_dict = {}  # 각 특징에 대한 피드백 저장
+
+    # 특징을 반복하며 기준값을 초과하는 경우 피드백 생성
+    for feature, difference in feature_differences.items():
+        if abs(difference) >= threshold:
+            if feature == "face_difference":
+                feedback_dict["face"] = "머리를 왼쪽으로 기울이세요." if difference > 0 else "머리를 오른쪽으로 기울이세요."
+            elif feature == "shoulder_difference":
+                if difference > 0:
+                    random_choice = random.choice(["왼쪽 어깨를 내리세요.", "오른쪽 어깨를 올리세요."])
+                else:
+                    random_choice = random.choice(["왼쪽 어깨를 올리세요.", "오른쪽 어깨를 내리세요."])
+                feedback_dict["shoulder"] = random_choice
+            elif feature in ["left_arm_angle_difference", "right_arm_angle_difference"]:
+                side = "왼쪽" if "left" in feature else "오른쪽"
+                feedback_dict[feature.replace("_angle_difference", "")] = f"{side} 팔을 내리세요." if difference > 0 else f"{side} 팔을 올리세요."
+            elif feature in ["left_elbow_angle_difference", "right_elbow_angle_difference"]:
+                side = "왼쪽" if "left" in feature else "오른쪽"
+                feedback_dict[feature.replace("_angle_difference", "")] = f"{side} 팔꿈치를 펴세요." if difference > 0 else f"{side} 팔꿈치를 구부리세요."
+            elif feature in ["left_leg_angle_difference", "right_leg_angle_difference"]:
+                side = "왼쪽" if "left" in feature else "오른쪽"
+                feedback_dict[feature.replace("_angle_difference", "")] = f"{side} 다리를 내리세요." if difference > 0 else f"{side} 다리를 올리세요."
+            elif feature in ["left_knee_angle_difference", "right_knee_angle_difference"]:
+                side = "왼쪽" if "left" in feature else "오른쪽"
+                feedback_dict[feature.replace("_angle_difference", "")] = f"{side} 무릎을 펴세요." if difference > 0 else f"{side} 무릎을 구부리세요."
+    
+    # 기준값을 초과한 특징이 없으면 기본 성공 메시지 반환
+    if not feedback_dict:
+        return {"result": "훌륭합니다! 자세가 완벽합니다!"}
     
     return feedback_dict
 
@@ -52,9 +95,9 @@ def calculate_two_points_angle(point1, point2):
 
     return angle
 
-def calculate_three_points_angle(point1, point2, point3):
+def calculate_three_points_angle(point1, point2, point3, eps=1e-7):
     vector1 = point1 - point2
-    vector2 = point3 - point2 
+    vector2 = point3 - point2
     
     dot_product = np.dot(vector1, vector2)
 
@@ -63,7 +106,7 @@ def calculate_three_points_angle(point1, point2, point3):
 
     cos_angle = dot_product / (magnitude1 * magnitude2)
 
-    cos_angle = min(1.0, max(-1.0, cos_angle))
+    cos_angle = min(1.0-eps, max(-1.0+eps, cos_angle))
     angle = math.degrees(math.acos(cos_angle))
     
     return angle
@@ -183,11 +226,11 @@ def json_to_prompt(target_landmarks_json_path, compare_landmarks_json_path, resu
         "shoulder_difference": int(pose1.get_shoulder_height_difference() - pose2.get_shoulder_height_difference()),
         "left_arm_angle_difference": int(pose1.get_left_arm_angle() - pose2.get_left_arm_angle()),
         "right_arm_angle_difference": -int(pose1.get_right_arm_angle() - pose2.get_right_arm_angle()),
-        "left_elbow_angle_difference": -int(pose1.get_left_elbow_angle() - pose2.get_left_elbow_angle()),
-        "right_elbow_angle_difference": -int(pose1.get_right_elbow_angle() - pose2.get_right_elbow_angle()),
+        "left_elbow_angle_difference": int(pose1.get_left_elbow_angle() - pose2.get_left_elbow_angle()),
+        "right_elbow_angle_difference": int(pose1.get_right_elbow_angle() - pose2.get_right_elbow_angle()),
         "left_leg_angle_difference": int(pose1.get_left_leg_angle() - pose2.get_left_leg_angle()),
-        "right_leg_angle_difference": -int(pose1.get_right_leg_angle() - pose2.get_right_leg_angle()),
-        "left_knee_angle_difference": -int(pose1.get_left_knee_angle() - pose2.get_left_knee_angle()),
+        "right_leg_angle_difference": int(pose1.get_right_leg_angle() - pose2.get_right_leg_angle()),
+        "left_knee_angle_difference": int(pose1.get_left_knee_angle() - pose2.get_left_knee_angle()),
         "right_knee_angle_difference": -int(pose1.get_right_knee_angle() - pose2.get_right_knee_angle()),
     }
     natural_language_json = generate_feedback(result_json)
