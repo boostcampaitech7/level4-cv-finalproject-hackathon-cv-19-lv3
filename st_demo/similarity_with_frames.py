@@ -109,9 +109,9 @@ def calculate_similarity_with_visualization(keypoints1, keypoints2):
 
     return distance, average_cosine_similarity, average_euclidean_distance, average_oks, average_pck, pairs
 
-def get_center_pair_frames(pairs, keypoint2_index):
+def get_center_pair_frames(pairs, keypoint2_index, matched_idx=1):
     # keypoint2_index와 매칭된 keypoint1의 모든 인덱스를 찾음
-    matching_pairs = [pair for pair in pairs if pair[1] == keypoint2_index]
+    matching_pairs = [pair for pair in pairs if pair[matched_idx] == keypoint2_index]
     num_total_pairs = len(matching_pairs)
 
     if not matching_pairs:
@@ -124,9 +124,9 @@ def get_center_pair_frames(pairs, keypoint2_index):
     # 매칭된 프레임 중 시간축 기준 중간에 위치하는 것을 추출
     return matching_pairs[num_total_pairs // 2][0]
 
-def get_all_pair_frames(pairs, keypoint2_index):
+def get_all_pair_frames(pairs, keypoint2_index, matched_idx=1):
     # keypoint2_index와 매칭된 keypoint1의 모든 인덱스를 찾음
-    matching_pairs = [pair for pair in pairs if pair[1] == keypoint2_index]
+    matching_pairs = [pair for pair in pairs if pair[matched_idx] == keypoint2_index]
 
     if not matching_pairs:
         print(f"No matching pairs found for keypoint2 index: {keypoint2_index}")
