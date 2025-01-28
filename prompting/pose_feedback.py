@@ -38,8 +38,6 @@ def generate_feedback(feature_differences, threshold = 30):
             elif feature in ["left_knee_angle_difference", "right_knee_angle_difference"]:
                 side = "left" if "left" in feature else "right"
                 feedback_dict[feature.replace("_angle_difference", "")] = f"Straighten your {side} knee." if difference > 0 else f"Bend your {side} knee."
-        else:
-            feedback_dict[feature.replace("_angle_difference", "").replace("_difference", "")] = "perfectly matched"
     
     # If no features exceed the threshold, return a default success message
     if not feedback_dict:
@@ -83,8 +81,6 @@ def generate_korean_feedback(feature_differences, threshold = 30):
             elif feature in ["left_knee_angle_difference", "right_knee_angle_difference"]:
                 side = "왼쪽" if "left" in feature else "오른쪽"
                 feedback_dict[feature.replace("_angle_difference", "")] = f"{side} 무릎을 펴세요." if difference > 0 else f"{side} 무릎을 구부리세요."
-        else:
-            feedback_dict[feature.replace("_angle_difference", "").replace("_difference", "")] = "완벽합니다."
     
     # 기준값을 초과한 특징이 없으면 기본 성공 메시지 반환
     if not feedback_dict:
@@ -208,7 +204,7 @@ def get_point(data, key1, key2):
     return np.array([data[key1][key2]['x'], data[key1][key2]['y']])
 
 
-def json_to_prompt(target_landmarks_json_path, compare_landmarks_json_path, result_folder="./prompts"):
+def json_to_prompt(target_landmarks_json_path, compare_landmarks_json_path, result_folder="./prompts", threshold=30):
     if isinstance(target_landmarks_json_path, str):
         with open(target_landmarks_json_path, 'r') as f:
             data1 = json.load(f)
@@ -237,7 +233,7 @@ def json_to_prompt(target_landmarks_json_path, compare_landmarks_json_path, resu
         "left_knee_angle_difference": int(pose1.get_left_knee_angle() - pose2.get_left_knee_angle()),
         "right_knee_angle_difference": -int(pose1.get_right_knee_angle() - pose2.get_right_knee_angle()),
     }
-    natural_language_json = generate_feedback(result_json)
+    natural_language_json = generate_feedback(result_json, threshold=threshold)
     return result_json, natural_language_json
 
     # JSON 파일명 생성

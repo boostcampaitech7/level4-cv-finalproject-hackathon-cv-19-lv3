@@ -47,8 +47,8 @@ def extract_pose_landmarks(result, image_width, image_height):
     landmarks = {}
     
     # 각 포즈의 첫 번째 검출 결과만 사용
-    if result.pose_landmarks:
-        pose_landmarks = result.pose_landmarks[0]
+    if result:
+        pose_landmarks = result
         
         # 각 부위별 랜드마크 좌표 추출
         landmarks = {

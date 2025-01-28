@@ -23,14 +23,10 @@ st.markdown("<h2 style='text-align: center;'>Dance Pose Estimation Demo</h2>", u
 # sidebar
 page_options = ['Single Video Pose Estimation', 'Image Compare', 'Video Compare', 'User Feedback Demo']
 page_option = st.sidebar.selectbox("태스크 선택: ", page_options)
-model_size = st.sidebar.slider('model_size: ', 0, 2) # 0 ~ 2 큰 숫자일수록 큰모델
 seed = st.sidebar.number_input('random seed ', min_value=0, max_value=2024, step=1) #random seed
 util.set_seed(seed)
 
-# session state
-if "estimate_class" not in st.session_state or (model_size != st.session_state['model_size']):
-    st.session_state['model_size'] = model_size
-    st.session_state['estimate_class'] = detector.PoseDetector(model_size=model_size)
+st.session_state['estimate_class'] = detector.PoseDetector()
 if "feedback_info_1" not in st.session_state:
     st.session_state['feedback_info_1'] = None
 if "feedback_info_2" not in st.session_state:
@@ -67,11 +63,10 @@ if page_option is None or page_option == page_options[0]:
         # OpenCV로 비디오 읽고 추론
         st.info("모델로 비디오 keypoint를 추론하는 중입니다.")
         estimation_start_time = time.perf_counter()
-        st.session_state['estimate_class'].reset_detector()
         original_video_frames, pose_landmarker_results = st.session_state['estimate_class'].estimPose_video(temp_filepath)
 
-        all_landmarks = detector.get_pose_landmark_from_detect_result(pose_landmarker_results)
-        all_landmarks = fill_None_from_landmarks(all_landmarks)
+        pose_landmarker_results = detector.get_pose_landmark_from_detect_result(pose_landmarker_results)
+        all_landmarks = fill_None_from_landmarks(pose_landmarker_results)
         all_landmarks_dict = util.landmarks_to_dict(all_landmarks)
         del all_landmarks
 
@@ -273,15 +268,15 @@ elif page_option=="Video Compare":
             temp_filepath_2 = temp_file_2.name
         
         # 1번 비디오 landmarks 추출
-        st.session_state['estimate_class'].reset_detector()
         original_video_frames_1, pose_landmarker_results_1 = st.session_state['estimate_class'].estimPose_video(temp_filepath_1)
-        all_landmarks_1 = fill_None_from_landmarks(detector.get_pose_landmark_from_detect_result(pose_landmarker_results_1))
+        pose_landmarker_results_1 = detector.get_pose_landmark_from_detect_result(pose_landmarker_results_1)
+        all_landmarks_1 = fill_None_from_landmarks(pose_landmarker_results_1)
         height_1, width_1 = st.session_state['estimate_class'].last_shape
 
         # 2번 비디오 landmarks 추출
-        st.session_state['estimate_class'].reset_detector() # timestamp를 초기화해야 다음 동영상 분석 가능
         original_video_frames_2, pose_landmarker_results_2 = st.session_state['estimate_class'].estimPose_video(temp_filepath_2)
-        all_landmarks_2 = fill_None_from_landmarks(detector.get_pose_landmark_from_detect_result(pose_landmarker_results_2))
+        pose_landmarker_results_2 = detector.get_pose_landmark_from_detect_result(pose_landmarker_results_2)
+        all_landmarks_2 = fill_None_from_landmarks(pose_landmarker_results_2)
         height_2, width_2 = st.session_state['estimate_class'].last_shape
 
 
@@ -338,6 +333,8 @@ elif page_option=="Video Compare":
                 video_bytes = video_file.read()
                 st.video(video_bytes)
 else:
+    threshold = st.sidebar.slider('feedback threshold: ', 0, 60, value=30) # 보여질 동영상의 프레임 설정
+
     # 비디오 파일 업로드
     video_1 = st.file_uploader("video_1", type=["mp4", "mov", "avi", "mkv"])
     video_2 = st.file_uploader("video_2", type=["mp4", "mov", "avi", "mkv"])
@@ -353,7 +350,6 @@ else:
             temp_filepath_2 = temp_file_2.name
         
         if st.session_state["video_names"][0] != video_1.name or st.session_state['feedback_info_1'] is None:
-            st.session_state['estimate_class'].reset_detector()
             pose_landmarker_results1, keypoints1, frames1, fps1 = st.session_state['estimate_class'].estimPose_video_for_dtw(temp_filepath_1)
             height1, width1 = st.session_state['estimate_class'].last_shape
             # session state 설정
@@ -363,7 +359,6 @@ else:
             pose_landmarker_results1, keypoints1, frames1, fps1, height1, width1 = st.session_state['feedback_info_1']
         
         if st.session_state["video_names"][1] != video_2.name or st.session_state['feedback_info_2'] is None:
-            st.session_state['estimate_class'].reset_detector()
             pose_landmarker_results2, keypoints2, frames2, fps2 = st.session_state['estimate_class'].estimPose_video_for_dtw(temp_filepath_2)
             height2, width2 = st.session_state['estimate_class'].last_shape
             # session state 설정
@@ -422,8 +417,10 @@ else:
         )
 
         # min max normalize for all frames
-        all_landmarks1 = fill_None_from_landmarks(detector.get_pose_landmark_from_detect_result(pose_landmarker_results1))
-        all_landmarks2 = fill_None_from_landmarks(detector.get_pose_landmark_from_detect_result(pose_landmarker_results2))
+        pose_landmarker_results1 = detector.get_pose_landmark_from_detect_result(pose_landmarker_results1)
+        pose_landmarker_results2 = detector.get_pose_landmark_from_detect_result(pose_landmarker_results2)
+        all_landmarks1 = fill_None_from_landmarks(pose_landmarker_results1)
+        all_landmarks2 = fill_None_from_landmarks(pose_landmarker_results2)
         normalized_all_landmarks1 = scoring.normalize_landmarks_to_range_by_mean(
             np.array([scoring.refine_landmarks(l) for l in all_landmarks2]), np.array([scoring.refine_landmarks(l) for l in all_landmarks1])
         )
@@ -435,7 +432,7 @@ else:
             idx1 = get_center_pair_frames(pairs, idx2)
             random_matched_list.append(idx1)
             
-            for i, landmarks in enumerate(pose_landmarker_results1[idx1].pose_landmarks[0]):
+            for i, landmarks in enumerate(pose_landmarker_results1[idx1]):
                 landmarks.x = normalized_all_landmarks1[idx1, i, 0]
                 landmarks.y = normalized_all_landmarks1[idx1, i, 1]
                 landmarks.z = normalized_all_landmarks1[idx1, i, 2]
@@ -485,7 +482,7 @@ else:
 
             user_pose_landmarks_json = extract_pose_landmarks(user_landmark, width2, height2)
             target_pose_landmarks_json = extract_pose_landmarks(target_landmark, width1, height1)
-            _, feedback = json_to_prompt(target_pose_landmarks_json, user_pose_landmarks_json)
+            _, feedback = json_to_prompt(target_pose_landmarks_json, user_pose_landmarks_json, threshold=threshold)
 
             col1, col2 = st.columns(2)
             with col1:

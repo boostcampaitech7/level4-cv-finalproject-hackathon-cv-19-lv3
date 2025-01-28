@@ -10,11 +10,10 @@ import pandas as pd
 
 
 def compare_video_pair(right_video_path, wrong_video_path, frame_interval=0.5):
-    estimate_class = PoseDetector(model_size=2)
+    estimate_class = PoseDetector()
     right_pose_landmarker_results, right_keypoints, right_frames, right_fps = estimate_class.estimPose_video_for_dtw(right_video_path)
     right_shape = estimate_class.last_shape
 
-    estimate_class.reset_detector()
     wrong_pose_landmarker_results, wrong_keypoints, wrong_frames, wrong_fps = estimate_class.estimPose_video_for_dtw(wrong_video_path)
     wrong_shape = estimate_class.last_shape
     
@@ -28,8 +27,8 @@ def compare_video_pair(right_video_path, wrong_video_path, frame_interval=0.5):
     )
 
     # keypoint 결과 저장하기 편하도록 정제하는 과정
-    right_pose_landmarker_results = fill_None_from_landmarks(get_pose_landmark_from_detect_result(right_pose_landmarker_results))
-    wrong_pose_landmarker_results = fill_None_from_landmarks(get_pose_landmark_from_detect_result(wrong_pose_landmarker_results))
+    right_pose_landmarker_results = fill_None_from_landmarks(right_pose_landmarker_results)
+    wrong_pose_landmarker_results = fill_None_from_landmarks(wrong_pose_landmarker_results)
     
     # 매치된 pair끼리 frame, keypoint 저장
     matched_dict_list = []
@@ -99,7 +98,8 @@ def make_dataset(matched_dict_list, system_prompt, start_CID=0):
         
         for k, v in feedbacks.items():
             output_sentence += f"{k}: {v}\n"
-        
+        output_sentence += "나머지 자세는 모두 완벽합니다! 앞으로도 함께 노력해봐요!"
+
         df["Text"].append(input_sentence)
         df["Completion"].append(output_sentence)
     
