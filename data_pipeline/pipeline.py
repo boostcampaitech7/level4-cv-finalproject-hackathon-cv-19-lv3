@@ -1,6 +1,8 @@
-from ..st_demo.detector import PoseDetector, get_pose_landmark_from_detect_result
-from ..st_demo.similarity_with_frames import *
-from ..st_demo.util import fill_None_from_landmarks
+from ..dance_scoring.detector import PoseDetector, get_pose_landmark_from_detect_result
+from ..dance_scoring.similarity_with_frames import *
+from ..dance_scoring.util import fill_None_from_landmarks
+from ..prompting.pose_compare import extract_pose_landmarks
+from ..prompting.pose_feedback import json_to_prompt
 
 
 def compare_video_pair(right_video_path, wrong_video_path, frame_interval=0.5):
@@ -45,3 +47,14 @@ def compare_video_pair(right_video_path, wrong_video_path, frame_interval=0.5):
         })
     
     return matched_dict_list
+
+def get_feedback_from_keypoints(match_info_dict):
+    # dictionary로부터 필요한 정보 가져오기
+    right_keypoint, right_shape = match_info_dict['right_keypoint'], match_info_dict['right_shape']
+    wrong_keypoint, wrong_shape = match_info_dict['wrong_keypoint'], match_info_dict['wrong_shape']
+
+    # 사전정의된 알고리즘에 따라 관절 각도 정보를 dictionary로 가져옴
+    right_pose_json = extract_pose_landmarks(right_keypoint, right_shape[1], right_shape[0])
+    wrong_pose_json = extract_pose_landmarks(wrong_keypoint, wrong_shape[1], wrong_shape[0])
+
+    # 각도 정보를 비교하여
