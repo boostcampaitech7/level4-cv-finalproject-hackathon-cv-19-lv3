@@ -38,6 +38,8 @@ def generate_feedback(feature_differences, threshold = 30):
             elif feature in ["left_knee_angle_difference", "right_knee_angle_difference"]:
                 side = "left" if "left" in feature else "right"
                 feedback_dict[feature.replace("_angle_difference", "")] = f"Straighten your {side} knee." if difference > 0 else f"Bend your {side} knee."
+        else:
+            feedback_dict[feature.replace("_angle_difference", "").replace("_difference", "")] = "perfectly matched"
     
     # If no features exceed the threshold, return a default success message
     if not feedback_dict:
@@ -81,6 +83,8 @@ def generate_korean_feedback(feature_differences, threshold = 30):
             elif feature in ["left_knee_angle_difference", "right_knee_angle_difference"]:
                 side = "왼쪽" if "left" in feature else "오른쪽"
                 feedback_dict[feature.replace("_angle_difference", "")] = f"{side} 무릎을 펴세요." if difference > 0 else f"{side} 무릎을 구부리세요."
+        else:
+            feedback_dict[feature.replace("_angle_difference", "").replace("_difference", "")] = "완벽합니다."
     
     # 기준값을 초과한 특징이 없으면 기본 성공 메시지 반환
     if not feedback_dict:

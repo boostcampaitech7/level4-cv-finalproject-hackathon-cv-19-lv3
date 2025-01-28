@@ -1,8 +1,12 @@
-from ..dance_scoring.detector import PoseDetector, get_pose_landmark_from_detect_result
-from ..dance_scoring.similarity_with_frames import *
-from ..dance_scoring.util import fill_None_from_landmarks
-from ..prompting.pose_compare import extract_pose_landmarks
-from ..prompting.pose_feedback import json_to_prompt, generate_feedback
+import sys
+sys.path.append("./")
+
+from dance_scoring.detector import PoseDetector, get_pose_landmark_from_detect_result
+from dance_scoring.similarity_with_frames import *
+from dance_scoring.util import fill_None_from_landmarks
+from prompting.pose_compare import extract_pose_landmarks
+from prompting.pose_feedback import json_to_prompt, generate_feedback
+import pandas as pd
 
 
 def compare_video_pair(right_video_path, wrong_video_path, frame_interval=0.5):
@@ -54,6 +58,8 @@ def compare_video_pair(right_video_path, wrong_video_path, frame_interval=0.5):
     
     return matched_dict_list
 
+
+
 def get_feedback_from_keypoints(match_info_dict, feedback_thres = 30):
     # dictionary로부터 필요한 정보 가져오기
     right_keypoint, right_shape = match_info_dict['right_keypoint'], match_info_dict['right_shape']
@@ -68,5 +74,34 @@ def get_feedback_from_keypoints(match_info_dict, feedback_thres = 30):
     feedbacks = generate_feedback(differences, threshold=feedback_thres)
     return differences, feedbacks
 
-def make_dataset(matched_dict_list):
-    pass
+
+
+def make_dataset(matched_dict_list, system_prompt, start_CID=0):
+    df = {
+        "System_Prompt": [], # 지시문
+        "C_ID": [], #Conversation ID
+        "T_ID": [], # Turn ID
+        "Text": [], # 사용자가 말할 것으로 기대되는 모든 발화 내용
+        "Completion": [] # CLOVA Studio가 답해야할 것으로 기대되는 모든 발화 내용
+    }
+
+    for idx, matched_dict in enumerate(matched_dict_list):
+        df["C_ID"].append(idx+start_CID)
+        df["T_ID"].append(0)
+        df["System_Prompt"].append(system_prompt)
+
+        differences, feedbacks = get_feedback_from_keypoints(matched_dict)
+        input_sentence = ""
+        output_sentence = "자세 차이를 기반으로 피드백을 드리도록 하겠습니다.\n"
+
+        for k, v in differences.items():
+            input_sentence += f"{k}: {v}\n"
+        
+        for k, v in feedbacks.items():
+            output_sentence += f"{k}: {v}\n"
+        
+        df["Text"].append(input_sentence)
+        df["Completion"].append(output_sentence)
+    
+    df = pd.DataFrame(df)
+    return df
