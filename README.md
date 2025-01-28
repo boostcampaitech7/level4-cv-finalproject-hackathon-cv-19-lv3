@@ -1,4 +1,3 @@
-# 📋 Hackathon Overview
 ### Naver Boostcamp AI Tech 7th Hackathon with *NAVER CLOUD*
 세상을 이롭게 하고 비즈니스 가치를 창출하는 AI 기술 활용한 사례를 개발해주세요. 
 <br/>
