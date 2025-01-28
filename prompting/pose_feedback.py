@@ -18,8 +18,8 @@ def generate_feedback(feature_differences, threshold = 30):
     # Iterate through the features and generate feedback if the threshold is exceeded
     for feature, difference in feature_differences.items():
         if abs(difference) >= threshold:
-            if feature == "face_difference":
-                feedback_dict["face"] = "Tilt your head to the left." if difference > 0 else "Tilt your head to the right."
+            if feature == "head_difference":
+                feedback_dict["head"] = "Tilt your head to the left." if difference > 0 else "Tilt your head to the right."
             elif feature == "shoulder_difference":
                 if difference > 0:
                     random_choice = random.choice(["Lower your left shoulder.", "Raise your right shoulder."])
@@ -61,8 +61,8 @@ def generate_korean_feedback(feature_differences, threshold = 30):
     # 특징을 반복하며 기준값을 초과하는 경우 피드백 생성
     for feature, difference in feature_differences.items():
         if abs(difference) >= threshold:
-            if feature == "face_difference":
-                feedback_dict["face"] = "머리를 왼쪽으로 기울이세요." if difference > 0 else "머리를 오른쪽으로 기울이세요."
+            if feature == "head_difference":
+                feedback_dict["head"] = "머리를 왼쪽으로 기울이세요." if difference > 0 else "머리를 오른쪽으로 기울이세요."
             elif feature == "shoulder_difference":
                 if difference > 0:
                     random_choice = random.choice(["왼쪽 어깨를 내리세요.", "오른쪽 어깨를 올리세요."])
@@ -114,12 +114,12 @@ def calculate_three_points_angle(point1, point2, point3, eps=1e-7):
 class frame_pose:
     def __init__(self, landmarks_data):
         self.left_ear = np.array([
-            landmarks_data['face']['7']['x'],
-            landmarks_data['face']['7']['y']
+            landmarks_data['head']['7']['x'],
+            landmarks_data['head']['7']['y']
         ])
         self.right_ear = np.array([
-            landmarks_data['face']['8']['x'],
-            landmarks_data['face']['8']['y']
+            landmarks_data['head']['8']['x'],
+            landmarks_data['head']['8']['y']
         ])
         self.left_shoulder = np.array([
             landmarks_data['left_arm']['11']['x'],
@@ -222,7 +222,7 @@ def json_to_prompt(target_landmarks_json_path, compare_landmarks_json_path, resu
     
     # result_json 생성 및 저장
     result_json = {
-        "face_difference": int(pose1.get_ear_height_difference() - pose2.get_ear_height_difference()),
+        "head_difference": int(pose1.get_ear_height_difference() - pose2.get_ear_height_difference()),
         "shoulder_difference": int(pose1.get_shoulder_height_difference() - pose2.get_shoulder_height_difference()),
         "left_arm_angle_difference": int(pose1.get_left_arm_angle() - pose2.get_left_arm_angle()),
         "right_arm_angle_difference": -int(pose1.get_right_arm_angle() - pose2.get_right_arm_angle()),

@@ -52,7 +52,7 @@ def extract_pose_landmarks(result, image_width, image_height):
         
         # 각 부위별 랜드마크 좌표 추출
         landmarks = {
-            "face": {
+            "head": {
                 "0": {
                     "x": int(pose_landmarks[0].x * image_width),
                     "y": int(pose_landmarks[0].y * image_height),
