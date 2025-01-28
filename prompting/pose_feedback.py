@@ -45,6 +45,49 @@ def generate_feedback(feature_differences, threshold = 30):
     
     return feedback_dict
 
+def generate_korean_feedback(feature_differences, threshold = 30):
+    """
+    주어진 특징 차이에 따라 피드백을 생성합니다.
+
+    Parameters:
+    - feature_differences (dict): 특징 차이를 저장한 딕셔너리.
+    - threshold (int): 피드백을 생성할 최소 차이값 기준 (기본값: 30).
+
+    Returns:
+    - dict: 기준값을 초과한 각 특징에 대한 피드백.
+    """
+    feedback_dict = {}  # 각 특징에 대한 피드백 저장
+
+    # 특징을 반복하며 기준값을 초과하는 경우 피드백 생성
+    for feature, difference in feature_differences.items():
+        if abs(difference) >= threshold:
+            if feature == "face_difference":
+                feedback_dict["face"] = "머리를 왼쪽으로 기울이세요." if difference > 0 else "머리를 오른쪽으로 기울이세요."
+            elif feature == "shoulder_difference":
+                if difference > 0:
+                    random_choice = random.choice(["왼쪽 어깨를 내리세요.", "오른쪽 어깨를 올리세요."])
+                else:
+                    random_choice = random.choice(["왼쪽 어깨를 올리세요.", "오른쪽 어깨를 내리세요."])
+                feedback_dict["shoulder"] = random_choice
+            elif feature in ["left_arm_angle_difference", "right_arm_angle_difference"]:
+                side = "왼쪽" if "left" in feature else "오른쪽"
+                feedback_dict[feature.replace("_angle_difference", "")] = f"{side} 팔을 내리세요." if difference > 0 else f"{side} 팔을 올리세요."
+            elif feature in ["left_elbow_angle_difference", "right_elbow_angle_difference"]:
+                side = "왼쪽" if "left" in feature else "오른쪽"
+                feedback_dict[feature.replace("_angle_difference", "")] = f"{side} 팔꿈치를 구부리세요." if difference > 0 else f"{side} 팔꿈치를 펴세요."
+            elif feature in ["left_leg_angle_difference", "right_leg_angle_difference"]:
+                side = "왼쪽" if "left" in feature else "오른쪽"
+                feedback_dict[feature.replace("_angle_difference", "")] = f"{side} 다리를 내리세요." if difference > 0 else f"{side} 다리를 올리세요."
+            elif feature in ["left_knee_angle_difference", "right_knee_angle_difference"]:
+                side = "왼쪽" if "left" in feature else "오른쪽"
+                feedback_dict[feature.replace("_angle_difference", "")] = f"{side} 무릎을 구부리세요." if difference > 0 else f"{side} 무릎을 펴세요."
+    
+    # 기준값을 초과한 특징이 없으면 기본 성공 메시지 반환
+    if not feedback_dict:
+        return {"result": "훌륭합니다! 자세가 완벽합니다!"}
+    
+    return feedback_dict
+
 
 def calculate_two_points_angle(point1, point2):
     vector = point2 - point1
