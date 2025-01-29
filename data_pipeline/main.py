@@ -23,7 +23,7 @@ def parse_arguments():
     
     parser.add_argument(
         "--output_csv_path",
-        default="./output.csv",
+        default="./clova_datasets",
         help="output csv를 저장할 위치"
     )
 
@@ -63,7 +63,8 @@ def main():
         df = make_dataset(matched_dict_list, system_prompt, len(total_result))
         total_result = pd.concat([total_result, df], axis=0, ignore_index=True)
     
-    total_result.to_csv(output_csv_path, index=False, encoding="utf-8-sig")
+    os.mkdir(output_csv_path)
+    total_result.to_csv(os.path.join(output_csv_path, "output.csv"), index=False, encoding="utf-8-sig")
 
 if __name__ == "__main__":
     main()

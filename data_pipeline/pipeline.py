@@ -5,7 +5,7 @@ from dance_scoring.detector import PoseDetector, get_pose_landmark_from_detect_r
 from dance_scoring.similarity_with_frames import *
 from dance_scoring.util import fill_None_from_landmarks
 from prompting.pose_compare import extract_pose_landmarks
-from prompting.pose_feedback import json_to_prompt, generate_feedback
+from prompting.pose_feedback import json_to_prompt, generate_feedback, generate_korean_feedback
 import pandas as pd
 
 
@@ -82,8 +82,7 @@ def get_feedback_from_keypoints(match_info_dict, feedback_thres = 30):
     wrong_pose_json = extract_pose_landmarks(wrong_keypoint, wrong_shape[1], wrong_shape[0])
 
     # 각도 정보를 비교하여 수치적인 차이와 그에 해당하는 자연어 피드백을 dictionary형태로 가져옴
-    differences, _ = json_to_prompt(right_pose_json, wrong_pose_json)
-    feedbacks = generate_feedback(differences, threshold=feedback_thres)
+    differences, feedbacks = json_to_prompt(right_pose_json, wrong_pose_json, threshold=feedback_thres)
     return differences, feedbacks
 
 
