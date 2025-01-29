@@ -91,6 +91,7 @@ class CreateTaskExecutor:
             return res
 
 def train_request(
+    name,
     trainingDatasetBucket = 'cv19-storage',
     trainingDatasetFilePath='test_dataset_1.csv',
     lr='1e-5f',
@@ -100,6 +101,7 @@ def train_request(
     '''
     Storage에 업로드 되어 있는 데이터셋을 기반으로 Tuning을 수행합니다.
     inputs:
+        name : tuning을 어떤 이름으로 저장할지
         trainingDatasetBucket : 버킷 이름
         trainingDatasetFilePath : 버킷을 root로 했을 때 dataset의 경로
         lr : learning rate
@@ -119,7 +121,7 @@ def train_request(
         request_id='<request_id>'
     )
 
-    request_data = {'name': 'generation_task',
+    request_data = {'name': name,
                     'model': 'HCX-003',
                     'tuningType': 'PEFT',
                     'taskType': 'GENERATION',
@@ -187,4 +189,4 @@ def train_check(taskId, api_path='./CLOVA_API'):
 
 if __name__=="__main__":
     # train_check('5s8kvr2k')
-    train_request(trainingDatasetFilePath='test_dataset_noinstruction.csv')
+    train_request("dance_model_test_1", trainingDatasetFilePath='test_dataset_noinstruction_3.csv')
