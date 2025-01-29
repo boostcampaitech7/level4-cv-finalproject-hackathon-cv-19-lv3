@@ -26,9 +26,14 @@ class CompletionExecutor:
 
 def test_simple_chatbot(content, request_id, api_path='./CLOVA_API'):
     '''
-    content : user가 input으로 넣을 문장
-    request_id : 테스트앱 발급 시 나오는 request id 적으면 됩니다
-    api_path : api key와 SubAccount 정보를 담은 파일 경로
+    단순히 서비스앱을 테스트하고 챗봇의 응답을 print하는 함수입니다.
+    inputs:
+        content : user가 input으로 넣을 문장
+        request_id : 테스트앱 발급 시 나오는 request id 적으면 됩니다
+        api_path : api key와 SubAccount 정보를 담은 파일 경로
+    
+    Returns:
+        None
     '''
     with open(api_path, 'r') as f:
         api_info = json.load(f)
@@ -93,11 +98,16 @@ def train_request(
     api_path='./CLOVA_API'
 ):
     '''
-    trainingDatasetBucket : 버킷 이름
-    trainingDatasetFilePath : 버킷을 root로 했을 때 dataset의 경로
-    lr : learning rate
-    epoch : peft로 finetuning할 총 에폭 수
-    api_path : api key와 SubAccount 정보를 담은 파일 경로
+    Storage에 업로드 되어 있는 데이터셋을 기반으로 Tuning을 수행합니다.
+    inputs:
+        trainingDatasetBucket : 버킷 이름
+        trainingDatasetFilePath : 버킷을 root로 했을 때 dataset의 경로
+        lr : learning rate
+        epoch : peft로 finetuning할 총 에폭 수
+        api_path : api key와 SubAccount 정보를 담은 파일 경로
+
+    returns:
+        response_text : 모델 튜닝 요청에 대한 response text
     '''
     with open(api_path, 'r') as f:
         api_info = json.load(f)
@@ -152,8 +162,13 @@ class FindTaskExecutor:
 
 def train_check(taskId, api_path='./CLOVA_API'):
     '''
-    taskId : 확인할 tuning task의 taskId
-    api_path : api key와 SubAccount 정보를 담은 파일 경로 
+    TaskID를 기반으로 훈련 진행 상황을 체크하는 함수입니다.
+    inputs:
+        taskId : 확인할 tuning task의 taskId
+        api_path : api key와 SubAccount 정보를 담은 파일 경로 
+    
+    returns:
+        None
     '''
     with open(api_path, 'r') as f:
         api_info = json.load(f)
