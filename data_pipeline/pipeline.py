@@ -9,6 +9,19 @@ from prompting.pose_feedback import json_to_prompt, generate_feedback
 import pandas as pd
 
 
+english_to_korean = {
+    "head": "머리",
+    "shoulder": "어깨",
+    "left_arm": "왼쪽 팔",
+    "right_arm": "오른쪽 팔",
+    "left_elbow": "왼쪽 팔목",
+    "right_elbow": "오른쪽 팔목",
+    "left_leg": "왼쪽 다리",
+    "right_leg": "오른쪽 다리",
+    "left_knee": "왼쪽 무릎",
+    "right_knee": "오른쪽 무릎"
+}
+
 def compare_video_pair(right_video_path, wrong_video_path, frame_interval=0.5):
     estimate_class = PoseDetector()
     right_pose_landmarker_results, right_keypoints, right_frames, right_fps = estimate_class.estimPose_video_for_dtw(right_video_path)
@@ -74,6 +87,17 @@ def get_feedback_from_keypoints(match_info_dict, feedback_thres = 30):
     return differences, feedbacks
 
 
+def numeric_to_text(numeric_result_json):
+    for k, v in numeric_result_json.items():
+        if v == 0:
+            numeric_result_json[k] = "목표 자세와 차이가 없습니다."
+        else:
+            if 'angle' in k:
+                numeric_result_json[k] = f"목표 자세에 대해 {v}만큼의 각도 차이가 있습니다."
+            else:
+                numeric_result_json[k] = f"목표 자세에 대해 {v}만큼의 높이 차이가 있습니다."
+    return numeric_result_json
+
 
 def make_dataset(matched_dict_list, system_prompt, start_CID=0):
     df = {
@@ -93,12 +117,17 @@ def make_dataset(matched_dict_list, system_prompt, start_CID=0):
         input_sentence = ""
         output_sentence = "자세 차이를 기반으로 피드백을 드리도록 하겠습니다.\n"
 
+        differences = numeric_to_text(differences)
         for k, v in differences.items():
             input_sentence += f"{k}: {v}\n"
         
         for k, v in feedbacks.items():
-            output_sentence += f"{k}: {v}\n"
-        output_sentence += "나머지 자세는 모두 완벽합니다! 앞으로도 함께 노력해봐요!"
+            output_sentence += f"{english_to_korean[k] if k in english_to_korean else k}: {v}\n"
+        
+        if "perfect_msg" not in output_sentence:
+            output_sentence += "나머지 자세는 모두 완벽합니다! 앞으로도 함께 노력해봐요!"
+        else:
+            output_sentence += "대단해요!"
 
         df["Text"].append(input_sentence)
         df["Completion"].append(output_sentence)

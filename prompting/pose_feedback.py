@@ -41,7 +41,7 @@ def generate_feedback(feature_differences, threshold = 30):
     
     # If no features exceed the threshold, return a default success message
     if not feedback_dict:
-        return {"result": "Great job! Your posture is perfect!"}
+        return {"perfect_msg": "Great job! Your posture is perfect!"}
     
     return feedback_dict
 
@@ -84,7 +84,7 @@ def generate_korean_feedback(feature_differences, threshold = 30):
     
     # 기준값을 초과한 특징이 없으면 기본 성공 메시지 반환
     if not feedback_dict:
-        return {"result": "훌륭합니다! 자세가 완벽합니다!"}
+        return {"perfect_msg": "훌륭합니다! 자세가 완벽합니다!"}
     
     return feedback_dict
 
@@ -233,7 +233,8 @@ def json_to_prompt(target_landmarks_json_path, compare_landmarks_json_path, resu
         "left_knee_angle_difference": int(pose1.get_left_knee_angle() - pose2.get_left_knee_angle()),
         "right_knee_angle_difference": -int(pose1.get_right_knee_angle() - pose2.get_right_knee_angle()),
     }
-    natural_language_json = generate_feedback(result_json, threshold=threshold)
+    # natural_language_json = generate_feedback(result_json, threshold=threshold)
+    natural_language_json = generate_korean_feedback(result_json, threshold=threshold)
     return result_json, natural_language_json
 
     # JSON 파일명 생성
