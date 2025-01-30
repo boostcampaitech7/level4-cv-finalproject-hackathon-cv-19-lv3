@@ -1,12 +1,14 @@
 import sys
 sys.path.append("./")
+import pandas as pd
+import numpy as np
+from scipy.stats import norm
 
 from dance_scoring.detector import PoseDetector, get_pose_landmark_from_detect_result
 from dance_scoring.similarity_with_frames import *
 from dance_scoring.util import fill_None_from_landmarks
 from prompting.pose_compare import extract_pose_landmarks
 from prompting.pose_feedback import json_to_prompt, generate_feedback, generate_korean_feedback
-import pandas as pd
 
 
 english_to_korean = {
@@ -72,7 +74,7 @@ def compare_video_pair(right_video_path, wrong_video_path, frame_interval=0.5):
 
 
 
-def get_feedback_from_keypoints(match_info_dict, feedback_thres = 30):
+def get_feedback_from_keypoints(match_info_dict, threshold = 30):
     # dictionary로부터 필요한 정보 가져오기
     right_keypoint, right_shape = match_info_dict['right_keypoint'], match_info_dict['right_shape']
     wrong_keypoint, wrong_shape = match_info_dict['wrong_keypoint'], match_info_dict['wrong_shape']
@@ -82,7 +84,7 @@ def get_feedback_from_keypoints(match_info_dict, feedback_thres = 30):
     wrong_pose_json = extract_pose_landmarks(wrong_keypoint, wrong_shape[1], wrong_shape[0])
 
     # 각도 정보를 비교하여 수치적인 차이와 그에 해당하는 자연어 피드백을 dictionary형태로 가져옴
-    differences, feedbacks = json_to_prompt(right_pose_json, wrong_pose_json, threshold=feedback_thres)
+    differences, feedbacks = json_to_prompt(right_pose_json, wrong_pose_json, threshold=threshold)
     return differences, feedbacks
 
 
@@ -91,14 +93,11 @@ def numeric_to_text(numeric_result_json):
         if v == 0:
             numeric_result_json[k] = "목표 자세와 차이가 없습니다."
         else:
-            if 'angle' in k:
-                numeric_result_json[k] = f"목표 자세에 대해 {v}만큼의 각도 차이가 있습니다."
-            else:
-                numeric_result_json[k] = f"목표 자세에 대해 {v}만큼의 높이 차이가 있습니다."
+            numeric_result_json[k] = f"목표 자세에 대해 {v}만큼의 각도 차이가 있습니다."
     return numeric_result_json
 
 
-def make_dataset(matched_dict_list, system_prompt, start_CID=0):
+def make_dataset(matched_dict_list, system_prompt, start_CID=0, threshold=30):
     df = {
         "System_Prompt": [], # 지시문
         "C_ID": [], #Conversation ID
@@ -112,16 +111,17 @@ def make_dataset(matched_dict_list, system_prompt, start_CID=0):
         df["T_ID"].append(0)
         df["System_Prompt"].append(system_prompt)
 
-        differences, feedbacks = get_feedback_from_keypoints(matched_dict)
+        differences, feedbacks = get_feedback_from_keypoints(matched_dict, threshold)
         input_sentence = ""
-        output_sentence = "자세 차이를 기반으로 피드백을 드리도록 하겠습니다.\n"
+        output_sentence = "자세 차이를 기반으로 피드백을 드리도록 하겠습니다. "
 
         differences = numeric_to_text(differences)
         for k, v in differences.items():
-            input_sentence += f"{k}: {v}\n"
+            input_sentence += f"{k}: {v}. "
         
         for k, v in feedbacks.items():
-            output_sentence += f"{english_to_korean[k] if k in english_to_korean else k}: {v}\n"
+            # output_sentence += f"{english_to_korean[k] if k in english_to_korean else k}: {v}. "
+            output_sentence += f"{v}. "
         
         if "perfect_msg" not in output_sentence:
             output_sentence += "나머지 자세는 모두 완벽합니다! 앞으로도 함께 노력해봐요!"
@@ -133,3 +133,69 @@ def make_dataset(matched_dict_list, system_prompt, start_CID=0):
     
     df = pd.DataFrame(df)
     return df
+
+# 표준편차를 계산하는 함수
+def calculate_std_dev(threshold):
+    """ threshold 값 내에 들어올 확률이 40%가 되도록 std_dev를 조정 """
+    return threshold / norm.ppf(0.7)  # 0.7은 (0.4 + 0.5), 표준 정규분포에서 해당 누적 확률값을 찾아 사용
+
+# 랜덤 값 생성 함수
+def generate_random_value(mean, min_val, max_val, threshold):
+    std_dev = calculate_std_dev(threshold)
+    while True:
+        value = int(np.random.normal(mean, std_dev))
+        if min_val <= value <= max_val:
+            return value
+
+def make_random_dataset(total_data_cnt, system_prompt, threshold=30):
+    df = {
+        "System_Prompt": [], # 지시문
+        "C_ID": [], #Conversation ID
+        "T_ID": [], # Turn ID
+        "Text": [], # 사용자가 말할 것으로 기대되는 모든 발화 내용
+        "Completion": [] # CLOVA Studio가 답해야할 것으로 기대되는 모든 발화 내용
+    }
+
+    # 범위 정의
+    ranges = {
+        "head_difference": (-70, 70),
+        "shoulder_difference": (-100, 100),
+        "left_arm_angle_difference": (-140, 140),
+        "right_arm_angle_difference": (-140, 140),
+        "left_elbow_angle_difference": (-140, 140),
+        "right_elbow_angle_difference": (-140, 140),
+        "left_leg_angle_difference": (-90, 90),
+        "right_leg_angle_difference": (-90, 90),
+        "left_knee_angle_difference": (-140, 140),
+        "right_knee_angle_difference": (-140, 140),
+    }
+
+
+    for idx in range(total_data_cnt):
+        # 랜덤 값 생성
+        result_json = {key: generate_random_value(0, *ranges[key], threshold) for key in ranges}
+        feedbacks = generate_korean_feedback(result_json, threshold=threshold)
+
+        df["C_ID"].append(idx)
+        df["T_ID"].append(0)
+        df["System_Prompt"].append(system_prompt)
+
+        input_sentence = ""
+        output_sentence = "자세 차이를 기반으로 피드백을 드리도록 하겠습니다. "
+
+        result_json = numeric_to_text(result_json)
+        for k, v in result_json.items():
+            input_sentence += f"{k}: {v} "
+        
+        for k, v in feedbacks.items():
+            output_sentence += f"{v} "
+        
+        if "perfect_msg" not in output_sentence:
+            output_sentence += "나머지 자세는 모두 완벽합니다! 앞으로도 함께 노력해봐요!"
+        else:
+            output_sentence += "대단해요!"
+
+        df["Text"].append(input_sentence)
+        df["Completion"].append(output_sentence)
+    
+    return pd.DataFrame(df)
