@@ -7,6 +7,7 @@ class CompletionExecutor:
         self._host = host
         self._api_key = api_key
         self._request_id = request_id
+        self.res_string = "event:result"
 
     def execute(self, completion_request):
         headers = {
@@ -18,13 +19,19 @@ class CompletionExecutor:
 
         with requests.post(self._host + '/testapp/v1/chat-completions/HCX-003',
                            headers=headers, json=completion_request, stream=True) as r:
+            check = False
             for line in r.iter_lines():
                 if line:
                     line = line.decode("utf-8")
                     print(line)
+                    if check:
+                        return line[5:]
+
+                    if line.startswith(self.res_string):
+                        check = True
 
 
-def test_simple_chatbot(content, request_id, api_path='./CLOVA_API'):
+def test_simple_chatbot(content, request_id, api_path='./CLOVA_API', is_test=True):
     '''
     단순히 서비스앱을 테스트하고 챗봇의 응답을 print하는 함수입니다.
     inputs:
@@ -40,12 +47,12 @@ def test_simple_chatbot(content, request_id, api_path='./CLOVA_API'):
 
     # chatbot prompt
     preset_text = [
-        {"role":"system","content":"피드백이 key, value 쌍으로 주어졌을 때, 이거를 자연스러운 문장으로 연결해줘.\n\n\n[예시 입력 1]\nright_arm: Raise your right arm.\r\nleft_elbow: Bend your left elbow.\r\nright_elbow: Bend your right elbow.\r\n\n[예시 출력 1]\n자세 차이를 기반으로 피드백을 드리도록 하겠습니다.\n오른쪽 팔을 조금 더 들어주시고, 왼쪽 팔목은 좀 더 굽혀주세요. 오른쪽 팔목도 좀 더 굽혀주세요.\r\n나머지 자세는 모두 완벽합니다! 앞으로도 함께 노력해봐요!\n"},
+        {"role":"system","content":"[역할]\r\n피드백이 연속된 단문으로 주어졌을 때, 이걸 자연스러운 문장으로 연결해 줘.\r\n\r\n\r\n[예시 입력 1]\r\n왼쪽 팔을 반시계 방향으로 더 돌리세요. 왼쪽 팔꿈치를 구부리세요. 오른쪽 팔꿈치를 구부리세요. 오른쪽 다리를 반시계 방향으로 더 돌리세요. 왼쪽 무릎을 구부리세요. 좋은 흐름이에요! 이대로 쭉 가봅시다!\r\n\r\n[예시 출력 1]\r\n왼쪽 팔을 반시계 방향으로 천천히 더 돌려주시고, 이제 왼쪽 팔꿈치를 부드럽게 구부려 보세요. 오른쪽 팔꿈치도 함께 구부려주시고, 오른쪽 다리는 반시계 방향으로 조금 더 돌려봅시다. 왼쪽 무릎도 자연스럽게 구부려주세요. 아주 좋아요! 이 흐름을 유지하면서 계속 이어가봅시다. 잘하고 있어요!\n"},
         {"role":"user", "content":content}
     ]
     executor_setting = {
         'host': 'https://clovastudio.stream.ntruss.com',
-        'api_key': api_info['api_key'],
+        'api_key': api_info['test_api_key'] if is_test else api_info['service_api_key'],
         'request_id': request_id
     }
 
@@ -64,7 +71,10 @@ def test_simple_chatbot(content, request_id, api_path='./CLOVA_API'):
         'includeAiFilters': True,
         'seed': 0
     }
-    completion_executor.execute(request_data)
+    result_dict = completion_executor.execute(request_data)
+    result_dict = json.loads(result_dict)
+    content = result_dict['message']['content']
+    return content
 
 
 class CreateTaskExecutor:
@@ -96,7 +106,8 @@ def train_request(
     trainingDatasetFilePath='test_dataset_1.csv',
     lr='1e-5f',
     epoch='8',
-    api_path='./CLOVA_API'
+    api_path='./CLOVA_API',
+    is_test = True
 ):
     '''
     Storage에 업로드 되어 있는 데이터셋을 기반으로 Tuning을 수행합니다.
@@ -117,7 +128,7 @@ def train_request(
     completion_executor = CreateTaskExecutor(
         host='https://clovastudio.stream.ntruss.com',
         uri='/tuning/v2/tasks',
-        api_key=api_info['api_key'],
+        api_key=api_info['test_api_key'] if is_test else api_info['service_api_key'],
         request_id='<request_id>'
     )
 
@@ -162,7 +173,7 @@ class FindTaskExecutor:
         else:
             return res
 
-def train_check(taskId, api_path='./CLOVA_API'):
+def train_check(taskId, api_path='./CLOVA_API', is_test=True):
     '''
     TaskID를 기반으로 훈련 진행 상황을 체크하는 함수입니다.
     inputs:
@@ -178,7 +189,7 @@ def train_check(taskId, api_path='./CLOVA_API'):
     completion_executor = FindTaskExecutor(
         host='https://clovastudio.stream.ntruss.com',
         uri='/tuning/v2/tasks/',
-        api_key=api_info['api_key'],
+        api_key=api_info['test_api_key'] if is_test else api_info['service_api_key'],
         request_id='<request_id>',
         api_path='./CLOVA_API'
     )

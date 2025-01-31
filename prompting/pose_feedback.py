@@ -3,12 +3,13 @@ import json
 import numpy as np
 import random
 
-def generate_feedback(feature_differences, threshold = 30):
+def generate_feedback(feature_differences, threshold=30):
     """
     Generate feedback based on the feature differences provided.
 
     Parameters:
     - feature_differences (dict): Dictionary of feature differences.
+    - threshold (int): Minimum difference required to generate feedback (default: 30).
 
     Returns:
     - dict: Feedback for each feature exceeding the threshold.
@@ -20,29 +21,40 @@ def generate_feedback(feature_differences, threshold = 30):
         if abs(difference) >= threshold:
             if feature == "head_difference":
                 feedback_dict["head"] = "Tilt your head to the left." if difference > 0 else "Tilt your head to the right."
+
             elif feature == "shoulder_difference":
                 if difference > 0:
                     random_choice = random.choice(["Lower your left shoulder.", "Raise your right shoulder."])
                 else:
                     random_choice = random.choice(["Raise your left shoulder.", "Lower your right shoulder."])
                 feedback_dict["shoulder"] = random_choice
+
             elif feature in ["left_arm_angle_difference", "right_arm_angle_difference"]:
                 side = "left" if "left" in feature else "right"
-                feedback_dict[feature.replace("_angle_difference", "")] = f"Lower your {side} arm." if difference > 0 else f"Raise your {side} arm."
+                if difference > 0:
+                    feedback_dict[feature.replace("_angle_difference", "")] = f"Rotate your {side} arm clockwise."
+                else:
+                    feedback_dict[feature.replace("_angle_difference", "")] = f"Rotate your {side} arm counterclockwise."
+
             elif feature in ["left_elbow_angle_difference", "right_elbow_angle_difference"]:
                 side = "left" if "left" in feature else "right"
                 feedback_dict[feature.replace("_angle_difference", "")] = f"Straighten your {side} elbow." if difference > 0 else f"Bend your {side} elbow."
+
             elif feature in ["left_leg_angle_difference", "right_leg_angle_difference"]:
                 side = "left" if "left" in feature else "right"
-                feedback_dict[feature.replace("_angle_difference", "")] = f"Lower your {side} leg." if difference > 0 else f"Raise your {side} leg."
+                if difference > 0:
+                    feedback_dict[feature.replace("_angle_difference", "")] = f"Rotate your {side} leg clockwise."
+                else:
+                    feedback_dict[feature.replace("_angle_difference", "")] = f"Rotate your {side} leg counterclockwise."
+
             elif feature in ["left_knee_angle_difference", "right_knee_angle_difference"]:
                 side = "left" if "left" in feature else "right"
                 feedback_dict[feature.replace("_angle_difference", "")] = f"Straighten your {side} knee." if difference > 0 else f"Bend your {side} knee."
-    
+
     # If no features exceed the threshold, return a default success message
     if not feedback_dict:
         return {"perfect_msg": "Great job! Your posture is perfect!"}
-    
+
     return feedback_dict
 
 def generate_korean_feedback(feature_differences, threshold = 30):
@@ -74,15 +86,9 @@ def generate_korean_feedback(feature_differences, threshold = 30):
             elif feature in ["left_arm_angle_difference", "right_arm_angle_difference"]:
                 side = "왼쪽" if "left" in feature else "오른쪽"
                 if difference > 0:
-                    if difference <= 180:
-                        feedback_dict[feature.replace("_angle_difference", "")] = f"{side} 팔을 시계 방향으로 더 돌리세요."
-                    else:
-                        feedback_dict[feature.replace("_angle_difference", "")] = f"{side} 팔을 반시계 방향으로 더 돌리세요."
+                    feedback_dict[feature.replace("_angle_difference", "")] = f"{side} 팔을 시계 방향으로 더 돌리세요."
                 else:
-                    if abs(difference) <= 180:
-                        feedback_dict[feature.replace("_angle_difference", "")] = f"{side} 팔을 반시계 방향으로 더 돌리세요."
-                    else:
-                        feedback_dict[feature.replace("_angle_difference", "")] = f"{side} 팔을 시계 방향으로 더 돌리세요."
+                    feedback_dict[feature.replace("_angle_difference", "")] = f"{side} 팔을 반시계 방향으로 더 돌리세요."
             
             elif feature in ["left_elbow_angle_difference", "right_elbow_angle_difference"]:
                 side = "왼쪽" if "left" in feature else "오른쪽"
@@ -91,15 +97,9 @@ def generate_korean_feedback(feature_differences, threshold = 30):
             elif feature in ["left_leg_angle_difference", "right_leg_angle_difference"]:
                 side = "왼쪽" if "left" in feature else "오른쪽"
                 if difference > 0:
-                    if difference <= 180:
-                        feedback_dict[feature.replace("_angle_difference", "")] = f"{side} 다리를 시계 방향으로 더 돌리세요."
-                    else:
-                        feedback_dict[feature.replace("_angle_difference", "")] = f"{side} 다리를 반시계 방향으로 더 돌리세요."
+                    feedback_dict[feature.replace("_angle_difference", "")] = f"{side} 다리를 시계 방향으로 더 돌리세요."
                 else:
-                    if abs(difference) <= 180:
-                        feedback_dict[feature.replace("_angle_difference", "")] = f"{side} 다리를 반시계 방향으로 더 돌리세요."
-                    else:
-                        feedback_dict[feature.replace("_angle_difference", "")] = f"{side} 다리를 시계 방향으로 더 돌리세요."
+                    feedback_dict[feature.replace("_angle_difference", "")] = f"{side} 다리를 반시계 방향으로 더 돌리세요."
 
             elif feature in ["left_knee_angle_difference", "right_knee_angle_difference"]:
                 side = "왼쪽" if "left" in feature else "오른쪽"
@@ -256,18 +256,11 @@ def json_to_prompt(target_landmarks_json_path, compare_landmarks_json_path, resu
         "left_knee_angle_difference": int(pose1.get_left_knee_angle() - pose2.get_left_knee_angle()),
         "right_knee_angle_difference": int(pose1.get_right_knee_angle() - pose2.get_right_knee_angle()),
     }
-    # natural_language_json = generate_feedback(result_json, threshold=threshold)
+
+    # difference 절대값이 180보다 큰 경우 부호를 바꿔서 절대값이 180보다 작아지게 만듦
+    for key in ["left_arm_angle_difference", "right_arm_angle_difference", "left_leg_angle_difference", "right_leg_angle_difference"]:
+        if abs(result_json[key]) > 180:
+            result_json[key] = result_json[key] - 360 if result_json[key] > 0 else 360 + result_json[key]
+
     natural_language_json = generate_korean_feedback(result_json, threshold=threshold)
     return result_json, natural_language_json
-
-    # JSON 파일명 생성
-    # if not os.path.exists(result_folder):
-    #     os.mkdir(result_folder)
-    # target_data_name = list(Path(target_landmarks_json_path).parts)[-2]
-    # compare_data_name = list(Path(compare_landmarks_json_path).parts)[-2]
-    # json_file_name = f"{target_data_name.split('_')[0]}_{compare_data_name.split('_')[0]}_{target_data_name.split('_')[-1]}.json"
-    # json_file_path = os.path.join(result_folder, json_file_name)
-
-    # # JSON 파일 저장
-    # with open(json_file_path, 'w') as f:
-    #     json.dump(result_json, f, indent=4)
