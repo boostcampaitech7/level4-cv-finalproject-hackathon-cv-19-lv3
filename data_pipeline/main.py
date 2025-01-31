@@ -6,6 +6,13 @@ from copy import deepcopy
 from pipeline import compare_video_pair, make_dataset, make_random_dataset
 from tqdm import tqdm
 
+def str_to_bool(value):
+    if value.lower() in ("True", "true", "t", "yes", "y", "1"):
+        return True
+    elif value.lower() in ("False", "false", "f", "no", "n", "0"):
+        return False
+    else:
+        raise argparse.ArgumentTypeError("Boolean value expected.")
 
 def parse_arguments():
     parser = argparse.ArgumentParser()
@@ -13,13 +20,13 @@ def parse_arguments():
         "--challenge_path",
         type=str, 
         default="",
-        help="챌린지에 대한 right영상 1개와 여러 wrong 영상이 위치한 폴더 경로"
+        help="챌린지에 대한 right영상 1개와 여러 wrong 영상이 위치한 폴더 경로. 빈 문자열일 경우 랜덤 생성이 수행됨."
     )
 
     parser.add_argument(
         "--system_prompt_path",
         type=str,
-        default="./prompting/structured_system_prompt.txt",
+        default="./prompting/structured_system_prompt_short.txt",
         help="system prompt로 사용할 지시문이 담겨있는 txt파일의 경로"
     )
     
@@ -32,7 +39,7 @@ def parse_arguments():
 
     parser.add_argument(
         "--instruction_dataset",
-        type=bool,
+        type=str_to_bool,
         default=False,
         help="데이터셋 구성을 instruction dataset으로 할 것인지 아닌지 여부(차이점은 clova docs 참고)"
     )

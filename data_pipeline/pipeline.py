@@ -212,7 +212,8 @@ def make_random_dataset(total_data_cnt, system_prompt, threshold=30):
         df["System_Prompt"].append(system_prompt)
 
         # input prompt를 dict으로부터 작성
-        input_sentence = input_prompt_from_dict(numeric_to_text(result_json))
+        # input_sentence = input_prompt_from_dict(numeric_to_text(result_json))
+        input_sentence = str(numeric_to_text(result_json))
 
         # output sentence를 dict로부터 작성
         output_sentence = output_sentence_from_dict(feedbacks)
