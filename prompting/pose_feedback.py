@@ -262,5 +262,4 @@ def json_to_prompt(target_landmarks_json_path, compare_landmarks_json_path, resu
         if abs(result_json[key]) > 180:
             result_json[key] = result_json[key] - 360 if result_json[key] > 0 else 360 + result_json[key]
 
-    natural_language_json = generate_korean_feedback(result_json, threshold=threshold)
-    return result_json, natural_language_json
+    return result_json

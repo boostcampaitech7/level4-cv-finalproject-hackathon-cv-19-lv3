@@ -74,6 +74,14 @@ def compare_video_pair(right_video_path, wrong_video_path, frame_interval=0.5):
     
     return matched_dict_list
 
+def delete_low_difference(result_dict, threshold):
+    low_diff_keys = []
+    for k, v in result_dict.items():
+        if abs(v) < threshold:
+            low_diff_keys.append(k)
+    
+    for k in low_diff_keys:
+        del result_dict[k]
 
 
 def get_feedback_from_keypoints(match_info_dict, threshold = 30):
@@ -86,8 +94,8 @@ def get_feedback_from_keypoints(match_info_dict, threshold = 30):
     wrong_pose_json = extract_pose_landmarks(wrong_keypoint, wrong_shape[1], wrong_shape[0])
 
     # 각도 정보를 비교하여 수치적인 차이와 그에 해당하는 자연어 피드백을 dictionary형태로 가져옴
-    differences, feedbacks = json_to_prompt(right_pose_json, wrong_pose_json, threshold=threshold)
-    return differences, feedbacks
+    differences = json_to_prompt(right_pose_json, wrong_pose_json, threshold=threshold)
+    return differences
 
 
 def numeric_to_text(numeric_result_json):
@@ -134,7 +142,7 @@ def output_sentence_from_dict(feedback_dict):
     return output_sentence
 
 
-def make_dataset(matched_dict_list, system_prompt, start_CID=0, threshold=30):
+def make_dataset(matched_dict_list, system_prompt, start_CID=0, threshold=30, ignore_low_difference=True, do_numeric_to_text=False):
     df = {
         "System_Prompt": [], # 지시문
         "C_ID": [], #Conversation ID
@@ -144,11 +152,12 @@ def make_dataset(matched_dict_list, system_prompt, start_CID=0, threshold=30):
     }
 
     for idx, matched_dict in enumerate(matched_dict_list):
-        df["C_ID"].append(idx+start_CID)
-        df["T_ID"].append(0)
-        df["System_Prompt"].append(system_prompt)
+        differences = get_feedback_from_keypoints(matched_dict, threshold)
+        feedbacks = generate_korean_feedback(differences, threshold=threshold)
 
-        differences, feedbacks = get_feedback_from_keypoints(matched_dict, threshold)
+        # 낮은 값들 거르는지 여부 보고 input에서 제외
+        if ignore_low_difference:
+            delete_low_difference(differences, threshold)
 
         # input prompt를 json으로부터 작성
         input_sentence = input_prompt_from_dict(numeric_to_text(differences))
@@ -156,6 +165,9 @@ def make_dataset(matched_dict_list, system_prompt, start_CID=0, threshold=30):
         # output sentence를 dict로부터 작성
         output_sentence = output_sentence_from_dict(feedbacks)
 
+        df["C_ID"].append(idx+start_CID)
+        df["T_ID"].append(0)
+        df["System_Prompt"].append(system_prompt)
         df["Text"].append(input_sentence)
         df["Completion"].append(output_sentence)
     
@@ -178,7 +190,7 @@ def generate_random_value(mean, min_val, max_val, threshold):
             return value
 
 
-def make_random_dataset(total_data_cnt, system_prompt, threshold=30):
+def make_random_dataset(total_data_cnt, system_prompt, threshold=30, ignore_low_difference=True, do_numeric_to_text=False):
     df = {
         "System_Prompt": [], # 지시문
         "C_ID": [], #Conversation ID
@@ -204,21 +216,28 @@ def make_random_dataset(total_data_cnt, system_prompt, threshold=30):
 
     for idx in tqdm(range(total_data_cnt)):
         # 랜덤 값 생성
-        result_json = {key: generate_random_value(0, *ranges[key], threshold) for key in ranges}
-        feedbacks = generate_korean_feedback(result_json, threshold=threshold)
+        differences = {key: generate_random_value(0, *ranges[key], threshold) for key in ranges}
+        feedbacks = generate_korean_feedback(differences, threshold=threshold)
 
-        df["C_ID"].append(idx)
-        df["T_ID"].append(0)
-        df["System_Prompt"].append(system_prompt)
+        # 낮은 값들 거르는지 여부 보고 input에서 제외
+        if ignore_low_difference:
+            delete_low_difference(differences, threshold)
 
         # input prompt를 dict으로부터 작성
-        # input_sentence = input_prompt_from_dict(numeric_to_text(result_json))
-        input_sentence = str(numeric_to_text(result_json))
+        if do_numeric_to_text:
+            input_sentence = str(numeric_to_text(differences))
+        else:
+            input_sentence = str(differences)
 
         # output sentence를 dict로부터 작성
         output_sentence = output_sentence_from_dict(feedbacks)
 
+        df["C_ID"].append(idx)
+        df["T_ID"].append(0)
+        df["System_Prompt"].append(system_prompt)
         df["Text"].append(input_sentence)
         df["Completion"].append(output_sentence)
     
-    return pd.DataFrame(df)
+
+    df = pd.DataFrame(df)
+    return df

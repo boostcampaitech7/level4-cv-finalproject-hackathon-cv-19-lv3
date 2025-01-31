@@ -51,6 +51,20 @@ def parse_arguments():
         help='얼마만큼의 각도차이가 나야 피드백 대상으로 선정되는지를 정하는 threshold값'
     )
 
+    parser.add_argument(
+        '--ignore_low_difference',
+        type=str_to_bool,
+        default=True,
+        help="threshold보다 낮은 difference의 정보를 input에 넣을지 여부."
+    )
+
+    parser.add_argument(
+        '--do_numeric_to_text',
+        type=str_to_bool,
+        default=False,
+        help="수치를 문장화시킬지 여부."
+    )
+
     args = parser.parse_args()
     return args
 
@@ -61,6 +75,8 @@ def main():
     output_csv_path = args.output_csv_path
     instruction_dataset = args.instruction_dataset
     threshold = args.threshold
+    ignore_low_difference = args.ignore_low_difference
+    do_numeric_to_text= args.do_numeric_to_text
 
     # system prompt 가져오기
     if system_prompt_path:
@@ -70,13 +86,7 @@ def main():
     else:
         system_prompt = ''
 
-    total_result = pd.DataFrame({
-        "System_Prompt": [], # 지시문
-        "C_ID": [], #Conversation ID
-        "T_ID": [], # Turn ID
-        "Text": [], # 사용자가 말할 것으로 기대되는 모든 발화 내용
-        "Completion": [] # CLOVA Studio가 답해야할 것으로 기대되는 모든 발화 내용
-    })
+    total_result = None
 
     # 지정 폴더에서 right video, wrong videos 경로 가져오기
     if challenge_path:
@@ -90,8 +100,11 @@ def main():
         # wrong video와 right video를 하나씩 비교하며 dataframe 완성하기
         for wrong_video_path in tqdm(wrong_mp4_list):
             matched_dict_list = compare_video_pair(right_mp4_path, wrong_video_path, frame_interval=0.5)
-            df = make_dataset(matched_dict_list, system_prompt, len(total_result), threshold=threshold)
-            total_result = pd.concat([total_result, df], axis=0, ignore_index=True)
+            df = make_dataset(matched_dict_list, system_prompt, len(total_result), threshold=threshold, ignore_low_difference=ignore_low_difference, do_numeric_to_text=do_numeric_to_text)
+            if total_result:
+                total_result = pd.concat([total_result, df], axis=0, ignore_index=True)
+            else:
+                total_result = df
 
     # 랜덤하게 데이터 생성하는 파트
     else:
@@ -101,9 +114,8 @@ def main():
             random_cnt = int(random_cnt)
         except:
             random_cnt = 1000
-        total_result = pd.concat([total_result, make_random_dataset(random_cnt, system_prompt, threshold=threshold)], axis=0, ignore_index=True)
+        total_result = make_random_dataset(random_cnt, system_prompt, threshold=threshold, ignore_low_difference=ignore_low_difference, do_numeric_to_text=do_numeric_to_text)
 
-    
     # instruction 형식이 아닌 경우 text, completion 열만 필요함
     if not instruction_dataset:
         total_result = total_result[['Text', 'Completion']]
