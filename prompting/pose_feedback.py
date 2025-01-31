@@ -63,21 +63,44 @@ def generate_korean_feedback(feature_differences, threshold = 30):
         if abs(difference) >= threshold:
             if feature == "head_difference":
                 feedback_dict["head"] = "머리를 왼쪽으로 기울이세요." if difference > 0 else "머리를 오른쪽으로 기울이세요."
+
             elif feature == "shoulder_difference":
                 if difference > 0:
                     random_choice = random.choice(["왼쪽 어깨를 내리세요.", "오른쪽 어깨를 올리세요."])
                 else:
                     random_choice = random.choice(["왼쪽 어깨를 올리세요.", "오른쪽 어깨를 내리세요."])
                 feedback_dict["shoulder"] = random_choice
+
             elif feature in ["left_arm_angle_difference", "right_arm_angle_difference"]:
                 side = "왼쪽" if "left" in feature else "오른쪽"
-                feedback_dict[feature.replace("_angle_difference", "")] = f"{side} 팔을 내리세요." if difference > 0 else f"{side} 팔을 올리세요."
+                if difference > 0:
+                    if difference <= 180:
+                        feedback_dict[feature.replace("_angle_difference", "")] = f"{side} 팔을 시계 방향으로 더 돌리세요."
+                    else:
+                        feedback_dict[feature.replace("_angle_difference", "")] = f"{side} 팔을 반시계 방향으로 더 돌리세요."
+                else:
+                    if abs(difference) <= 180:
+                        feedback_dict[feature.replace("_angle_difference", "")] = f"{side} 팔을 반시계 방향으로 더 돌리세요."
+                    else:
+                        feedback_dict[feature.replace("_angle_difference", "")] = f"{side} 팔을 시계 방향으로 더 돌리세요."
+            
             elif feature in ["left_elbow_angle_difference", "right_elbow_angle_difference"]:
                 side = "왼쪽" if "left" in feature else "오른쪽"
                 feedback_dict[feature.replace("_angle_difference", "")] = f"{side} 팔꿈치를 펴세요." if difference > 0 else f"{side} 팔꿈치를 구부리세요."
+
             elif feature in ["left_leg_angle_difference", "right_leg_angle_difference"]:
                 side = "왼쪽" if "left" in feature else "오른쪽"
-                feedback_dict[feature.replace("_angle_difference", "")] = f"{side} 다리를 내리세요." if difference > 0 else f"{side} 다리를 올리세요."
+                if difference > 0:
+                    if difference <= 180:
+                        feedback_dict[feature.replace("_angle_difference", "")] = f"{side} 다리를 시계 방향으로 더 돌리세요."
+                    else:
+                        feedback_dict[feature.replace("_angle_difference", "")] = f"{side} 다리를 반시계 방향으로 더 돌리세요."
+                else:
+                    if abs(difference) <= 180:
+                        feedback_dict[feature.replace("_angle_difference", "")] = f"{side} 다리를 반시계 방향으로 더 돌리세요."
+                    else:
+                        feedback_dict[feature.replace("_angle_difference", "")] = f"{side} 다리를 시계 방향으로 더 돌리세요."
+
             elif feature in ["left_knee_angle_difference", "right_knee_angle_difference"]:
                 side = "왼쪽" if "left" in feature else "오른쪽"
                 feedback_dict[feature.replace("_angle_difference", "")] = f"{side} 무릎을 펴세요." if difference > 0 else f"{side} 무릎을 구부리세요."
@@ -225,13 +248,13 @@ def json_to_prompt(target_landmarks_json_path, compare_landmarks_json_path, resu
         "head_difference": int(pose1.get_ear_height_difference() - pose2.get_ear_height_difference()),
         "shoulder_difference": int(pose1.get_shoulder_height_difference() - pose2.get_shoulder_height_difference()),
         "left_arm_angle_difference": int(pose1.get_left_arm_angle() - pose2.get_left_arm_angle()),
-        "right_arm_angle_difference": -int(pose1.get_right_arm_angle() - pose2.get_right_arm_angle()),
+        "right_arm_angle_difference": int(pose1.get_right_arm_angle() - pose2.get_right_arm_angle()),
         "left_elbow_angle_difference": int(pose1.get_left_elbow_angle() - pose2.get_left_elbow_angle()),
         "right_elbow_angle_difference": int(pose1.get_right_elbow_angle() - pose2.get_right_elbow_angle()),
         "left_leg_angle_difference": int(pose1.get_left_leg_angle() - pose2.get_left_leg_angle()),
         "right_leg_angle_difference": int(pose1.get_right_leg_angle() - pose2.get_right_leg_angle()),
         "left_knee_angle_difference": int(pose1.get_left_knee_angle() - pose2.get_left_knee_angle()),
-        "right_knee_angle_difference": -int(pose1.get_right_knee_angle() - pose2.get_right_knee_angle()),
+        "right_knee_angle_difference": int(pose1.get_right_knee_angle() - pose2.get_right_knee_angle()),
     }
     # natural_language_json = generate_feedback(result_json, threshold=threshold)
     natural_language_json = generate_korean_feedback(result_json, threshold=threshold)

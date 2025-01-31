@@ -1,4 +1,6 @@
 import sys
+import random
+from tqdm import tqdm
 sys.path.append("./")
 import pandas as pd
 import numpy as np
@@ -97,6 +99,41 @@ def numeric_to_text(numeric_result_json):
     return numeric_result_json
 
 
+def input_prompt_from_dict(difference_dict):
+    '''
+    difference_dict : {head_difference: 50, ...}과 같은 형태의 dictionary
+    '''
+    input_sentence = ''
+    for k, v in difference_dict.items():
+        input_sentence += f"{' '.join(k.split('_'))}: {v} "
+    return input_sentence
+
+
+def output_sentence_from_dict(feedback_dict):
+    endings = [
+        "나머지 자세는 완벽해요! 계속해서 발전해봅시다!",
+        "좋은 자세입니다! 앞으로도 꾸준히 연습해볼까요?",
+        "아주 좋아요! 이렇게만 하면 더욱 완벽해질 거예요!",
+        "지금도 훌륭해요! 조금씩 더 다듬어 가봅시다!",
+        "완벽에 가까워지고 있어요! 계속 노력해볼게요!",
+        "이 자세 유지하면서 다음 단계로 가볼까요?",
+        "점점 더 좋아지고 있어요! 계속 밀고 나가봅시다!",
+        "좋은 흐름이에요! 이대로 쭉 가봅시다!",
+        "자세가 많이 발전했어요! 다음 목표를 향해 가볼까요?",
+        "멋진 자세예요! 앞으로도 함께 최선을 다해봐요!"
+    ]
+
+    output_sentence = "자세 차이를 기반으로 피드백을 드리도록 하겠습니다. "
+    for k, v in feedback_dict.items():
+        output_sentence += f"{v} "
+    
+    if "perfect_msg" not in feedback_dict:
+        output_sentence += random.choice(endings)
+    else:
+        output_sentence += "대단해요!"
+    return output_sentence
+
+
 def make_dataset(matched_dict_list, system_prompt, start_CID=0, threshold=30):
     df = {
         "System_Prompt": [], # 지시문
@@ -112,21 +149,12 @@ def make_dataset(matched_dict_list, system_prompt, start_CID=0, threshold=30):
         df["System_Prompt"].append(system_prompt)
 
         differences, feedbacks = get_feedback_from_keypoints(matched_dict, threshold)
-        input_sentence = ""
-        output_sentence = "자세 차이를 기반으로 피드백을 드리도록 하겠습니다. "
 
-        differences = numeric_to_text(differences)
-        for k, v in differences.items():
-            input_sentence += f"{k}: {v}. "
-        
-        for k, v in feedbacks.items():
-            # output_sentence += f"{english_to_korean[k] if k in english_to_korean else k}: {v}. "
-            output_sentence += f"{v}. "
-        
-        if "perfect_msg" not in output_sentence:
-            output_sentence += "나머지 자세는 모두 완벽합니다! 앞으로도 함께 노력해봐요!"
-        else:
-            output_sentence += "대단해요!"
+        # input prompt를 json으로부터 작성
+        input_sentence = input_prompt_from_dict(numeric_to_text(differences))
+
+        # output sentence를 dict로부터 작성
+        output_sentence = output_sentence_from_dict(feedbacks)
 
         df["Text"].append(input_sentence)
         df["Completion"].append(output_sentence)
@@ -134,10 +162,12 @@ def make_dataset(matched_dict_list, system_prompt, start_CID=0, threshold=30):
     df = pd.DataFrame(df)
     return df
 
+
 # 표준편차를 계산하는 함수
 def calculate_std_dev(threshold):
     """ threshold 값 내에 들어올 확률이 40%가 되도록 std_dev를 조정 """
     return threshold / norm.ppf(0.7)  # 0.7은 (0.4 + 0.5), 표준 정규분포에서 해당 누적 확률값을 찾아 사용
+
 
 # 랜덤 값 생성 함수
 def generate_random_value(mean, min_val, max_val, threshold):
@@ -146,6 +176,7 @@ def generate_random_value(mean, min_val, max_val, threshold):
         value = int(np.random.normal(mean, std_dev))
         if min_val <= value <= max_val:
             return value
+
 
 def make_random_dataset(total_data_cnt, system_prompt, threshold=30):
     df = {
@@ -171,7 +202,7 @@ def make_random_dataset(total_data_cnt, system_prompt, threshold=30):
     }
 
 
-    for idx in range(total_data_cnt):
+    for idx in tqdm(range(total_data_cnt)):
         # 랜덤 값 생성
         result_json = {key: generate_random_value(0, *ranges[key], threshold) for key in ranges}
         feedbacks = generate_korean_feedback(result_json, threshold=threshold)
@@ -180,20 +211,11 @@ def make_random_dataset(total_data_cnt, system_prompt, threshold=30):
         df["T_ID"].append(0)
         df["System_Prompt"].append(system_prompt)
 
-        input_sentence = ""
-        output_sentence = "자세 차이를 기반으로 피드백을 드리도록 하겠습니다. "
+        # input prompt를 dict으로부터 작성
+        input_sentence = input_prompt_from_dict(numeric_to_text(result_json))
 
-        result_json = numeric_to_text(result_json)
-        for k, v in result_json.items():
-            input_sentence += f"{k}: {v} "
-        
-        for k, v in feedbacks.items():
-            output_sentence += f"{v} "
-        
-        if "perfect_msg" not in output_sentence:
-            output_sentence += "나머지 자세는 모두 완벽합니다! 앞으로도 함께 노력해봐요!"
-        else:
-            output_sentence += "대단해요!"
+        # output sentence를 dict로부터 작성
+        output_sentence = output_sentence_from_dict(feedbacks)
 
         df["Text"].append(input_sentence)
         df["Completion"].append(output_sentence)

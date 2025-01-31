@@ -19,7 +19,7 @@ def parse_arguments():
     parser.add_argument(
         "--system_prompt_path",
         type=str,
-        default="./prompting/system_prompt.txt",
+        default="./prompting/structured_system_prompt.txt",
         help="system prompt로 사용할 지시문이 담겨있는 txt파일의 경로"
     )
     
