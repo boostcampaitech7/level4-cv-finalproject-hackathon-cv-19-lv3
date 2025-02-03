@@ -12,8 +12,8 @@ from dance_scoring.detector import post_process_pose_landmarks
 from dance_scoring.util import draw_landmarks_on_image, get_closest_frame
 from dance_scoring.similarity_with_frames import get_normalized_keypoints, calculate_similarity_with_visualization, make_euclidean_similarity, make_cosine_similarity
 from dance_scoring.similarity_with_frames import get_center_pair_frames
-from prompting.pose_compare import extract_pose_landmarks
-from prompting.pose_feedback import json_to_prompt, generate_korean_feedback
+from feedback.pose_compare import extract_pose_landmarks
+from feedback.pose_feedback import json_to_prompt, generate_korean_feedback
 
 
 # main title
