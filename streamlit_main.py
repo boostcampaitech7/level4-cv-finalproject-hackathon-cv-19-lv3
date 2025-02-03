@@ -10,7 +10,7 @@ from copy import deepcopy
 from dance_scoring import detector, util, keypoint_map, scoring
 from dance_scoring.detector import post_process_pose_landmarks
 from dance_scoring.util import draw_landmarks_on_image, get_closest_frame
-from dance_scoring.similarity_with_frames import l2_normalize, calculate_similarity_with_visualization, make_euclidean_similarity, make_cosine_similarity
+from dance_scoring.similarity_with_frames import get_normalized_keypoints, calculate_similarity_with_visualization, make_euclidean_similarity, make_cosine_similarity
 from dance_scoring.similarity_with_frames import get_center_pair_frames
 from prompting.pose_compare import extract_pose_landmarks
 from prompting.pose_feedback import json_to_prompt, generate_korean_feedback
@@ -64,7 +64,7 @@ if page_option is None or page_option == page_options[0]:
         # OpenCV로 비디오 읽고 추론
         st.info("모델로 비디오 keypoint를 추론하는 중입니다.")
         estimation_start_time = time.perf_counter()
-        original_video_frames, pose_landmarker_results = st.session_state['estimate_class'].estimPose_video(temp_filepath)
+        original_video_frames, pose_landmarker_results, img_shape, fps = st.session_state['estimate_class'].estimPose_video(temp_filepath)
 
         pose_landmarker_results = post_process_pose_landmarks(pose_landmarker_results)
         pose_landmarker_results_dict = util.landmarks_to_dict(pose_landmarker_results)
@@ -267,14 +267,14 @@ elif page_option=="Video Compare":
             temp_filepath_2 = temp_file_2.name
         
         # 1번 비디오 landmarks 추출
-        original_video_frames_1, pose_landmarker_results_1 = st.session_state['estimate_class'].estimPose_video(temp_filepath_1)
+        original_video_frames_1, pose_landmarker_results_1, img_shape1, fps1 = st.session_state['estimate_class'].estimPose_video(temp_filepath_1)
         pose_landmarker_results_1 = post_process_pose_landmarks(pose_landmarker_results_1)
-        height_1, width_1 = st.session_state['estimate_class'].last_shape
+        height_1, width_1 = img_shape1
 
         # 2번 비디오 landmarks 추출
-        original_video_frames_2, pose_landmarker_results_2 = st.session_state['estimate_class'].estimPose_video(temp_filepath_2)
+        original_video_frames_2, pose_landmarker_results_2, img_shape2, fps2 = st.session_state['estimate_class'].estimPose_video(temp_filepath_2)
         pose_landmarker_results_2 = post_process_pose_landmarks(pose_landmarker_results_2)
-        height_2, width_2 = st.session_state['estimate_class'].last_shape
+        height_2, width_2 = img_shape2
 
 
         total_results, low_score_frames = scoring.get_score_from_frames(
@@ -330,7 +330,8 @@ elif page_option=="Video Compare":
                 video_bytes = video_file.read()
                 st.video(video_bytes)
 else:
-    threshold = st.sidebar.slider('feedback threshold: ', 0, 60, value=30) # 보여질 동영상의 프레임 설정
+    threshold = st.sidebar.slider('feedback threshold: ', 0, 60, value=30) # 피드백을 줄 임계치 설정
+    pck_thres = st.sidebar.number_input('pck_threshold', min_value=0.0, max_value=1.0, value=0.1, step=0.05)
 
     # 비디오 파일 업로드
     video_1 = st.file_uploader("video_1", type=["mp4", "mov", "avi", "mkv"])
@@ -347,30 +348,30 @@ else:
             temp_filepath_2 = temp_file_2.name
         
         if st.session_state["video_names"][0] != video_1.name or st.session_state['feedback_info_1'] is None:
-            pose_landmarker_results1, keypoints1, frames1, fps1 = st.session_state['estimate_class'].estimPose_video_for_dtw(temp_filepath_1)
-            height1, width1 = st.session_state['estimate_class'].last_shape
+            original_video_frames_1, pose_landmarker_results_1, img_shape1, fps1 = st.session_state['estimate_class'].estimPose_video(temp_filepath_1)
+            height1, width1 = img_shape1
             # session state 설정
             st.session_state["video_names"][0] = video_1.name
-            st.session_state['feedback_info_1'] = (pose_landmarker_results1, keypoints1, frames1, fps1, height1, width1)
+            st.session_state['feedback_info_1'] = (original_video_frames_1, pose_landmarker_results_1, height1, width1, fps1)
         else:
-            pose_landmarker_results1, keypoints1, frames1, fps1, height1, width1 = st.session_state['feedback_info_1']
+            original_video_frames_1, pose_landmarker_results_1, height1, width1, fps1 = st.session_state['feedback_info_1']
         
         if st.session_state["video_names"][1] != video_2.name or st.session_state['feedback_info_2'] is None:
-            pose_landmarker_results2, keypoints2, frames2, fps2 = st.session_state['estimate_class'].estimPose_video_for_dtw(temp_filepath_2)
-            height2, width2 = st.session_state['estimate_class'].last_shape
+            original_video_frames_2, pose_landmarker_results_2, img_shape2, fps2 = st.session_state['estimate_class'].estimPose_video(temp_filepath_2)
+            height2, width2 = img_shape2
             # session state 설정
             st.session_state["video_names"][1] = video_2.name
-            st.session_state['feedback_info_2'] = (pose_landmarker_results2, keypoints2, frames2, fps2, height2, width2)
+            st.session_state['feedback_info_2'] = (original_video_frames_2, pose_landmarker_results_2, height2, width2, fps2)
         else:
-            pose_landmarker_results2, keypoints2, frames2, fps2, height2, width2 = st.session_state['feedback_info_2']
+            original_video_frames_2, pose_landmarker_results_2, height2, width2, fps2 = st.session_state['feedback_info_2']
 
         # keypoints L2 정규화
-        keypoints1 = l2_normalize(keypoints1)
-        keypoints2 = l2_normalize(keypoints2)
+        keypoints1 = get_normalized_keypoints(pose_landmarker_results_1, height1, width1)
+        keypoints2 = get_normalized_keypoints(pose_landmarker_results_2, height2, width2)
 
         # 유사도 및 시각화 데이터 계산
         distance, average_cosine_similarity, average_euclidean_distance, average_oks, average_pck, pairs = calculate_similarity_with_visualization(
-            keypoints1, keypoints2
+            keypoints1, keypoints2, pck_threshold=pck_thres
         )
 
         # HTML과 CSS를 사용해 배경색 부여
@@ -414,29 +415,29 @@ else:
         )
 
         # min max normalize for all frames
-        pose_landmarker_results1 = post_process_pose_landmarks(pose_landmarker_results1)
-        pose_landmarker_results2 = post_process_pose_landmarks(pose_landmarker_results2)
+        pose_landmarker_results_1 = post_process_pose_landmarks(pose_landmarker_results_1)
+        pose_landmarker_results_2 = post_process_pose_landmarks(pose_landmarker_results_2)
         normalized_all_landmarks1 = scoring.normalize_landmarks_to_range_by_mean(
-            np.array([scoring.refine_landmarks(l) for l in pose_landmarker_results2]), np.array([scoring.refine_landmarks(l) for l in pose_landmarker_results1])
+            np.array([scoring.refine_landmarks(l) for l in pose_landmarker_results_2]), np.array([scoring.refine_landmarks(l) for l in pose_landmarker_results_1])
         )
 
 
         random_matched_list = []
-        for idx2, frame in enumerate(frames2):
+        for idx2, frame in enumerate(original_video_frames_2):
             idx1 = get_center_pair_frames(pairs, idx2)
             random_matched_list.append(idx1)
             
-            for i, landmarks in enumerate(pose_landmarker_results1[idx1]):
+            for i, landmarks in enumerate(pose_landmarker_results_1[idx1]):
                 landmarks.x = normalized_all_landmarks1[idx1, i, 0]
                 landmarks.y = normalized_all_landmarks1[idx1, i, 1]
                 landmarks.z = normalized_all_landmarks1[idx1, i, 2]
-            frames2[idx2] = draw_landmarks_on_image(frame, pose_landmarker_results1[idx1])
+            original_video_frames_2[idx2] = draw_landmarks_on_image(frame, pose_landmarker_results_1[idx1])
         del normalized_all_landmarks1
         
         with tempfile.NamedTemporaryFile(delete=False, suffix=".mp4") as temp_mp4:
             # MP4 파일 경로
             video_path = temp_mp4.name
-            iio.imwrite(video_path, frames2, fps=fps2, codec="libx264")
+            iio.imwrite(video_path, original_video_frames_2, fps=fps2, codec="libx264")
             end_time = time.perf_counter()
             st.success("MP4 파일 생성 완료!")
 
@@ -445,7 +446,7 @@ else:
                 video_bytes = video_file.read()
                 st.video(video_bytes)
         
-        total_frame_len = len(frames2)
+        total_frame_len = len(original_video_frames_2)
         total_time = int(total_frame_len / fps2)
 
         st.title("피드백을 받을 시간을 선택해주세요")
@@ -464,9 +465,9 @@ else:
 
         if submit_button:
             user_idx = get_closest_frame(target_time, total_frame_len, fps2)
-            user_landmark = pose_landmarker_results2[user_idx]
+            user_landmark = pose_landmarker_results_2[user_idx]
             target_idx = random_matched_list[user_idx]
-            target_landmark = pose_landmarker_results1[target_idx]
+            target_landmark = pose_landmarker_results_1[target_idx]
 
 
             # 슬라이더 값을 기반으로 프레임 계산
@@ -483,4 +484,4 @@ else:
             with col1:
                 st.json(feedback)
             with col2:
-                st.image(frames2[user_idx])
+                st.image(original_video_frames_2[user_idx])

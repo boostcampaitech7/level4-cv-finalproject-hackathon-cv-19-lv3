@@ -157,7 +157,7 @@ def pck(gt, preds, threshold=0.1, ignore_z=False):
     return pck_score, matched
 
 
-def evaluate_everything(landmarks1_np, bs1, landmarks2_np, bs2, pck_thres=0.1, normalize=True, verbose=True, ignore_z=False):
+def evaluate_everything(landmarks1_np, bs1, landmarks2_np, pck_thres=0.1, normalize=True, verbose=True, ignore_z=False):
     """
     landmarks1_np, landmarks2_np: [num_selected_keypoints, 4]의 numpy array
     pck_thres : pck스코어 계산 시 얼마나 가까워야 match시킬 것인지
@@ -221,7 +221,7 @@ def get_score_from_frames(all_landmarks1, all_landmarks2, score_target='PCK', pc
         for frame_num_1, frame_num_2 in path:
             np_l1 = all_landmarks_np_1[frame_num_1]
             np_l2 = all_landmarks_np_2[frame_num_2]
-            results = evaluate_everything(np_l1, bs1, np_l2, bs2, pck_thres=pck_thres, verbose=False, ignore_z=ignore_z)
+            results = evaluate_everything(np_l1, bs1, np_l2, pck_thres=pck_thres, verbose=False, ignore_z=ignore_z)
             results['matched_frame'] = (frame_num_1, frame_num_2)
 
             for k, v in results.items():
@@ -232,7 +232,7 @@ def get_score_from_frames(all_landmarks1, all_landmarks2, score_target='PCK', pc
         for frame_num, (landmarks1, landmarks2) in enumerate(zip(all_landmarks1, all_landmarks2)):
             np_l1 = refine_landmarks(landmarks1)
             np_l2 = refine_landmarks(landmarks2)
-            results = evaluate_everything(np_l1, bs1, np_l2, bs2, pck_thres=pck_thres, verbose=False, ignore_z=ignore_z)
+            results = evaluate_everything(np_l1, bs1, np_l2, pck_thres=pck_thres, verbose=False, ignore_z=ignore_z)
             results['matched_frame'] = (frame_num, frame_num)
 
             for k, v in results.items():
@@ -246,21 +246,3 @@ def get_score_from_frames(all_landmarks1, all_landmarks2, score_target='PCK', pc
         total_results[k] = np.mean(total_results[k])
     
     return total_results, low_score_frames
-
-
-def main(p1, p2):
-    from detector import PoseDetector
-    import matplotlib.pyplot as plt
-    d = PoseDetector()
-
-    l1, seg1, ann_img1, bs1 = d.get_detection(p1)
-    l2, seg2, ann_img2, bs2 = d.get_detection(p2)
-    np_l1 = refine_landmarks(l1)
-    np_l2 = refine_landmarks(l2)
-    evaluate_everything(np_l1, bs1, np_l2, bs2, ignore_z=True)
-    
-
-if __name__=="__main__":
-    img_path1 = "images/jun_v.jpg"
-    img_path2 = "images/wrong_pose_img.jpg"
-    main(img_path1, img_path2)

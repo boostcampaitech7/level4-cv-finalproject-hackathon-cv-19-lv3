@@ -35,6 +35,20 @@ def l2_normalize(keypoints):
     normalized_keypoints = keypoints / (norms + 1e-10)
     return normalized_keypoints
 
+def get_normalized_keypoints(pose_landmarker_results, height, width):
+    keypoints_list = []
+
+    for result in pose_landmarker_results:
+        keypoints = []
+        for landmark in result.pose_landmarks.landmark:
+            x = landmark.x * width
+            y = landmark.y * height
+            z = landmark.z
+            keypoints.append([x, y, z])
+        keypoints_list.append(np.array(keypoints))
+    return l2_normalize(keypoints_list)
+
+
 def filter_keypoints(keypoints, indices):
     return keypoints[:, np.array(indices), :]
 
@@ -64,7 +78,7 @@ def normalize_landmarks_to_range(keypoints1, keypoints2, eps=1e-7):
 
         return np.linalg.norm(keypoints1 - keypoints2)
 
-def calculate_similarity_with_visualization(keypoints1, keypoints2):
+def calculate_similarity_with_visualization(keypoints1, keypoints2, pck_threshold=0.1):
     # FastDTW로 DTW 거리와 매칭된 인덱스 쌍(pairs) 계산
     distance, pairs = fastdtw(keypoints1, keypoints2, dist=normalize_landmarks_to_range)
 
@@ -82,7 +96,7 @@ def calculate_similarity_with_visualization(keypoints1, keypoints2):
         frame_cosine_similarities = []
         frame_euclidean_distances = []
         oks_list.append(oks(kp1, kp2))
-        pck_list.append(pck(kp1, kp2, threshold=0.1)[0])
+        pck_list.append(pck(kp1, kp2, threshold=pck_threshold)[0])
 
         for p1, p2 in zip(kp1, kp2):
             # 코사인 유사도 계산

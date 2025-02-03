@@ -119,7 +119,7 @@ def landmarks_to_dict(all_landmarks):
 
 
 def draw_landmarks_on_image(rgb_image, detection_result, h_ratio=1.0, w_ratio=1.0, landmarks_c=(234,63,247), connection_c=(117,249,77), 
-                    thickness=10, circle_r=10):
+                    thickness=3, circle_r=3):
     try:
         pose_landmarks_list = detection_result.pose_landmarks # 직접 모델을 받아서 추론하는 경우, 여러 사람에 대한 estimation 결과가 들어있을 수 있습니다
     except:

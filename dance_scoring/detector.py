@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 from collections import namedtuple
 import warnings
 from tqdm import tqdm
-from .util import draw_landmarks_on_image, download_model
+from .util import draw_landmarks_on_image
 from .keypoint_map import KEYPOINT_MAPPING, NORMALIZED_LANDMARK_KEYS
 
 
@@ -14,16 +14,6 @@ class PoseDetector:
         # MediaPipe Pose 초기화
         mp_pose = mp.solutions.pose
         self.pose = mp_pose.Pose()
-        self._last_shape = (None, None)
-    
-    @property
-    def last_shape(self):
-        return self._last_shape
-    @last_shape.setter
-    def last_shape(self, shape):
-        if len(shape) != 2:
-            raise ValueError("shape should be (H, W) Tuple")
-        self._last_shape = shape
     
     def get_image_landmarks(self, img_path, landmarks_c=(234,63,247), connection_c=(117,249,77), 
                     thickness=3, circle_r=3, display=False):
@@ -82,7 +72,7 @@ class PoseDetector:
         inputs:
             - video_path(str) : video 경로(str)
             - do_resize(bool) : 리사이즈 할지 여부. resize_shpae가 지정되어있지 않으면 비율에 맞춰서 height를 640으로 조정
-            - resize_shape : Tuple(width, height)
+            - resize_shape : Tuple(height, width)
         
         outputs:
             - original_video_frames : list(numpy.array). video.read()로 읽어온 frame을 담은 list
@@ -113,12 +103,12 @@ class PoseDetector:
             frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             # Get the width and height of the frame
             frame_height, frame_width, _ =  frame.shape
-            self.last_shape = (frame_height, frame_width)
+            img_shape = (frame_height, frame_width)
 
             # Resize the frame while keeping the aspect ratio.
             if do_resize:
                 if resize_shape:
-                    frame = cv2.resize(frame, resize_shape[0], resize_shape[1])
+                    frame = cv2.resize(frame, resize_shape[1], resize_shape[0])
                 else:
                     frame = cv2.resize(frame, (int(frame_width * (640 / frame_height)), 640))
 
@@ -126,50 +116,7 @@ class PoseDetector:
             original_video_frames.append(frame.copy())
             pose_landmarker_results.append(pose_landmarker_result)
 
-        return original_video_frames, pose_landmarker_results
-    
-    def estimPose_video_for_dtw(self, video_path):
-        '''
-        video에 대한 landmark 추출을 진행하는 메서드
-
-        inputs:
-            - video_path(str) : video 경로(str)
-
-        outputs:
-        '''
-
-        cap = cv2.VideoCapture(video_path)
-        fps = int(cap.get(cv2.CAP_PROP_FPS))
-        total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-        pose_landmarker_results = []
-        keypoints_list = []
-        frames = []
-
-        for i in tqdm(range(total_frames)):
-            success, frame = cap.read()
-            if not success:
-                break
-
-            frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-            height, width = frame.shape[:2] # 프레임 해상도 (정규화된 좌표를 픽셀 단위로 변환하기 위해서)
-            self.last_shape = (height, width)
-
-            # Pose 추론 수행
-            result = self.pose.process(frame_rgb)
-            pose_landmarker_results.append(result)
-
-            if result.pose_landmarks:
-                keypoints = []
-                for landmark in result.pose_landmarks.landmark:
-                    x = landmark.x * width
-                    y = landmark.y * height
-                    z = landmark.z
-                    keypoints.append([x, y, z])
-                keypoints_list.append(np.array(keypoints))
-                frames.append(frame_rgb)  # 원본 프레임 저장
-
-        cap.release()
-        return pose_landmarker_results, np.array(keypoints_list), frames, fps
+        return original_video_frames, pose_landmarker_results, img_shape, fps
 
 
 def get_overlap_from_landmarks(
@@ -204,6 +151,7 @@ def get_skeleton_from_landmarks(
     if return_shape:
         ann_image = cv2.resize(ann_image, return_shape)
     return skeleton_image
+
 
 def post_process_pose_landmarks(pose_landmarks_results, fill_value=0.99999):
     # pose landmark result로부터 list(landmarks)의 형태를 만듦. 만약 landmarks가 없다면 None으로 채움
