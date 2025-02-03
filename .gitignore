@@ -1,5 +1,8 @@
 # data
-*.csv
+clova_datasets
+
+# API key file
+CLOVA_API
 
 # audio
 *.mp3
