@@ -6,9 +6,8 @@ import pandas as pd
 import numpy as np
 from scipy.stats import norm
 
-from dance_scoring.detector import PoseDetector, get_pose_landmark_from_detect_result
+from dance_scoring.detector import PoseDetector, post_process_pose_landmarks
 from dance_scoring.similarity_with_frames import *
-from dance_scoring.util import fill_None_from_landmarks
 from prompting.pose_compare import extract_pose_landmarks
 from prompting.pose_feedback import json_to_prompt, generate_feedback, generate_korean_feedback
 
@@ -28,15 +27,13 @@ english_to_korean = {
 
 def compare_video_pair(right_video_path, wrong_video_path, frame_interval=0.5):
     estimate_class = PoseDetector()
-    right_pose_landmarker_results, right_keypoints, right_frames, right_fps = estimate_class.estimPose_video_for_dtw(right_video_path)
-    right_shape = estimate_class.last_shape
+    right_original_video_frames, right_pose_landmarker_results, right_shape, right_fps = estimate_class.get_video_landmarks(right_video_path)
 
-    wrong_pose_landmarker_results, wrong_keypoints, wrong_frames, wrong_fps = estimate_class.estimPose_video_for_dtw(wrong_video_path)
-    wrong_shape = estimate_class.last_shape
+    wrong_original_video_frames, wrong_pose_landmarker_results, wrong_shape, wrong_fps = estimate_class.get_video_landmarks(wrong_video_path)
     
     # keypoints L2 정규화
-    right_keypoints = l2_normalize(right_keypoints)
-    wrong_keypoints = l2_normalize(wrong_keypoints)
+    right_keypoints = get_normalized_keypoints(right_pose_landmarker_results)
+    wrong_keypoints = get_normalized_keypoints(wrong_pose_landmarker_results)
 
     # 유사도 및 시각화 데이터 계산
     distance, average_cosine_similarity, average_euclidean_distance, average_oks, average_pck, pairs = calculate_similarity_with_visualization(
@@ -44,12 +41,12 @@ def compare_video_pair(right_video_path, wrong_video_path, frame_interval=0.5):
     )
 
     # keypoint 결과 저장하기 편하도록 정제하는 과정
-    right_pose_landmarker_results = fill_None_from_landmarks(get_pose_landmark_from_detect_result(right_pose_landmarker_results))
-    wrong_pose_landmarker_results = fill_None_from_landmarks(get_pose_landmark_from_detect_result(wrong_pose_landmarker_results))
+    right_pose_landmarker_results = post_process_pose_landmarks(right_pose_landmarker_results)
+    wrong_pose_landmarker_results = post_process_pose_landmarks(wrong_pose_landmarker_results)
     
     # 매치된 pair끼리 frame, keypoint 저장
     matched_dict_list = []
-    for idx1, frame in enumerate(right_frames):
+    for idx1, frame in enumerate(right_original_video_frames):
         if idx1 % (right_fps * frame_interval) != 0:
             continue
 
@@ -59,7 +56,7 @@ def compare_video_pair(right_video_path, wrong_video_path, frame_interval=0.5):
             'wrong_idx': idx2,
             'time': right_fps * idx1,
             'right_frame': frame,
-            'wrong_frame': wrong_frames[idx2],
+            'wrong_frame': wrong_original_video_frames[idx2],
             'right_keypoint': right_pose_landmarker_results[idx1],
             'wrong_keypoint': wrong_pose_landmarker_results[idx2],
             'right_shape': right_shape,

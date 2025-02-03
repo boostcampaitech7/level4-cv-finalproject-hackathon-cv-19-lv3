@@ -40,7 +40,7 @@ def get_normalized_keypoints(pose_landmarker_results, height, width):
 
     for result in pose_landmarker_results:
         keypoints = []
-        for landmark in result.pose_landmarks.landmark:
+        for landmark in result:
             x = landmark.x * width
             y = landmark.y * height
             z = landmark.z

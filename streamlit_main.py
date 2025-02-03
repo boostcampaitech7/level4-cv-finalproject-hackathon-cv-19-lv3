@@ -64,7 +64,7 @@ if page_option is None or page_option == page_options[0]:
         # OpenCV로 비디오 읽고 추론
         st.info("모델로 비디오 keypoint를 추론하는 중입니다.")
         estimation_start_time = time.perf_counter()
-        original_video_frames, pose_landmarker_results, img_shape, fps = st.session_state['estimate_class'].estimPose_video(temp_filepath)
+        original_video_frames, pose_landmarker_results, img_shape, fps = st.session_state['estimate_class'].get_video_landmarks(temp_filepath)
 
         pose_landmarker_results = post_process_pose_landmarks(pose_landmarker_results)
         pose_landmarker_results_dict = util.landmarks_to_dict(pose_landmarker_results)
@@ -267,12 +267,12 @@ elif page_option=="Video Compare":
             temp_filepath_2 = temp_file_2.name
         
         # 1번 비디오 landmarks 추출
-        original_video_frames_1, pose_landmarker_results_1, img_shape1, fps1 = st.session_state['estimate_class'].estimPose_video(temp_filepath_1)
+        original_video_frames_1, pose_landmarker_results_1, img_shape1, fps1 = st.session_state['estimate_class'].get_video_landmarks(temp_filepath_1)
         pose_landmarker_results_1 = post_process_pose_landmarks(pose_landmarker_results_1)
         height_1, width_1 = img_shape1
 
         # 2번 비디오 landmarks 추출
-        original_video_frames_2, pose_landmarker_results_2, img_shape2, fps2 = st.session_state['estimate_class'].estimPose_video(temp_filepath_2)
+        original_video_frames_2, pose_landmarker_results_2, img_shape2, fps2 = st.session_state['estimate_class'].get_video_landmarks(temp_filepath_2)
         pose_landmarker_results_2 = post_process_pose_landmarks(pose_landmarker_results_2)
         height_2, width_2 = img_shape2
 
@@ -348,7 +348,7 @@ else:
             temp_filepath_2 = temp_file_2.name
         
         if st.session_state["video_names"][0] != video_1.name or st.session_state['feedback_info_1'] is None:
-            original_video_frames_1, pose_landmarker_results_1, img_shape1, fps1 = st.session_state['estimate_class'].estimPose_video(temp_filepath_1)
+            original_video_frames_1, pose_landmarker_results_1, img_shape1, fps1 = st.session_state['estimate_class'].get_video_landmarks(temp_filepath_1)
             height1, width1 = img_shape1
             # session state 설정
             st.session_state["video_names"][0] = video_1.name
@@ -357,13 +357,17 @@ else:
             original_video_frames_1, pose_landmarker_results_1, height1, width1, fps1 = st.session_state['feedback_info_1']
         
         if st.session_state["video_names"][1] != video_2.name or st.session_state['feedback_info_2'] is None:
-            original_video_frames_2, pose_landmarker_results_2, img_shape2, fps2 = st.session_state['estimate_class'].estimPose_video(temp_filepath_2)
+            original_video_frames_2, pose_landmarker_results_2, img_shape2, fps2 = st.session_state['estimate_class'].get_video_landmarks(temp_filepath_2)
             height2, width2 = img_shape2
             # session state 설정
             st.session_state["video_names"][1] = video_2.name
             st.session_state['feedback_info_2'] = (original_video_frames_2, pose_landmarker_results_2, height2, width2, fps2)
         else:
             original_video_frames_2, pose_landmarker_results_2, height2, width2, fps2 = st.session_state['feedback_info_2']
+
+        # None값을 없애기위한 후처리
+        pose_landmarker_results_1 = post_process_pose_landmarks(pose_landmarker_results_1)
+        pose_landmarker_results_2 = post_process_pose_landmarks(pose_landmarker_results_2)
 
         # keypoints L2 정규화
         keypoints1 = get_normalized_keypoints(pose_landmarker_results_1, height1, width1)
@@ -415,8 +419,6 @@ else:
         )
 
         # min max normalize for all frames
-        pose_landmarker_results_1 = post_process_pose_landmarks(pose_landmarker_results_1)
-        pose_landmarker_results_2 = post_process_pose_landmarks(pose_landmarker_results_2)
         normalized_all_landmarks1 = scoring.normalize_landmarks_to_range_by_mean(
             np.array([scoring.refine_landmarks(l) for l in pose_landmarker_results_2]), np.array([scoring.refine_landmarks(l) for l in pose_landmarker_results_1])
         )

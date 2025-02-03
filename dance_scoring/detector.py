@@ -65,7 +65,7 @@ class PoseDetector:
         return detection_result.pose_landmarks.landmark, detection_result.segmentation_mask, annotated_image, boxsize
     
 
-    def estimPose_video(self, video_path, do_resize=True, resize_shape=None):
+    def get_video_landmarks(self, video_path, do_resize=True, resize_shape=None):
         '''
         video에 대한 landmark 추출을 진행하는 메서드
 

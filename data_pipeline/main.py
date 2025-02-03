@@ -2,7 +2,6 @@ import os
 import pandas as pd
 import argparse
 import glob
-from copy import deepcopy
 from pipeline import compare_video_pair, make_dataset, make_random_dataset
 from tqdm import tqdm
 
