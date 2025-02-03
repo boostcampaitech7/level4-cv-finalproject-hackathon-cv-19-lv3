@@ -63,8 +63,8 @@ def draw_keypoints_and_connections(input_image_path, input_json_path, circle_col
     plt.show()
 
 # 입력 이미지와 JSON 경로
-input_image_path = "img_file/1.png"
-input_json_path = "json_file/1.json"
+input_image_path = "3blue.jpg"
+input_json_path = "3blue.json"
 
 # 함수 실행
 draw_keypoints_and_connections(input_image_path, input_json_path)

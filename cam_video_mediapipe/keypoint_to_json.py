@@ -38,9 +38,9 @@ def extract_keypoints_to_json(input_file, output_json_path):
         print("No pose landmarks detected.")
 
 # 이미지 파일 경로
-input_image_path = "img_file/3.png"
+input_image_path = "3blue.jpg"
 # 저장할 JSON 파일 경로
-output_json_path = "json_file/3.json"
+output_json_path = "3blue.json"
 
 # 함수 실행
 extract_keypoints_to_json(input_image_path, output_json_path)
