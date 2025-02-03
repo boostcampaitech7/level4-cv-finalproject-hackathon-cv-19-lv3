@@ -420,7 +420,7 @@ else:
 
         # min max normalize for all frames
         normalized_all_landmarks1 = scoring.normalize_landmarks_to_range_by_mean(
-            np.array([scoring.refine_landmarks(l) for l in pose_landmarker_results_2]), np.array([scoring.refine_landmarks(l) for l in pose_landmarker_results_1])
+            np.array([scoring.refine_landmarks(l, keypoint_map.TOTAL_KEYPOINTS) for l in pose_landmarker_results_2]), np.array([scoring.refine_landmarks(l, keypoint_map.TOTAL_KEYPOINTS) for l in pose_landmarker_results_1])
         )
 
 

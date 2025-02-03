@@ -1,7 +1,7 @@
 import numpy as np
 from fastdtw import fastdtw 
 from scipy.spatial.distance import euclidean, cosine
-from keypoint_map import SELECTED_SIGMAS
+from .keypoint_map import SELECTED_KEYPOINTS, SELECTED_SIGMAS
 
 
 # PCK 값 계산 함수
@@ -49,7 +49,7 @@ def get_normalized_keypoints(pose_landmarker_results, height, width):
     return l2_normalize(keypoints_list)
 
 
-def filter_keypoints(keypoints, indices):
+def filter_keypoints(keypoints, indices=SELECTED_KEYPOINTS):
     return keypoints[:, np.array(indices), :]
 
 def normalize_landmarks_to_range(keypoints1, keypoints2, eps=1e-7):
@@ -79,6 +79,9 @@ def normalize_landmarks_to_range(keypoints1, keypoints2, eps=1e-7):
         return np.linalg.norm(keypoints1 - keypoints2)
 
 def calculate_similarity_with_visualization(keypoints1, keypoints2, pck_threshold=0.1):
+    keypoints1 = filter_keypoints(keypoints1)
+    keypoints2 = filter_keypoints(keypoints2)
+
     # FastDTW로 DTW 거리와 매칭된 인덱스 쌍(pairs) 계산
     distance, pairs = fastdtw(keypoints1, keypoints2, dist=normalize_landmarks_to_range)
 

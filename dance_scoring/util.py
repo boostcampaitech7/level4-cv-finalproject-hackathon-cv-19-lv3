@@ -9,7 +9,7 @@ from mediapipe.framework.formats import landmark_pb2
 import random
 import cv2
 from pathlib import Path
-from keypoint_map import KEYPOINT_MAPPING
+from .keypoint_map import KEYPOINT_MAPPING
 
 
 
