@@ -1,6 +1,5 @@
 import streamlit as st
 import tempfile
-from dance_scoring import detector, util, keypoint_map, scoring
 import time
 import imageio
 import imageio.v3 as iio
@@ -8,7 +7,9 @@ import json
 import cv2
 import numpy as np
 from copy import deepcopy
-from dance_scoring.util import fill_None_from_landmarks, draw_landmarks_on_image, get_closest_frame
+from dance_scoring import detector, util, keypoint_map, scoring
+from dance_scoring.detector import post_process_pose_landmarks
+from dance_scoring.util import draw_landmarks_on_image, get_closest_frame
 from dance_scoring.similarity_with_frames import l2_normalize, calculate_similarity_with_visualization, make_euclidean_similarity, make_cosine_similarity
 from dance_scoring.similarity_with_frames import get_center_pair_frames
 from prompting.pose_compare import extract_pose_landmarks
@@ -65,10 +66,8 @@ if page_option is None or page_option == page_options[0]:
         estimation_start_time = time.perf_counter()
         original_video_frames, pose_landmarker_results = st.session_state['estimate_class'].estimPose_video(temp_filepath)
 
-        pose_landmarker_results = detector.get_pose_landmark_from_detect_result(pose_landmarker_results)
-        all_landmarks = fill_None_from_landmarks(pose_landmarker_results)
-        all_landmarks_dict = util.landmarks_to_dict(all_landmarks)
-        del all_landmarks
+        pose_landmarker_results = post_process_pose_landmarks(pose_landmarker_results)
+        pose_landmarker_results_dict = util.landmarks_to_dict(pose_landmarker_results)
 
         estimation_end_time = time.perf_counter()
         estimation_elapsed_time = estimation_end_time - estimation_start_time
@@ -78,7 +77,7 @@ if page_option is None or page_option == page_options[0]:
         # 임시 파일 생성
         with tempfile.NamedTemporaryFile("w", delete=False, suffix=".json") as tmp_file:
             # 딕셔너리를 JSON 형식으로 임시 파일에 저장
-            json.dump(all_landmarks_dict, tmp_file, indent=4)
+            json.dump(pose_landmarker_results_dict, tmp_file, indent=4)
             tmp_file_path = tmp_file.name  # 임시 파일 경로
         
 
@@ -188,8 +187,8 @@ elif page_option == 'Image Compare':
             temp_filepath_2 = temp_file_2.name
         
         # pose estimate
-        pose_landmarks_1, _, annotated_image_1, b1 = st.session_state['estimate_class'].get_detection(temp_filepath_1, landmarks_c=(234,63,247), connection_c=(117,249,77))
-        pose_landmarks_2, _, annotated_image_2, b2 = st.session_state['estimate_class'].get_detection(temp_filepath_2, landmarks_c=(255, 165, 0), connection_c=(200, 200, 200))
+        pose_landmarks_1, _, annotated_image_1, b1 = st.session_state['estimate_class'].get_image_landmarks(temp_filepath_1, landmarks_c=(234,63,247), connection_c=(117,249,77))
+        pose_landmarks_2, _, annotated_image_2, b2 = st.session_state['estimate_class'].get_image_landmarks(temp_filepath_2, landmarks_c=(255, 165, 0), connection_c=(200, 200, 200))
         del _
 
         if pose_landmarks_1 is None or pose_landmarks_2 is None:
@@ -269,19 +268,17 @@ elif page_option=="Video Compare":
         
         # 1번 비디오 landmarks 추출
         original_video_frames_1, pose_landmarker_results_1 = st.session_state['estimate_class'].estimPose_video(temp_filepath_1)
-        pose_landmarker_results_1 = detector.get_pose_landmark_from_detect_result(pose_landmarker_results_1)
-        all_landmarks_1 = fill_None_from_landmarks(pose_landmarker_results_1)
+        pose_landmarker_results_1 = post_process_pose_landmarks(pose_landmarker_results_1)
         height_1, width_1 = st.session_state['estimate_class'].last_shape
 
         # 2번 비디오 landmarks 추출
         original_video_frames_2, pose_landmarker_results_2 = st.session_state['estimate_class'].estimPose_video(temp_filepath_2)
-        pose_landmarker_results_2 = detector.get_pose_landmark_from_detect_result(pose_landmarker_results_2)
-        all_landmarks_2 = fill_None_from_landmarks(pose_landmarker_results_2)
+        pose_landmarker_results_2 = post_process_pose_landmarks(pose_landmarker_results_2)
         height_2, width_2 = st.session_state['estimate_class'].last_shape
 
 
         total_results, low_score_frames = scoring.get_score_from_frames(
-            all_landmarks_1, all_landmarks_2, pck_thres=pck_thres, thres=0.4, ignore_z=ignore_z, use_dtw=use_dtw
+            pose_landmarker_results_1, pose_landmarker_results_2, pck_thres=pck_thres, thres=0.4, ignore_z=ignore_z, use_dtw=use_dtw
         )
         for k, v in total_results.items():
             if "matched" in k: continue
@@ -305,8 +302,8 @@ elif page_option=="Video Compare":
             match_dict = matched[i]
 
             matched_key_list = [keypoint_map.REVERSE_KEYPOINT_MAPPING[k] for k in match_dict.keys() if match_dict[k]]
-            frame_1_landmarks = all_landmarks_1[frame_num_1]
-            frame_2_landmarks = all_landmarks_2[frame_num_2]
+            frame_1_landmarks = pose_landmarker_results_1[frame_num_1]
+            frame_2_landmarks = pose_landmarker_results_2[frame_num_2]
             if frame_1_landmarks is None or frame_2_landmarks is None:
                 continue
 
@@ -417,14 +414,11 @@ else:
         )
 
         # min max normalize for all frames
-        pose_landmarker_results1 = detector.get_pose_landmark_from_detect_result(pose_landmarker_results1)
-        pose_landmarker_results2 = detector.get_pose_landmark_from_detect_result(pose_landmarker_results2)
-        all_landmarks1 = fill_None_from_landmarks(pose_landmarker_results1)
-        all_landmarks2 = fill_None_from_landmarks(pose_landmarker_results2)
+        pose_landmarker_results1 = post_process_pose_landmarks(pose_landmarker_results1)
+        pose_landmarker_results2 = post_process_pose_landmarks(pose_landmarker_results2)
         normalized_all_landmarks1 = scoring.normalize_landmarks_to_range_by_mean(
-            np.array([scoring.refine_landmarks(l) for l in all_landmarks2]), np.array([scoring.refine_landmarks(l) for l in all_landmarks1])
+            np.array([scoring.refine_landmarks(l) for l in pose_landmarker_results2]), np.array([scoring.refine_landmarks(l) for l in pose_landmarker_results1])
         )
-        del all_landmarks1, all_landmarks2
 
 
         random_matched_list = []

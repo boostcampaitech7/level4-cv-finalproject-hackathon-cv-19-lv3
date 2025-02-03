@@ -9,7 +9,6 @@ from mediapipe import solutions
 from mediapipe.framework.formats import landmark_pb2
 import random
 import cv2
-from collections import namedtuple
 from pathlib import Path
 
 def set_seed(seed):
@@ -121,28 +120,28 @@ def landmarks_to_dict(all_landmarks):
 
 def draw_landmarks_on_image(rgb_image, detection_result, h_ratio=1.0, w_ratio=1.0, landmarks_c=(234,63,247), connection_c=(117,249,77), 
                     thickness=10, circle_r=10):
-  try:
-      pose_landmarks_list = detection_result.pose_landmarks
-  except:
-      pose_landmarks_list = [detection_result]
-  annotated_image = np.copy(rgb_image)
+    try:
+        pose_landmarks_list = detection_result.pose_landmarks # 직접 모델을 받아서 추론하는 경우, 여러 사람에 대한 estimation 결과가 들어있을 수 있습니다
+    except:
+        pose_landmarks_list = [detection_result] # 그렇지 않은경우, 단일 결과만 주어지기에 list로 만들어 이후 처리에서 에러 안나도록
+    annotated_image = np.copy(rgb_image)
 
   # Loop through the detected poses to visualize.
-  for idx in range(len(pose_landmarks_list)):
-    pose_landmarks = pose_landmarks_list[idx]
+    for idx in range(len(pose_landmarks_list)):
+        pose_landmarks = pose_landmarks_list[idx]
 
-    # Draw the pose landmarks.
-    pose_landmarks_proto = landmark_pb2.NormalizedLandmarkList()
-    pose_landmarks_proto.landmark.extend([
-      landmark_pb2.NormalizedLandmark(x=landmark.x*w_ratio, y=landmark.y*h_ratio, z=landmark.z) for landmark in pose_landmarks
-    ])
-    solutions.drawing_utils.draw_landmarks(
-      annotated_image,
-      pose_landmarks_proto,
-      solutions.pose.POSE_CONNECTIONS,
-      solutions.drawing_utils.DrawingSpec(landmarks_c, thickness, circle_r),
-      solutions.drawing_utils.DrawingSpec(connection_c, thickness, circle_r))
-  return annotated_image
+        # Draw the pose landmarks.
+        pose_landmarks_proto = landmark_pb2.NormalizedLandmarkList()
+        pose_landmarks_proto.landmark.extend([
+            landmark_pb2.NormalizedLandmark(x=landmark.x*w_ratio, y=landmark.y*h_ratio, z=landmark.z) for landmark in pose_landmarks
+        ])
+        solutions.drawing_utils.draw_landmarks(
+            annotated_image,
+            pose_landmarks_proto,
+            solutions.pose.POSE_CONNECTIONS,
+            solutions.drawing_utils.DrawingSpec(landmarks_c, thickness, circle_r),
+            solutions.drawing_utils.DrawingSpec(connection_c, thickness, circle_r))
+    return annotated_image
 
 
 
@@ -174,14 +173,6 @@ def draw_circle_on_image(image: np.ndarray, normalized_x: float, normalized_y: f
     # 원 그리기
     cv2.circle(image, (x, y), r, color, thickness)
 
-
-def fill_None_from_landmarks(all_landmarks, fill_value=1.):
-    NormalizedLandmark = namedtuple('NormalizedLandmark', NORMALIZED_LANDMARK_KEYS)
-    none_fill_value = [NormalizedLandmark(**{k:fill_value for k in NORMALIZED_LANDMARK_KEYS}) for _ in range(len(KEYPOINT_MAPPING))]
-    for i in range(len(all_landmarks)):
-        if all_landmarks[i] is None:
-            all_landmarks[i] = none_fill_value
-    return all_landmarks
 
 
 def get_closest_frame(time_in_seconds, total_frames, fps):
