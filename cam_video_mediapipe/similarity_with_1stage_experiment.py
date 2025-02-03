@@ -164,9 +164,9 @@ def calculate_similarity_with_visualization2(keypoints1, keypoints2):
         kp2 = keypoints2[idx2]  # shape: (keypoint_count, 4)
 
         if len(kp1) == 0 or len(kp2) == 0:
-            cosine_similarities.append(-1)
-            euclidean_similarities.append(-1)
-            weighted_distances.append(-1)
+            cosine_similarities.append(0)
+            euclidean_similarities.append(0)
+            weighted_distances.append(0)
             continue
 
         kp2 = normalize_landmarks_to_pair(kp1, kp2)  # kp2를 kp1의 범위에 맞게 정규화
@@ -178,29 +178,32 @@ def calculate_similarity_with_visualization2(keypoints1, keypoints2):
 
         # 각 keypoint의 confidence 값을 가져오기
         confidences = kp1[:, 3]  # P(pose1(x_i, y_i))
+        # confidences2 = kp2[:, 3]
+        # confidences = confidences1 * confidences2
         confidence_sum = np.sum(confidences) + 1e-10  # 0으로 나누는 것을 방지
 
         for p1, p2, conf in zip(kp1[:, :3], kp2[:, :3], confidences):
             # 코사인 유사도 계산
-            print(f'conf:{conf}')
+            # print(f'conf:{conf}')
             cosine_similarity = min(1, 1 - cosine(p1, p2)) # 0~1 사이의 범위 조절
-            print(f'cos:{cosine_similarity}')
+            # print(f'cos:{cosine_similarity}')
             frame_cosine_similarities.append(cosine_similarity)
 
             # 유클리드 유사도 계산
             euclidean_similarity = max(0, 1 - euclidean(p1, p2)) # 0~1 사이의 범위 조절
-            print(f'euc:{euclidean_similarity}')
-            print()
+            # print(f'euc:{euclidean_similarity}')
+            # print()
             frame_euclidean_similarities.append(euclidean_similarity)
 
             # Weighted Distance 계산
-            weighted_similarity = conf * cosine_similarity
+            weighted_similarity = conf * euclidean_similarity
             frame_weighted_distances.append(weighted_similarity)
 
         # 각 프레임의 평균 값을 저장
         cosine_similarities.append(np.mean(frame_cosine_similarities))
         euclidean_similarities.append(np.mean(frame_euclidean_similarities))
-        weighted_distances.append(np.mean(frame_weighted_distances))  # Normalize by confidence sum
+        weighted_distances.append(np.sum(frame_weighted_distances) / confidence_sum)
+        # weighted_distances.append(np.mean(frame_weighted_distances))  # Normalize by confidence sum
 
     # 전체 프레임에 대한 평균 값을 계산
     average_cosine_similarity = np.mean(cosine_similarities)
@@ -242,12 +245,16 @@ def save_random_pair_frames(pairs, frames1, frames2, output_dir, keypoint2_index
             print(f"Invalid keypoint1 index: {idx1}")
 
 # 비디오 경로
-video1 = "video_chal.mp4"
+video1 = "video_no.mp4"
 video2 = "video_chal.mp4"
 
 # keypoints 및 프레임 추출
 keypoints1, frames1 = extract_keypoints_with_frames(video1)
+print(keypoints1.shape)
+print(keypoints1)
 keypoints2, frames2 = extract_keypoints_with_frames(video2)
+print(keypoints2)
+print(keypoints2.shape)
 
 # 특정 keypoints 인덱스
 # 전체 인덱스를 사용하는게 유사도 차이를 더욱 보여줌
