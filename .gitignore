@@ -15,6 +15,7 @@
 *.task
 
 # data
+data/
 *.json
 *.txt
 
