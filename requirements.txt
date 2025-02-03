@@ -5,3 +5,4 @@ imageio[ffmpeg]
 fastdtw
 streamlit
 tqdm
+yt_dlp

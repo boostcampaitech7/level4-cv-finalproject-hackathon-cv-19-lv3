@@ -227,7 +227,7 @@ def get_point(data, key1, key2):
     return np.array([data[key1][key2]['x'], data[key1][key2]['y']])
 
 
-def json_to_prompt(target_landmarks_json_path, compare_landmarks_json_path, result_folder="./prompts", threshold=30):
+def json_to_prompt(target_landmarks_json_path, compare_landmarks_json_path):
     if isinstance(target_landmarks_json_path, str):
         with open(target_landmarks_json_path, 'r') as f:
             data1 = json.load(f)

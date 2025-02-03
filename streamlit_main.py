@@ -12,7 +12,7 @@ from dance_scoring.util import fill_None_from_landmarks, draw_landmarks_on_image
 from dance_scoring.similarity_with_frames import l2_normalize, calculate_similarity_with_visualization, make_euclidean_similarity, make_cosine_similarity
 from dance_scoring.similarity_with_frames import get_center_pair_frames
 from prompting.pose_compare import extract_pose_landmarks
-from prompting.pose_feedback import json_to_prompt
+from prompting.pose_feedback import json_to_prompt, generate_korean_feedback
 
 
 # main title
@@ -482,7 +482,8 @@ else:
 
             user_pose_landmarks_json = extract_pose_landmarks(user_landmark, width2, height2)
             target_pose_landmarks_json = extract_pose_landmarks(target_landmark, width1, height1)
-            _, feedback = json_to_prompt(target_pose_landmarks_json, user_pose_landmarks_json, threshold=threshold)
+            result_json = json_to_prompt(target_pose_landmarks_json, user_pose_landmarks_json)
+            feedback = generate_korean_feedback(result_json, threshold=threshold)
 
             col1, col2 = st.columns(2)
             with col1:

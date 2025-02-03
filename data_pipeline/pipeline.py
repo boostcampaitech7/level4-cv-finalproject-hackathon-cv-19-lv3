@@ -84,7 +84,7 @@ def delete_low_difference(result_dict, threshold):
         del result_dict[k]
 
 
-def get_feedback_from_keypoints(match_info_dict, threshold = 30):
+def get_feedback_from_keypoints(match_info_dict):
     # dictionary로부터 필요한 정보 가져오기
     right_keypoint, right_shape = match_info_dict['right_keypoint'], match_info_dict['right_shape']
     wrong_keypoint, wrong_shape = match_info_dict['wrong_keypoint'], match_info_dict['wrong_shape']
@@ -94,7 +94,7 @@ def get_feedback_from_keypoints(match_info_dict, threshold = 30):
     wrong_pose_json = extract_pose_landmarks(wrong_keypoint, wrong_shape[1], wrong_shape[0])
 
     # 각도 정보를 비교하여 수치적인 차이와 그에 해당하는 자연어 피드백을 dictionary형태로 가져옴
-    differences = json_to_prompt(right_pose_json, wrong_pose_json, threshold=threshold)
+    differences = json_to_prompt(right_pose_json, wrong_pose_json)
     return differences
 
 
@@ -152,7 +152,7 @@ def make_dataset(matched_dict_list, system_prompt, start_CID=0, threshold=30, ig
     }
 
     for idx, matched_dict in enumerate(matched_dict_list):
-        differences = get_feedback_from_keypoints(matched_dict, threshold)
+        differences = get_feedback_from_keypoints(matched_dict)
         feedbacks = generate_korean_feedback(differences, threshold=threshold)
 
         # 낮은 값들 거르는지 여부 보고 input에서 제외
