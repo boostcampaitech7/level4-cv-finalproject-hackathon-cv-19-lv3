@@ -4,12 +4,14 @@ import platform
 import subprocess
 import shutil
 import numpy as np
-from .keypoint_map import KEYPOINT_MAPPING, NORMALIZED_LANDMARK_KEYS
 from mediapipe import solutions
 from mediapipe.framework.formats import landmark_pb2
 import random
 import cv2
 from pathlib import Path
+from keypoint_map import KEYPOINT_MAPPING
+
+
 
 def set_seed(seed):
     random.seed(seed)

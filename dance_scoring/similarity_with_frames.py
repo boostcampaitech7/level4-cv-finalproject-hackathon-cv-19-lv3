@@ -1,7 +1,7 @@
 import numpy as np
 from fastdtw import fastdtw 
 from scipy.spatial.distance import euclidean, cosine
-from .keypoint_map import SELECTED_SIGMAS
+from keypoint_map import SELECTED_SIGMAS
 
 
 # PCK 값 계산 함수

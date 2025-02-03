@@ -5,8 +5,8 @@ import matplotlib.pyplot as plt
 from collections import namedtuple
 import warnings
 from tqdm import tqdm
-from .util import draw_landmarks_on_image
-from .keypoint_map import KEYPOINT_MAPPING, NORMALIZED_LANDMARK_KEYS
+from util import draw_landmarks_on_image
+from keypoint_map import KEYPOINT_MAPPING, NORMALIZED_LANDMARK_KEYS
 
 
 class PoseDetector:

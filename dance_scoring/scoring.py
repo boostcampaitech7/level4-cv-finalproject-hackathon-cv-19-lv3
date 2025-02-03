@@ -1,8 +1,8 @@
-from .keypoint_map import KEYPOINT_MAPPING, SELECTED_KEYPOINTS, SELECTED_SIGMAS, SELECTED_KEYPOINTS_MAPPING
 import numpy as np
 from collections import defaultdict
 from scipy.spatial.distance import euclidean
 from fastdtw import fastdtw
+from keypoint_map import KEYPOINT_MAPPING, SELECTED_KEYPOINTS, SELECTED_SIGMAS
 
 
 # refine landmark result to numpy array
