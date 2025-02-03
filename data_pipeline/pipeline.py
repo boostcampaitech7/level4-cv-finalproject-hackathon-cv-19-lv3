@@ -31,18 +31,18 @@ def compare_video_pair(right_video_path, wrong_video_path, frame_interval=0.5):
 
     wrong_original_video_frames, wrong_pose_landmarker_results, wrong_shape, wrong_fps = estimate_class.get_video_landmarks(wrong_video_path)
     
+    # None값 처리
+    right_pose_landmarker_results = post_process_pose_landmarks(right_pose_landmarker_results)
+    wrong_pose_landmarker_results = post_process_pose_landmarks(wrong_pose_landmarker_results)
+
     # keypoints L2 정규화
-    right_keypoints = get_normalized_keypoints(right_pose_landmarker_results)
-    wrong_keypoints = get_normalized_keypoints(wrong_pose_landmarker_results)
+    right_keypoints = get_normalized_keypoints(right_pose_landmarker_results, *right_shape)
+    wrong_keypoints = get_normalized_keypoints(wrong_pose_landmarker_results, *wrong_shape)
 
     # 유사도 및 시각화 데이터 계산
     distance, average_cosine_similarity, average_euclidean_distance, average_oks, average_pck, pairs = calculate_similarity_with_visualization(
         right_keypoints, wrong_keypoints
     )
-
-    # keypoint 결과 저장하기 편하도록 정제하는 과정
-    right_pose_landmarker_results = post_process_pose_landmarks(right_pose_landmarker_results)
-    wrong_pose_landmarker_results = post_process_pose_landmarks(wrong_pose_landmarker_results)
     
     # 매치된 pair끼리 frame, keypoint 저장
     matched_dict_list = []

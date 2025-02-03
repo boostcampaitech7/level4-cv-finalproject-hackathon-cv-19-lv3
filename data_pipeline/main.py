@@ -98,9 +98,14 @@ def main():
 
         # wrong video와 right video를 하나씩 비교하며 dataframe 완성하기
         for wrong_video_path in tqdm(wrong_mp4_list):
+            if isinstance(total_result, pd.DataFrame):
+                data_idx = len(total_result)
+            else:
+                data_idx = 0
+
             matched_dict_list = compare_video_pair(right_mp4_path, wrong_video_path, frame_interval=0.5)
-            df = make_dataset(matched_dict_list, system_prompt, len(total_result), threshold=threshold, ignore_low_difference=ignore_low_difference, do_numeric_to_text=do_numeric_to_text)
-            if total_result:
+            df = make_dataset(matched_dict_list, system_prompt, data_idx, threshold=threshold, ignore_low_difference=ignore_low_difference, do_numeric_to_text=do_numeric_to_text)
+            if isinstance(total_result, pd.DataFrame):
                 total_result = pd.concat([total_result, df], axis=0, ignore_index=True)
             else:
                 total_result = df
