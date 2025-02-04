@@ -14,6 +14,11 @@ from .keypoint_map import KEYPOINT_MAPPING
 
 
 def set_seed(seed):
+    '''
+    seed를 고정하기 위한 함수. mediapipe 관련 seed 설정은 수행하지 못하는중
+    inputs:
+        - seed(int)
+    '''
     random.seed(seed)
     np.random.seed(seed)
 
@@ -200,7 +205,6 @@ def get_closest_frame(time_in_seconds, total_frames, fps):
 def find_image_files(directory):
     """
     주어진 폴더 경로 내의 모든 이미지 파일을 찾아 리스트로 반환하는 함수.
-    
     Args:
         directory (str or Path): 폴더 경로.
         
