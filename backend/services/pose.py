@@ -23,14 +23,14 @@ def extract_pose(video_path):
         frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         result = pose.get_result(frame_rgb)
 
-        if result and result.pose_landmarks.landmark:
+        if result.pose_landmarks:
             points = [
-                (round(lm.x, 4), round(lm.y, 4))
+                (round(lm.x, 4), round(lm.y, 4), round(lm.z, 4))
                 for i, lm in enumerate(result.pose_landmarks.landmark)
                 if i not in EXCEPTIONS
             ]
         else:
-            points = [(-1, -1)] * (33 - len(EXCEPTIONS))
+            points = [(-1, -1, -1)] * (33 - len(EXCEPTIONS))
 
         all_frames_points.append(points)
 
