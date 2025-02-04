@@ -6,6 +6,7 @@
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE"/>
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
 
@@ -15,6 +16,7 @@
         android:required="false" />
 
     <application
+        android:usesCleartextTraffic="true"
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
@@ -25,13 +27,19 @@
         android:theme="@style/Theme.Hackaton"
         tools:targetApi="31">
         <activity
+            android:name=".CameraActivity"
+            android:exported="false" />
+        <activity
+            android:name=".UrlProcessActivity"
+            android:exported="false" />
+        <activity
+            android:name=".UrlActivity"
+            android:exported="false" />
+        <activity
             android:name=".FinalActivity"
             android:exported="false" />
         <activity
             android:name=".ScoreActivity"
-            android:exported="false" />
-        <activity
-            android:name=".FeedbackActivity"
             android:exported="false" />
         <activity
             android:name=".CameraActivity5"

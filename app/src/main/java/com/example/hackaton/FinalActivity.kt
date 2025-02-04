@@ -20,6 +20,7 @@ class FinalActivity : AppCompatActivity() {
     private lateinit var mainBtn: Button
     private var flippedVideoPath: String? = null
     private var originalVideo: String? = null
+    private var folderId: String? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -35,6 +36,7 @@ class FinalActivity : AppCompatActivity() {
 
         flippedVideoPath = intent.getStringExtra("flippedVideoPath")
         originalVideo = intent.getStringExtra("originalVideo")
+        folderId = intent.getStringExtra("folderId")
         val videoUri = Uri.parse(originalVideo)
 
         retryBtn = findViewById(R.id.retryBtn)
@@ -45,27 +47,11 @@ class FinalActivity : AppCompatActivity() {
         startVideo(videoUri)
 
         retryBtn.setOnClickListener {
-            if (originalVideo == "android.resource://${packageName}/${R.raw.kick_drum_base_challenge}") {
-                val intent = Intent(this, CameraActivity1::class.java)
+                val intent = Intent(this, CameraActivity::class.java).apply {
+                    putExtra("originalVideo", originalVideo)
+                    putExtra("folderId", folderId)
+                }
                 startActivity(intent)
-            }
-            else if (originalVideo == "android.resource://${packageName}/${R.raw.sticky_challenge}") {
-                val intent = Intent(this, CameraActivity2::class.java)
-                startActivity(intent)
-            }
-            else if (originalVideo == "android.resource://${packageName}/${R.raw.jaessbee_challenge}") {
-                val intent = Intent(this, CameraActivity3::class.java)
-                startActivity(intent)
-            }
-            else if (originalVideo == "android.resource://${packageName}/${R.raw.wait_challenge}") {
-                val intent = Intent(this, CameraActivity4::class.java)
-                startActivity(intent)
-            }
-            else if (originalVideo == "android.resource://${packageName}/${R.raw.imok_challenge}") {
-                val intent = Intent(this, CameraActivity5::class.java)
-                startActivity(intent)
-            }
-
         }
 
         downloadBtn.setOnClickListener {

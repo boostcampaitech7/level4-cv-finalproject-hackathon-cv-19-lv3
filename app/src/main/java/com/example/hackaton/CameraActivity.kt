@@ -2,26 +2,29 @@ package com.example.hackaton
 
 import android.content.Intent
 import android.hardware.Camera
-import java.text.SimpleDateFormat
 import android.media.CamcorderProfile
 import android.media.MediaRecorder
 import android.net.Uri
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.os.Environment
 import android.util.Log
 import android.view.SurfaceHolder
 import android.view.SurfaceView
 import android.view.View
 import android.widget.Toast
 import android.widget.VideoView
+import androidx.core.content.FileProvider
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.gun0912.tedpermission.PermissionListener
 import com.gun0912.tedpermission.normal.TedPermission
 import java.io.File
+import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-class CameraActivity1 : AppCompatActivity(), SurfaceHolder.Callback {
+class CameraActivity : AppCompatActivity(), SurfaceHolder.Callback {
+
     private lateinit var btnRecord: FloatingActionButton
     private lateinit var surfaceView: SurfaceView
     private lateinit var videoOverlay: VideoView
@@ -29,12 +32,21 @@ class CameraActivity1 : AppCompatActivity(), SurfaceHolder.Callback {
     private var mediaRecorder: MediaRecorder? = null
     private lateinit var surfaceHolder: SurfaceHolder
     private var recording = false
-    private val TAG = "CameraActivity1.kt"
+    private val TAG = "CameraActivity.kt"
+    private var youtubeVideoPath: String? = null
     private var videoFilePath: String? = null
+    private var folderId: String? = null
+
+    private val apiService = RetrofitClient.instance
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_camera1)
+        setContentView(R.layout.activity_camera)
+
+        youtubeVideoPath = intent.getStringExtra("originalVideoPath")
+        folderId = intent.getStringExtra("folderId")
+        Log.d(TAG, "$folderId")
+
 
         // 권한 요청 코드
         TedPermission.create()
@@ -44,13 +56,14 @@ class CameraActivity1 : AppCompatActivity(), SurfaceHolder.Callback {
             .setPermissions(
                 android.Manifest.permission.CAMERA,
                 android.Manifest.permission.WRITE_EXTERNAL_STORAGE,
+                android.Manifest.permission.READ_EXTERNAL_STORAGE,
                 android.Manifest.permission.RECORD_AUDIO
             )
             .check()
 
-        btnRecord = findViewById(R.id.record_btn1)
-        surfaceView = findViewById(R.id.surfaceView1)
-        videoOverlay = findViewById(R.id.videoOverlay1)
+        btnRecord = findViewById(R.id.record_btn)
+        surfaceView = findViewById(R.id.surfaceView)
+        videoOverlay = findViewById(R.id.videoOverlay)
 
         // SurfaceHolder 초기화
         surfaceHolder = surfaceView.holder
@@ -64,13 +77,42 @@ class CameraActivity1 : AppCompatActivity(), SurfaceHolder.Callback {
                 startRecording()
             }
         }
+
+        // CameraActivity 시작 시 바로 비디오 포즈 추출 API 호출
+        folderId?.let {
+            extractVideoPose(folderId!!)
+        }
     }
 
+    // 비디오 포즈 추출 API를 백그라운드에서 실행
+    private fun extractVideoPose(folderId: String) {
+        // 백그라운드에서 API 호출 처리
+        Thread {
+            try {
+                val response = apiService.extractVideoPose(folderId).execute()
+                if (response.isSuccessful) {
+                    val message = response.body()?.get("message")
+                    Log.d(TAG, "포즈 추출 완료: $message")
+
+                    runOnUiThread {
+                        Toast.makeText(this, "포즈 추출 작업 완료", Toast.LENGTH_SHORT).show()
+                    }
+                } else {
+                    Log.e(TAG, "포즈 추출 실패: ${response.code()}")
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "포즈 추출 오류: ${e.message}")
+            }
+        }.start()
+    }
+
+
     private fun setupVideoOverlay() {
-        val videoUri = Uri.parse("android.resource://${packageName}/${R.raw.kick_drum_base_challenge}")
+        val videoUri = Uri.parse("file://$youtubeVideoPath")
 
         videoOverlay.setVideoURI(videoUri)
         videoOverlay.setOnPreparedListener { mediaPlayer ->
+            Log.d("VideoView", "Video is prepared")
             mediaPlayer.isLooping = false
         }
 
@@ -80,6 +122,7 @@ class CameraActivity1 : AppCompatActivity(), SurfaceHolder.Callback {
             val intent = Intent(this, ProcessActivity::class.java).apply {
                 putExtra("videoFilePath", videoFilePath)
                 putExtra("originalVideo", videoUri.toString())
+                putExtra("folderId", folderId)
             }
             startActivity(intent)
         }
@@ -87,6 +130,7 @@ class CameraActivity1 : AppCompatActivity(), SurfaceHolder.Callback {
         videoOverlay.visibility = View.VISIBLE // 비디오 오버레이를 표시
         videoOverlay.start()
     }
+
     private fun startRecording() {
         val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
         val videoFile = File(
@@ -105,7 +149,7 @@ class CameraActivity1 : AppCompatActivity(), SurfaceHolder.Callback {
 
         // 녹화 시작
         runOnUiThread {
-            Toast.makeText(this@CameraActivity1, "녹화가 시작되었습니다.", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this@CameraActivity, "녹화가 시작되었습니다.", Toast.LENGTH_SHORT).show()
 
             try {
                 mediaRecorder = MediaRecorder().apply {
@@ -166,19 +210,19 @@ class CameraActivity1 : AppCompatActivity(), SurfaceHolder.Callback {
                     Log.e(TAG, "Error setting camera preview: ${e.message}")
                 }
             } else {
-                Toast.makeText(this@CameraActivity1, "전면 카메라를 찾을 수 없습니다.", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this@CameraActivity, "전면 카메라를 찾을 수 없습니다.", Toast.LENGTH_SHORT).show()
                 return
             }
-            surfaceView = findViewById(R.id.surfaceView1)
+            surfaceView = findViewById(R.id.surfaceView)
             surfaceHolder = surfaceView.holder
-            surfaceHolder.addCallback(this@CameraActivity1)
+            surfaceHolder.addCallback(this@CameraActivity)
             surfaceHolder.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS)
-            Toast.makeText(this@CameraActivity1, "권한 허가", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this@CameraActivity, "권한 허가", Toast.LENGTH_SHORT).show()
         }
 
         override fun onPermissionDenied(deniedPermissions: MutableList<String>?) {
             // 권한 거부 시
-            Toast.makeText(this@CameraActivity1, "권한 거부", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this@CameraActivity, "권한 거부", Toast.LENGTH_SHORT).show()
         }
     }
 

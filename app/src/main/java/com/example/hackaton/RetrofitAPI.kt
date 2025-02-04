@@ -2,10 +2,13 @@ package com.example.hackaton
 
 import okhttp3.MultipartBody
 import okhttp3.OkHttpClient
+import okhttp3.ResponseBody
 import retrofit2.Call
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
+import retrofit2.http.Body
 import retrofit2.http.GET
+import retrofit2.http.Headers
 import retrofit2.http.Multipart
 import retrofit2.http.POST
 import retrofit2.http.Part
@@ -21,6 +24,12 @@ interface RetrofitAPI {
         @Part originalVideo: MultipartBody.Part, // 원본 영상
         @Part recordedVideo: MultipartBody.Part  // 촬영 영상
     ): Call<ScoreResponse>
+
+    // 서버로 유튜브 링크 전송
+    @POST("/postYoutubeUrl")
+    fun sendYoutubeUrl(
+        @Body request: YoutubeUrlRequest
+    ): Call<ResponseBody>
 
     // 프레임 전송해 피드백 요청
     @GET("/getFeedback")
@@ -55,4 +64,8 @@ data class ScoreResponse(
 
 data class FeedbackResponse(
     val feedback: String
+)
+
+data class YoutubeUrlRequest(
+    val url: String
 )

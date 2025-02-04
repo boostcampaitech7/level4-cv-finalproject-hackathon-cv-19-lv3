@@ -18,7 +18,7 @@ class StartActivity : AppCompatActivity() {
 
 
         btnStart.setOnClickListener {
-            val intent = Intent(this, SongActivity::class.java)
+            val intent = Intent(this, UrlActivity::class.java)
             startActivity(intent)
         }
     }

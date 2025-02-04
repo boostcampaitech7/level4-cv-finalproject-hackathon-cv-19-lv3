@@ -31,8 +31,11 @@ class ResultActivity : AppCompatActivity() {
     private lateinit var feedbackTextView: TextView
     private var flippedVideoPath: String? = null
     private var originalVideo: String? = null
+    private var folderId: String? = null
     private var isPlaying = false
     private val handler = android.os.Handler()
+
+    private val apiService = RetrofitClient.instance
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -55,6 +58,7 @@ class ResultActivity : AppCompatActivity() {
 
         flippedVideoPath = intent.getStringExtra("flippedVideoPath")
         originalVideo = intent.getStringExtra("originalVideo")
+        folderId = intent.getStringExtra("folderId")
 
         if (flippedVideoPath != null) {
             playFlippedVideo(flippedVideoPath!!)
@@ -66,6 +70,7 @@ class ResultActivity : AppCompatActivity() {
             val intent = Intent(this, FinalActivity::class.java).apply {
                 putExtra("flippedVideoPath", flippedVideoPath)
                 putExtra("originalVideo", originalVideo)
+                putExtra("folderId", folderId)
             }
             startActivity(intent)
         }
@@ -91,7 +96,7 @@ class ResultActivity : AppCompatActivity() {
                         frameImageView.setImageURI(frameUri)
 
                         // 서버에 피드백 요청 함수 실행
-//                        feedbackRequest(frameIndexInt, path)
+                        feedbackRequest(frameIndexInt, path)
                     } else {
                         Toast.makeText(this, "프레임을 저장할 수 없습니다.", Toast.LENGTH_SHORT).show()
                     }
@@ -196,20 +201,32 @@ class ResultActivity : AppCompatActivity() {
     }
 
     private fun feedbackRequest(frame: Int, videoPath: String) {
-        val api = RetrofitAPI.create("http://localhost:8000")
-        
-        api.getFeedback(frame, videoPath).enqueue(object : Callback<FeedbackResponse> {
-            override fun onResponse(call: Call<FeedbackResponse>, response: Response<FeedbackResponse>) {
+        if (folderId.isNullOrEmpty()) {
+            Toast.makeText(this, "폴더 ID가 누락되었습니다.", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        val request = FeedbackRequest(
+            folderId = folderId!!,
+            frame = frame.toString()
+        )
+
+        apiService.getFeedback(request).enqueue(object : Callback<Map<String, String>> {
+            override fun onResponse(call: Call<Map<String, String>>, response: Response<Map<String, String>>) {
                 if (response.isSuccessful) {
-                    val feedback = response.body()?.feedback
-                    feedbackTextView.text = feedback // 피드백 텍스트를 화면에 표시
+                    val feedback = response.body()?.get("feedback")
+                    if (!feedback.isNullOrEmpty()) {
+                        feedbackTextView.text = feedback // 피드백 텍스트를 화면에 표시
+                    } else {
+                        Toast.makeText(this@ResultActivity, "피드백을 받을 수 없습니다.", Toast.LENGTH_SHORT).show()
+                    }
                 } else {
-                    Toast.makeText(this@ResultActivity, "피드백을 받을 수 없습니다.", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this@ResultActivity, "서버 응답 오류", Toast.LENGTH_SHORT).show()
                 }
             }
 
-            override fun onFailure(call: Call<FeedbackResponse>, t: Throwable) {
-                Toast.makeText(this@ResultActivity, "서버 연결 실패", Toast.LENGTH_SHORT).show()
+            override fun onFailure(call: Call<Map<String, String>>, t: Throwable) {
+                Toast.makeText(this@ResultActivity, "서버 연결 실패: ${t.message}", Toast.LENGTH_SHORT).show()
             }
         })
     }

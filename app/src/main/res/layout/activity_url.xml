@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".UrlActivity">
+
+    <FrameLayout
+        android:id="@+id/topFragmentContainer"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:gravity="center"
+        app:layout_constraintTop_toBottomOf="@id/topFragmentContainer"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/bottomFragmentContainer">
+
+        <TextView
+            android:id="@+id/textView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="딴 - 따라와 함께 춤추고 싶은 영상을 알려주세요!"
+            android:textSize="18sp"
+            android:layout_marginTop="30sp"/>
+
+        <Space
+            android:layout_width="match_parent"
+            android:layout_height="36dp" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="117dp"
+            android:gravity="center"
+            android:orientation="horizontal">
+
+            <ImageView
+                android:id="@+id/imageView5"
+                android:layout_width="124dp"
+                android:layout_height="108dp"
+                app:srcCompat="@drawable/character_left" />
+
+            <ImageView
+                android:id="@+id/imageView7"
+                android:layout_width="118dp"
+                android:layout_height="102dp"
+                app:srcCompat="@drawable/character_right" />
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="358dp"
+            android:layout_height="60dp"
+            android:orientation="horizontal">
+
+            <EditText
+                android:id="@+id/urlText"
+                android:layout_width="285dp"
+                android:layout_height="match_parent"
+                android:alpha="0.5"
+                android:ems="10"
+                android:hint="youtube.com/..."
+                android:inputType="text"
+                android:textColor="#003482"
+                android:textColorHint="#003482"
+                android:textSize="14sp" />
+
+            <ImageButton
+                android:id="@+id/urlSearchButton"
+                android:layout_width="62dp"
+                android:layout_height="55dp"
+                android:layout_gravity="center|right"
+                android:layout_marginRight="10sp"
+                android:background="#00FFFFFF"
+                android:contentDescription="@string/search_button_description"
+                android:src="@drawable/search" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/textView5"
+            android:layout_width="370dp"
+            android:layout_height="wrap_content"
+            android:text="✅ 확인해주세요!"
+            android:layout_marginTop="50sp"/>
+
+        <TextView
+            android:id="@+id/textView7"
+            android:layout_width="340dp"
+            android:layout_height="wrap_content"
+            android:text="· 60초 이내의 영상으로 골라주세요." />
+
+        <TextView
+            android:id="@+id/textView8"
+            android:layout_width="340dp"
+            android:layout_height="wrap_content"
+            android:text="· 한 사람만이 등장하는 영상으로 골라주세요. " />
+
+        <TextView
+            android:id="@+id/textView9"
+            android:layout_width="340dp"
+            android:layout_height="wrap_content"
+            android:text="· 정면으로 촬영된 영상이어야 정확한 피드백이 가능합니다." />
+
+    </LinearLayout>
+
+    <FrameLayout
+        android:id="@+id/bottomFragmentContainer"
+        android:layout_width="match_parent"
+        android:layout_height="100dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+</androidx.constraintlayout.widget.ConstraintLayout>
