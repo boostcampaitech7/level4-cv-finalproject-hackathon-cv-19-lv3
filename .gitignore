@@ -3,7 +3,6 @@ clova_datasets
 
 # API key file
 CLOVA_API
-
 # audio
 *.mp3
 *.wav
@@ -21,7 +20,9 @@ CLOVA_API
 *.task
 
 # data
+data/
 *.json
+*.txt
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -193,6 +194,8 @@ cython_debug/
 #.idea/
 
 # PyPI configuration file
+.pypirc
+=======
 .pypirc
 
 # dtw 매칭 프레임 생성 폴더
