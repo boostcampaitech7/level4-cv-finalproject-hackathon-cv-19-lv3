@@ -265,5 +265,257 @@ def json_to_prompt(target_landmarks_json_path, compare_landmarks_json_path):
     return result_json
 
 
-
 ###################### NEW x, y, z, dataset test
+def calculate_two_vector_angle(v1, v2, normal, eps=1e-7):
+    dot_product = np.dot(v1, v2)
+
+    magnitude1 = np.linalg.norm(v1)
+    magnitude2 = np.linalg.norm(v2)
+
+    cos_angle = dot_product / (magnitude1 * magnitude2)
+
+    cos_angle = min(1.0-eps, max(-1.0+eps, cos_angle))
+    angle = math.degrees(math.acos(cos_angle))
+
+     # 부호 결정을 위한 외적
+    cross_product = np.cross(v1, v2)
+    if np.dot(cross_product, normal) < 0:
+        angle = -angle
+    
+    return angle
+
+def calculate_two_points_angle_xy(point1, point2):
+    vector = point2 - point1
+    angle = math.degrees(math.atan2(vector[1], vector[0]))
+
+    return angle
+
+def calculate_two_points_angle_xz(point1, point2):
+    vector = point2 - point1
+    angle = math.degrees(math.atan2(vector[2], vector[0]))
+
+    return angle
+
+def calculate_two_points_angle_zx(point1, point2):
+    vector = point2 - point1
+    angle = math.degrees(math.atan2(vector[0], vector[2]))
+
+    return angle
+
+def calculate_three_points_angle_with_sign(point1, point2, point3, normal, eps=1e-7):
+    vector1 = point1 - point2
+    vector2 = point3 - point2
+    
+    dot_product = np.dot(vector1, vector2)
+
+    magnitude1 = np.linalg.norm(vector1)
+    magnitude2 = np.linalg.norm(vector2)
+
+    cos_angle = dot_product / (magnitude1 * magnitude2)
+
+    cos_angle = min(1.0-eps, max(-1.0+eps, cos_angle))
+    angle = math.degrees(math.acos(cos_angle))
+
+    # 부호 결정을 위한 외적
+    cross_product = np.cross(vector1, vector2)
+    if np.dot(cross_product, normal) < 0:
+        angle = -angle
+
+    return angle
+
+
+class FramePose3D:
+    def __init__(self, landmarks_data):
+        self.nose = np.array([
+            landmarks_data['head']['0']['x'],
+            landmarks_data['head']['0']['y'],
+            landmarks_data['head']['0']['z']
+        ])
+
+        self.left_eye = np.array([
+            landmarks_data['head']['2']['x'],
+            landmarks_data['head']['2']['y'],
+            landmarks_data['head']['2']['z']
+        ])
+
+        self.right_eye = np.array([
+            landmarks_data['head']['5']['x'],
+            landmarks_data['head']['5']['y'],
+            landmarks_data['head']['5']['z']
+        ])
+
+        self.left_ear = np.array([
+            landmarks_data['head']['7']['x'],
+            landmarks_data['head']['7']['y'],
+            landmarks_data['head']['7']['z']
+        ])
+        self.right_ear = np.array([
+            landmarks_data['head']['8']['x'],
+            landmarks_data['head']['8']['y'],
+            landmarks_data['head']['8']['z']
+        ])
+        self.left_mouth = np.array([
+            landmarks_data['head']['9']['x'],
+            landmarks_data['head']['9']['y'],
+            landmarks_data['head']['9']['z']
+        ])
+        self.right_mouth = np.array([
+            landmarks_data['head']['10']['x'],
+            landmarks_data['head']['10']['y'],
+            landmarks_data['head']['10']['z']
+        ])
+
+        self.left_shoulder = np.array([
+            landmarks_data['left_arm']['11']['x'],
+            landmarks_data['left_arm']['11']['y'],
+            landmarks_data['left_arm']['11']['z']
+        ])
+        self.right_shoulder = np.array([
+            landmarks_data['right_arm']['12']['x'],
+            landmarks_data['right_arm']['12']['y'],
+            landmarks_data['right_arm']['12']['z']
+        ])
+        self.left_elbow = np.array([
+            landmarks_data['left_arm']['13']['x'],
+            landmarks_data['left_arm']['13']['y'],
+            landmarks_data['left_arm']['13']['z']
+        ])
+        self.right_elbow = np.array([
+            landmarks_data['right_arm']['14']['x'],
+            landmarks_data['right_arm']['14']['y'],
+            landmarks_data['right_arm']['14']['z']
+        ])
+        self.left_wrist = np.array([
+            landmarks_data['left_arm']['15']['x'],
+            landmarks_data['left_arm']['15']['y'],
+            landmarks_data['left_arm']['15']['z']
+        ])
+        self.right_wrist = np.array([
+            landmarks_data['right_arm']['16']['x'],
+            landmarks_data['right_arm']['16']['y'],
+            landmarks_data['right_arm']['16']['z']
+        ])
+        self.left_pelvis = np.array([
+            landmarks_data['left_leg']['23']['x'],
+            landmarks_data['left_leg']['23']['y'],
+            landmarks_data['left_leg']['23']['z']
+        ])
+        self.right_pelvis = np.array([
+            landmarks_data['right_leg']['24']['x'],
+            landmarks_data['right_leg']['24']['y'],
+            landmarks_data['right_leg']['24']['z']
+        ])
+        self.left_knee = np.array([
+            landmarks_data['left_leg']['25']['x'],
+            landmarks_data['left_leg']['25']['y'],
+            landmarks_data['left_leg']['25']['z']
+        ])
+        self.right_knee = np.array([
+            landmarks_data['right_leg']['26']['x'],
+            landmarks_data['right_leg']['26']['y'],
+            landmarks_data['right_leg']['26']['z']
+        ])
+        self.left_ankle = np.array([
+            landmarks_data['left_leg']['27']['x'],
+            landmarks_data['left_leg']['27']['y'],
+            landmarks_data['left_leg']['27']['z']
+        ])
+        self.right_ankle = np.array([
+            landmarks_data['right_leg']['28']['x'],
+            landmarks_data['right_leg']['28']['y'],
+            landmarks_data['right_leg']['28']['z']
+        ])
+
+        # 몸이 움직임에 따라 좌표축 역할을 해줄 2개의 벡터 정의
+        x_direction = (self.left_shoulder - self.right_shoulder)
+        x_direction[1] = 0.
+        self.shoulder_vector = x_direction # 팔과 머리의 움직임과 연관
+
+        x_direction = (self.left_pelvis - self.right_pelvis)
+        x_direction[1] = 0.
+        self.pervis_vector = x_direction # 다리의 움직임과 연관
+
+
+    def get_head_angle_1(self):
+        '''
+        귀 중점, 어깨중점, 엉덩이 중점의 3point
+        - 고개가 앞/뒤로 얼마나 숙여져/젖혀져 있는지 구합니다.
+        - 0 ~ 180 : 앞으로 숙임
+        '''
+        shoulder_center = (self.right_shoulder + self.left_shoulder) / 2
+        hip_center = (self.left_pelvis + self.right_pelvis) / 2
+        ear_center = (self.right_ear + self.left_ear) / 2
+        return calculate_three_points_angle(hip_center, shoulder_center, ear_center)
+    
+    def get_head_angle_2(self):
+        '''
+        - 고개가 어느쪽으로 얼마나 꺾여있는지 구합니다.
+        - 0인경우 안꺾임
+        - 왼쪽으로 꺾여 있으면 양수
+        - 오른쪽으로 꺾여 있으면 음수
+        '''
+        ear_vector = (self.left_ear - self.right_ear)
+        return calculate_two_vector_angle(self.shoulder_vector, ear_vector, normal=np.array([0, 0, 1]))
+    
+    def get_eye_direction(self):
+        '''
+        - 시선이 왼쪽/오른쪽 어디를 바라보고 있는지 구합니다
+        - 180이 정면, 0이 완전 후면
+        - 음수면 오른쪽 보는중, 양수면 왼쪽 보는중
+        '''
+        eye_center = (self.right_eye + self.left_eye) / 2
+        eye_center[1] = 0.
+        ear_center = (self.right_ear + self.left_ear) / 2
+        ear_center[1] = 0.
+
+        return calculate_two_points_angle_zx(ear_center, eye_center)
+
+    
+    def get_waist_angle_1(self):
+        '''
+        어깨중점, 엉덩이중점, 무릎 중점의 3 point
+        - 허리 굽혀진 정도 계산
+        - 180에 가까울수록 펴져있고, 0에 가까울수록 접혀져있음
+        '''
+        shoulder_center = (self.right_shoulder + self.left_shoulder) / 2
+        hip_center = (self.left_pelvis + self.right_pelvis) / 2
+        knee_center = (self.left_knee + self.right_knee) / 2
+        return calculate_three_points_angle(shoulder_center, hip_center, knee_center)
+    
+    def get_waist_angle_2(self):
+        '''
+        - 사람의 몸이 전체적으로 얼마나 뒤를 돌아 있는지 판단하기위해 엉덩이 point 2개를 이용
+        - 왼쪽으로 돌고 있으면 양수, 오른쪽으로 돌고 있으면 음수
+        '''
+        left_pelvis = np.copy(self.left_pelvis)
+        left_pelvis[1] = 0.
+        right_pelvis = np.copy(self.right_pelvis)
+        right_pelvis[1] = 0.
+
+        return calculate_two_points_angle_xz(right_pelvis, left_pelvis)
+
+
+if __name__ == "__main__":
+    import sys
+    sys.path.append("./")
+    from dance_scoring import detector, scoring
+    from feedback.pose_compare import extract_pose_world_landmarks
+
+    det = detector.PoseDetector()
+
+    img_path = './images/look_back.jpg'
+    landmark, _, _, _ = det.get_image_landmarks(img_path)
+    result = extract_pose_world_landmarks(landmark)
+
+    # pose feedback
+    feedback_module = FramePose3D(result)
+    print("################ HEAD ################")
+    print("고개가 숙여진/펴진 정도: ", feedback_module.get_head_angle_1())
+    print("고개가 오른/왼쪽으로 얼마나 숙여졌는지: ", feedback_module.get_head_angle_2())
+    print("시선이 오른/왼쪽으로 얼마나 돌아갔는지: ", feedback_module.get_eye_direction())
+    
+    print("################ BODY ################")
+    print("허리가 앞으로 숙여진 정도: ", feedback_module.get_waist_angle_1())
+    print("사용자 몸이 돌아간 정도: ", feedback_module.get_waist_angle_2())
+
+    print("################ LEFT ARM ################")
