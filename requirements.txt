@@ -1,0 +1,8 @@
+mediapipe
+opencv-python
+imageio
+imageio[ffmpeg]
+fastdtw
+streamlit
+tqdm
+yt_dlp
