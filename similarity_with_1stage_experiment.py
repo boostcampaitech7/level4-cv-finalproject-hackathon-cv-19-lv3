@@ -34,9 +34,11 @@ def extract_keypoints_with_frames(video_path):
                 visibility = result.pose_landmarks.landmark[i].visibility
                 # keypoints.append([x, y, z])
                 keypoints.append([x, y, z, visibility])
-                
             keypoints_list.append(np.array(keypoints))
-            frames.append(frame)  # 원본 프레임 저장
+        else:
+            # keypoints_list.append(np.full((33, 3), np.nan)) # nan 에러 발생 가능성 존재
+            keypoints_list.append(np.zeros((33, 4)))  # 33개의 키포인트를 (0,0,0)으로 채움
+        frames.append(frame)  # 원본 프레임 저장
 
     cap.release()
     return np.array(keypoints_list), frames
@@ -146,9 +148,66 @@ def calculate_similarity_with_visualization(keypoints1, keypoints2):
 
     return distance, average_cosine_similarity, average_euclidean_similarity, pairs
 
-import numpy as np
-from fastdtw import fastdtw
-from scipy.spatial.distance import euclidean, cosine
+# COCO dataset에서 제공하는 OKS 계산을 위한 keypoint standard deviation (σ values)
+SELECTED_SIGMAS = [
+    0.026, # nose
+    0.025, # left_eye_inner
+    0.025, # left_eye
+    0.025, # left_eye_outer
+    0.025, # right_eye_inner
+    0.025, # right_eye
+    0.025, # right_eye_outer
+    0.035, # left_ear
+    0.035, # right_ear
+    0.026, # mouth_left
+    0.026, # mouth_right
+    0.079, # left_shoulder
+    0.079, # right_shoulder
+    0.072, # left_elbow
+    0.072, # right_elbow
+    0.062, # left_wrist
+    0.062, # right_wrist
+    0.072, # left_pinky
+    0.072, # right_pinky
+    0.072, # left_index
+    0.072, # right_index
+    0.072, # left_thumb
+    0.072, # right_thumb
+    0.107, # left_hip
+    0.107, # right_hip
+    0.087, # left_knee
+    0.087, # right_knee
+    0.089, # left_ankle
+    0.089, # right_ankle
+    0.089, # left_heel
+    0.089, # right_heel
+    0.072, # left_foot_index
+    0.072  # right_foot_index
+]
+
+# OKS 값 계산 함수
+def oks(gt, preds):
+    """
+    gt : shape (num_selected, 4) 4 feature is (x, y, z, visibility)
+    preds : shape (num_selected, 4) 4 feature is (x, y, z, visibility)
+    """
+    sigmas = np.array(SELECTED_SIGMAS)
+    distance = np.linalg.norm(gt[:, :3] - preds[:, :3], axis=1)
+
+    kp_c = sigmas * 2
+    return np.mean(np.exp(-(distance ** 2) / (2 * (kp_c ** 2))))
+
+
+# PCK 값 계산 함수
+def pck(gt, preds, threshold=0.1):
+    """
+    gt : shape (num_selected, 4) 4 feature is (x, y, z, visibility)
+    preds : shape (num_selected, 4) 4 feature is (x, y, z, visibility)
+    """
+    distance = np.linalg.norm(gt[:, :3] - preds[:, :3], axis=1)
+    matched = distance < threshold
+    pck_score = np.mean(matched)
+    return pck_score, matched
 
 def calculate_similarity_with_visualization2(keypoints1, keypoints2):
     # FastDTW로 DTW 거리와 매칭된 인덱스 쌍(pairs) 계산
@@ -157,6 +216,8 @@ def calculate_similarity_with_visualization2(keypoints1, keypoints2):
     cosine_similarities = []
     euclidean_similarities = []
     weighted_distances = []
+    oks_scores = []
+    pck_scores = []
 
     for idx1, idx2 in pairs:
         # 각 프레임에서 keypoints의 Cosine Similarity와 Euclidean Distance 계산
@@ -167,9 +228,11 @@ def calculate_similarity_with_visualization2(keypoints1, keypoints2):
             cosine_similarities.append(0)
             euclidean_similarities.append(0)
             weighted_distances.append(0)
+            oks_scores.append(0)
+            pck_scores.append(0)
             continue
 
-        kp2 = normalize_landmarks_to_pair(kp1, kp2)  # kp2를 kp1의 범위에 맞게 정규화
+        # kp2 = normalize_landmarks_to_pair(kp1, kp2)  # kp2를 kp1의 범위에 맞게 정규화
 
         # 벡터 차원을 유지한 상태로 유사도 계산
         frame_cosine_similarities = []
@@ -177,10 +240,10 @@ def calculate_similarity_with_visualization2(keypoints1, keypoints2):
         frame_weighted_distances = []
 
         # 각 keypoint의 confidence 값을 가져오기
-        confidences = kp1[:, 3]  # P(pose1(x_i, y_i))
-        # confidences2 = kp2[:, 3]
-        # confidences = confidences1 * confidences2
-        confidence_sum = np.sum(confidences) + 1e-10  # 0으로 나누는 것을 방지
+        confidences1 = kp1[:, 3]  # P(pose1(x_i, y_i))
+        confidences2 = kp2[:, 3]
+        confidences = confidences1 * confidences2
+        # confidence_sum = np.sum(confidences) + 1e-10  # 0으로 나누는 것을 방지
 
         for p1, p2, conf in zip(kp1[:, :3], kp2[:, :3], confidences):
             # 코사인 유사도 계산
@@ -202,15 +265,24 @@ def calculate_similarity_with_visualization2(keypoints1, keypoints2):
         # 각 프레임의 평균 값을 저장
         cosine_similarities.append(np.mean(frame_cosine_similarities))
         euclidean_similarities.append(np.mean(frame_euclidean_similarities))
-        weighted_distances.append(np.sum(frame_weighted_distances) / confidence_sum)
-        # weighted_distances.append(np.mean(frame_weighted_distances))  # Normalize by confidence sum
+        # weighted_distances.append(np.sum(frame_weighted_distances) / confidence_sum)
+        weighted_distances.append(np.mean(frame_weighted_distances))  # Normalize by confidence sum
+
+        oks_score = oks(kp1, kp2)
+        oks_scores.append(oks_score)
+
+        # PCK 계산 (각 프레임별)
+        pck_score, _ = pck(kp1, kp2)
+        pck_scores.append(pck_score)
 
     # 전체 프레임에 대한 평균 값을 계산
     average_cosine_similarity = np.mean(cosine_similarities)
     average_euclidean_similarity = np.mean(euclidean_similarities)
     average_weighted_distance = np.mean(weighted_distances)
+    average_oks = np.mean(oks_scores)
+    average_pck = np.mean(pck_scores)
 
-    return distance, average_cosine_similarity, average_euclidean_similarity, average_weighted_distance, pairs
+    return distance, average_cosine_similarity, average_euclidean_similarity, average_weighted_distance, average_oks, average_pck, pairs
 
 
 def save_random_pair_frames(pairs, frames1, frames2, output_dir, keypoint2_index):
@@ -245,16 +317,14 @@ def save_random_pair_frames(pairs, frames1, frames2, output_dir, keypoint2_index
             print(f"Invalid keypoint1 index: {idx1}")
 
 # 비디오 경로
-video1 = "video_no.mp4"
-video2 = "video_chal.mp4"
+video1 = "video_kdb1.mp4"
+video2 = "video_kdb2.mp4"
 
 # keypoints 및 프레임 추출
 keypoints1, frames1 = extract_keypoints_with_frames(video1)
-print(keypoints1.shape)
-print(keypoints1)
+# print(keypoints1.shape)
 keypoints2, frames2 = extract_keypoints_with_frames(video2)
-print(keypoints2)
-print(keypoints2.shape)
+# print(keypoints2.shape)
 
 # 특정 keypoints 인덱스
 # 전체 인덱스를 사용하는게 유사도 차이를 더욱 보여줌
@@ -263,15 +333,33 @@ print(keypoints2.shape)
 # keypoints2 = filter_keypoints(keypoints2, selected_indices)
 
 # 유사도 및 시각화 데이터 계산
-distance, avg_cosine, avg_euclidean, avg_weighted, pairs = calculate_similarity_with_visualization2(
+distance, avg_cosine, avg_euclidean, avg_weighted, average_oks, average_pck, pairs = calculate_similarity_with_visualization2(
     keypoints1, keypoints2
 )
 
 # 랜덤한 매칭된 프레임 저장
 output_dir = "output_frames"
-save_random_pair_frames(pairs, frames1, frames2, output_dir, 200)
+save_random_pair_frames(pairs, frames1, frames2, output_dir, 100)
 
 print(f"{video1} pairing with {video2} in in 1-stage experiment")
 print(f"Average Cosine Similarity score: {avg_cosine}")
 print(f"Average Euclidean Similarity score: {avg_euclidean}")
 print(f"Average Weighted Similarity score: {avg_weighted}")
+print(f"Average OKS score: {average_oks}")
+print(f"Average PCK score: {average_pck}")
+print()
+print(f"Cos(0.3) + Euc(0.3) + OKS(0.4): {avg_cosine*0.3 + avg_euclidean*0.3 + average_oks*0.4}")
+print(f"Cos(0.4) + Euc(0.4) + OKS(0.2): {avg_cosine*0.4 + avg_euclidean*0.4 + average_oks*0.2}")
+print(f"Cos(0.5) + Euc(0.3) + OKS(0.2): {avg_cosine*0.5 + avg_euclidean*0.3 + average_oks*0.2}")
+
+print(f"Cos(0.3) + Euc(0.3) + PKS(0.4): {avg_cosine*0.3 + avg_euclidean*0.3 + average_pck*0.4}")
+print(f"Cos(0.4) + Euc(0.4) + PKS(0.2): {avg_cosine*0.4 + avg_euclidean*0.4 + average_pck*0.2}")
+print(f"Cos(0.5) + Euc(0.3) + PKS(0.2): {avg_cosine*0.5 + avg_euclidean*0.3 + average_pck*0.2}")
+
+print(f"Cos(0.3) + Euc(0.3) + OKS(0.2) + PCK(0.2): {avg_cosine*0.3 + avg_euclidean*0.3 + average_oks*0.2 + average_pck*0.2}")
+print(f"Cos(0.4) + Euc(0.2) + OKS(0.2) + PCK(0.2): {avg_cosine*0.4 + avg_euclidean*0.2 + average_oks*0.2 + average_pck*0.2}")
+print(f"Cos(0.4) + Euc(0.4) + OKS(0.1) + PCK(0.1): {avg_cosine*0.4 + avg_euclidean*0.4 + average_oks*0.1 + average_pck*0.1}")
+print(f"Cos(0.5) + Euc(0.3) + OKS(0.1) + PCK(0.1): {avg_cosine*0.5 + avg_euclidean*0.3 + average_oks*0.1 + average_pck*0.1}")
+print(f"Cos(0.6) + Euc(0.2) + OKS(0.1) + PCK(0.1): {avg_cosine*0.6 + avg_euclidean*0.2 + average_oks*0.1 + average_pck*0.1}")
+print(f"Cos(0.65) + Euc(0.15) + OKS(0.1) + PCK(0.1): {avg_cosine*0.65 + avg_euclidean*0.15 + average_oks*0.1 + average_pck*0.1}")
+print(f"Cos(0.7) + Euc(0.1) + OKS(0.1) + PCK(0.1): {avg_cosine*0.7 + avg_euclidean*0.1 + average_oks*0.1 + average_pck*0.1}")

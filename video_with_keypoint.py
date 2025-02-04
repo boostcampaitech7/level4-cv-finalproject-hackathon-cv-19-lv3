@@ -7,7 +7,7 @@ mp_drawing = mp.solutions.drawing_utils
 pose = mp_pose.Pose()
 
 # 동영상 파일 열기 ("video.mp4"를 원하는 동영상 파일 경로로 변경)
-video_path = "video_no.mp4"
+video_path = "video_non.mp4"
 cap = cv2.VideoCapture(video_path)
 
 if not cap.isOpened():
@@ -28,6 +28,7 @@ while cap.isOpened():
     
     # keypoints가 감지된 경우 화면에 표시
     if results.pose_landmarks:
+        print(results.pose_landmarks.landmark)
         mp_drawing.draw_landmarks(
             frame, results.pose_landmarks, mp_pose.POSE_CONNECTIONS,
             landmark_drawing_spec=mp_drawing.DrawingSpec(color=(0, 255, 0), thickness=2, circle_radius=3),

@@ -141,12 +141,14 @@ def save_random_pair_frames(pairs, frames1, frames2, output_dir, keypoint2_index
             print(f"Invalid keypoint1 index: {idx1}")
 
 # 비디오 경로
-video1 = "video_chal.mp4"
-video2 = "video_kdb2.mp4"
+video1 = "video_no.mp4"
+video2 = "video_no.mp4"
 
 # keypoints 및 프레임 추출
 keypoints1, frames1 = extract_keypoints_with_frames(video1)
+# print(keypoints1.shape)
 keypoints2, frames2 = extract_keypoints_with_frames(video2)
+# print(keypoints2.shape)
 
 # 특정 keypoints 인덱스
 # 전체 인덱스를 사용하는게 유사도 차이를 더욱 보여줌
