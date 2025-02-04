@@ -8,11 +8,11 @@ import cv2
 import numpy as np
 from copy import deepcopy
 from dance_scoring import detector, util, keypoint_map, scoring
-from dance_scoring.detector import post_process_pose_landmarks
+from dance_scoring.detector import post_process_pose_landmarks, post_process_world_pose_landmarks
 from dance_scoring.util import draw_landmarks_on_image, get_closest_frame
 from dance_scoring.similarity_with_frames import get_normalized_keypoints, calculate_similarity_with_visualization, make_euclidean_similarity, make_cosine_similarity
 from dance_scoring.similarity_with_frames import get_center_pair_frames
-from feedback.pose_compare import extract_pose_landmarks
+from feedback.pose_compare import extract_pose_landmarks, extract_pose_world_landmarks
 from feedback.pose_feedback import json_to_prompt, generate_korean_feedback
 
 
@@ -365,6 +365,10 @@ else:
         else:
             original_video_frames_2, pose_landmarker_results_2, height2, width2, fps2 = st.session_state['feedback_info_2']
 
+        # feedback에 사용하기 위한 world landmarks 추출
+        pose_world_landmarker_results_1 = post_process_world_pose_landmarks(pose_landmarker_results_1)
+        pose_world_landmarker_results_2 = post_process_world_pose_landmarks(pose_landmarker_results_2)
+
         # None값을 없애기위한 후처리
         pose_landmarker_results_1 = post_process_pose_landmarks(pose_landmarker_results_1)
         pose_landmarker_results_2 = post_process_pose_landmarks(pose_landmarker_results_2)
@@ -450,7 +454,9 @@ else:
         
         total_frame_len = len(original_video_frames_2)
         total_time = int(total_frame_len / fps2)
+        
 
+        ### 피드백 구간
         st.title("피드백을 받을 시간을 선택해주세요")
         # 슬라이더 추가
         # 슬라이더와 버튼을 폼 내부에 배치
@@ -467,9 +473,9 @@ else:
 
         if submit_button:
             user_idx = get_closest_frame(target_time, total_frame_len, fps2)
-            user_landmark = pose_landmarker_results_2[user_idx]
+            user_landmark = pose_world_landmarker_results_2[user_idx]
             target_idx = random_matched_list[user_idx]
-            target_landmark = pose_landmarker_results_1[target_idx]
+            target_landmark = pose_world_landmarker_results_1[target_idx]
 
 
             # 슬라이더 값을 기반으로 프레임 계산
@@ -477,9 +483,10 @@ else:
             st.write(f"선택된 시간: {target_time}초")
             st.write(f"해당 프레임: {target_frame}")
 
-            user_pose_landmarks_json = extract_pose_landmarks(user_landmark, width2, height2)
-            target_pose_landmarks_json = extract_pose_landmarks(target_landmark, width1, height1)
+            user_pose_landmarks_json = extract_pose_world_landmarks(user_landmark)
+            target_pose_landmarks_json = extract_pose_world_landmarks(target_landmark)
             result_json = json_to_prompt(target_pose_landmarks_json, user_pose_landmarks_json)
+            print(result_json)
             feedback = generate_korean_feedback(result_json, threshold=threshold)
 
             col1, col2 = st.columns(2)

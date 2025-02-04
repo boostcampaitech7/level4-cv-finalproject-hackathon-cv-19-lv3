@@ -263,3 +263,7 @@ def json_to_prompt(target_landmarks_json_path, compare_landmarks_json_path):
             result_json[key] = result_json[key] - 360 if result_json[key] > 0 else 360 + result_json[key]
 
     return result_json
+
+
+
+###################### NEW x, y, z, dataset test

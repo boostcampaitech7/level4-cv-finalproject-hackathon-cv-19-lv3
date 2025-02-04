@@ -119,6 +119,138 @@ def extract_pose_landmarks(result, image_width, image_height):
     
     return landmarks
 
+def extract_pose_world_landmarks(result):
+    landmarks = {}
+    
+    # 각 포즈의 첫 번째 검출 결과만 사용
+    if result:
+        pose_landmarks = result
+        
+        # 각 부위별 랜드마크 좌표 추출
+        landmarks = {
+            "head": {
+                "0": {
+                    "x": pose_landmarks[0].x,
+                    "y": pose_landmarks[0].y,
+                    "z": pose_landmarks[0].z,
+                },
+                "7": {
+                    "x": pose_landmarks[7].x,
+                    "y": pose_landmarks[7].y,
+                    "z": pose_landmarks[7].z,
+                },
+                "8": {
+                    "x": pose_landmarks[8].x,
+                    "y": pose_landmarks[8].y,
+                    "z": pose_landmarks[8].z,
+                }
+            },
+            "left_arm": {
+                "11": {
+                    "x": pose_landmarks[11].x,
+                    "y": pose_landmarks[11].y,
+                    "z": pose_landmarks[11].z,
+                },
+                "13": {
+                    "x": pose_landmarks[13].x,
+                    "y": pose_landmarks[13].y,
+                    "z": pose_landmarks[13].z,
+                },
+                "15": {
+                    "x": pose_landmarks[15].x,
+                    "y": pose_landmarks[15].y,
+                    "z": pose_landmarks[15].z,
+                }
+            },
+            "right_arm": {
+                "12": {
+                    "x": pose_landmarks[12].x,
+                    "y": pose_landmarks[12].y,
+                    "z": pose_landmarks[12].z,
+                },
+                "14": {
+                    "x": pose_landmarks[14].x,
+                    "y": pose_landmarks[14].y,
+                    "z": pose_landmarks[14].z,
+                },
+                "16": {
+                    "x": pose_landmarks[16].x,
+                    "y": pose_landmarks[16].y,
+                    "z": pose_landmarks[16].z,
+                }
+            },
+            "left_leg": {
+                "23": {
+                    "x": pose_landmarks[23].x,
+                    "y": pose_landmarks[23].y,
+                    "z": pose_landmarks[23].z,
+                },
+                "25": {
+                    "x": pose_landmarks[25].x,
+                    "y": pose_landmarks[25].y,
+                    "z": pose_landmarks[25].z,
+                },
+                "27": {
+                    "x": pose_landmarks[27].x,
+                    "y": pose_landmarks[27].y,
+                    "z": pose_landmarks[27].z,
+                }
+            },
+            "right_leg": {
+                "24": {
+                    "x": pose_landmarks[24].x,
+                    "y": pose_landmarks[24].y,
+                    "z": pose_landmarks[24].z,
+                },
+                "26": {
+                    "x": pose_landmarks[26].x,
+                    "y": pose_landmarks[26].y,
+                    "z": pose_landmarks[26].z,
+                },
+                "28": {
+                    "x": pose_landmarks[28].x,
+                    "y": pose_landmarks[28].y,
+                    "z": pose_landmarks[28].z,
+                }
+            },
+            "left_foot": {
+                "27": {
+                    "x": pose_landmarks[27].x,
+                    "y": pose_landmarks[27].y,
+                    "z": pose_landmarks[27].z,
+                },
+                "29": {
+                    "x": pose_landmarks[29].x,
+                    "y": pose_landmarks[29].y,
+                    "z": pose_landmarks[29].z,
+                },
+                "31": {
+                    "x": pose_landmarks[31].x,
+                    "y": pose_landmarks[31].y,
+                    "z": pose_landmarks[31].z,
+                }
+            },
+            "right_foot": {
+                "28": {
+                    "x": pose_landmarks[28].x,
+                    "y": pose_landmarks[28].y,
+                    "z": pose_landmarks[28].z,
+                },
+                "30": {
+                    "x": pose_landmarks[30].x,
+                    "y": pose_landmarks[30].y,
+                    "z": pose_landmarks[30].z,
+                },
+                "32": {
+                    "x": pose_landmarks[32].x,
+                    "y": pose_landmarks[32].y,
+                    "z": pose_landmarks[32].z,
+                }
+            }
+        }
+    
+    return landmarks
+
 
 def make_pose_jsons(img_path_list, detector, result_folder="./results"):
     if not os.path.exists(result_folder):
