@@ -1,8 +1,11 @@
 import os
+import sys
+sys.path.append("./")
 import cv2
 import json
 import mediapipe as mp
 from mediapipe.framework.formats import landmark_pb2
+from dance_scoring.util import draw_landmarks_on_image
 
 
 def extract_pose_landmarks(result, image_width, image_height):

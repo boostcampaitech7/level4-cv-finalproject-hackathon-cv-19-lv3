@@ -115,7 +115,7 @@ class PoseDetector:
             pose_landmarker_result = self.pose.process(frame)
             original_video_frames.append(frame.copy())
             pose_landmarker_results.append(pose_landmarker_result)
-
+        print("video (height, width): ", img_shape)
         return original_video_frames, pose_landmarker_results, img_shape, fps
 
 
