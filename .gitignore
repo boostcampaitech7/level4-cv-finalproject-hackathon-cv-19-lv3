@@ -1,3 +1,12 @@
-video/
+# 무시할 폴더 목록
+.venv/
+function_check/
 output_frames/
-functio_check/
+Pose_Estimation/
+RAG/
+video/
+
+# 특정 파일 무시
+*.pyc  # Python 컴파일된 파일
+__pycache__/  # Python 캐시 폴더
+.DS_Store  # macOS 시스템 파일
