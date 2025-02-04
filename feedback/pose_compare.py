@@ -5,44 +5,6 @@ import mediapipe as mp
 from mediapipe.framework.formats import landmark_pb2
 
 
-def draw_landmarks_on_image(rgb_image, detection_result, landmark_color, connection_color):
-    pose_landmarks_list = detection_result.pose_landmarks
-    
-    # 랜드마크 그리기를 위한 DrawingSpec 설정
-    mp_drawing = mp.solutions.drawing_utils
-    mp_pose = mp.solutions.pose
-    
-    # 스타일 설정
-    landmark_drawing_spec = mp_drawing.DrawingSpec(
-        color=landmark_color,
-        thickness=10,
-        circle_radius=10
-    )
-    connection_drawing_spec = mp_drawing.DrawingSpec(
-        color=connection_color,
-        thickness=10
-    )
-
-    # 각 포즈의 랜드마크 그리기aaaaaaaaaaaaaaaaaaaaaaaaa
-    for pose_landmarks in pose_landmarks_list:
-        # 랜드마크를 정규화된 프로토콜 버퍼에서 이미지 좌표로 변환
-        pose_landmarks_proto = landmark_pb2.NormalizedLandmarkList()
-        pose_landmarks_proto.landmark.extend([
-            landmark_pb2.NormalizedLandmark(x=landmark.x, y=landmark.y, z=landmark.z)
-            for landmark in pose_landmarks
-        ])
-
-        # 랜드마크와 연결선 그리기
-        mp_drawing.draw_landmarks(
-            image=rgb_image,
-            landmark_list=pose_landmarks_proto,
-            connections=mp_pose.POSE_CONNECTIONS,
-            landmark_drawing_spec=landmark_drawing_spec,
-            connection_drawing_spec=connection_drawing_spec
-        )
-    
-    return rgb_image
-
 def extract_pose_landmarks(result, image_width, image_height):
     landmarks = {}
     
