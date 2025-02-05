@@ -1,11 +1,11 @@
 import os
-import json
 import cv2
+import h5py
 from fastapi.responses import JSONResponse
+from constants import FilePaths
 from models.mediapipe import mp_model
 
-VIDEO_FILES = {"origin": ("video.mp4", "video.json"), "user": ("user.mp4", "user.json")}
-EXCEPTIONS = [1, 2, 3, 4, 5, 6, 9, 10, 17, 18, 19, 20, 21, 22]
+SELECTED_POINTS = [0, 7, 8, 11, 12, 13, 14, 15, 16, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32]
 pose = mp_model()
 
 def extract_pose(video_path):
@@ -26,11 +26,11 @@ def extract_pose(video_path):
         if result.pose_landmarks:
             points = [
                 (round(lm.x, 4), round(lm.y, 4), round(lm.z, 4))
-                for i, lm in enumerate(result.pose_landmarks.landmark)
-                if i not in EXCEPTIONS
+                for i, lm in enumerate(result.pose_world_landmarks.landmark)
+                if i in SELECTED_POINTS
             ]
         else:
-            points = [(-1, -1, -1)] * (33 - len(EXCEPTIONS))
+            points = [(-1, -1, -1)] * len(SELECTED_POINTS)
 
         all_frames_points.append(points)
 
@@ -40,36 +40,36 @@ def extract_pose(video_path):
 async def extract_pose_from_video(folder_id: str):
     try:
         root_path = os.path.join("data", folder_id)
-        video_file, json_file = VIDEO_FILES.get("origin", VIDEO_FILES["origin"])
+        video_file, h5_file = FilePaths.ORIGIN_MP4.value, FilePaths.ORIGIN_H5.value
         video_path = os.path.join(root_path, video_file)
-        json_path = os.path.join(root_path, json_file)
+        h5_path = os.path.join(root_path, h5_file)
 
         fps, width, height, all_frames_points = extract_pose(video_path)
-
-        data = {"fps": fps, "width": width, "height": height, "all_frames_points": all_frames_points}
-        with open(json_path, "w") as f:
-            json.dump(data, f)
-
+        with h5py.File(h5_path, "w") as f:
+            f.create_dataset("fps", data=fps)
+            f.create_dataset("width", data=width)
+            f.create_dataset("height", data=height)
+            f.create_dataset("all_frames_points", data=all_frames_points, compression="gzip")
         return JSONResponse(content={"message": "Success"}, status_code=200)
     except Exception as e:
         return JSONResponse(content={"error": f"Failed: {str(e)}"}, status_code=400)
-
+    
 async def extract_user_pose(folder_id: str, video):
     try:
         root_path = os.path.join("data", folder_id)
-        video_file, json_file = VIDEO_FILES.get("user", VIDEO_FILES["user"])
+        video_file, h5_file = FilePaths.USER_MP4.value, FilePaths.USER_H5.value
         video_path = os.path.join(root_path, video_file)
-        json_path = os.path.join(root_path, json_file)
+        h5_path = os.path.join(root_path, h5_file)
 
         with open(video_path, "wb") as buffer:
             buffer.write(await video.read())
 
         fps, width, height, all_frames_points = extract_pose(video_path)
-
-        data = {"fps": fps, "width": width, "height": height, "all_frames_points": all_frames_points}
-        with open(json_path, "w") as f:
-            json.dump(data, f)
-
+        with h5py.File(h5_path, "w") as f:
+            f.create_dataset("fps", data=fps)
+            f.create_dataset("width", data=width)
+            f.create_dataset("height", data=height)
+            f.create_dataset("all_frames_points", data=all_frames_points, compression="gzip")
         return JSONResponse(content={"message": "Success"}, status_code=200)
     except Exception as e:
         return JSONResponse(content={"error": f"Failed: {str(e)}"}, status_code=400)
