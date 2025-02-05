@@ -23,7 +23,7 @@ class UrlProcessActivity : AppCompatActivity() {
     private lateinit var loading: ImageView
     private val TAG = "UrlProcessActivity"
     private lateinit var apiService: ApiService
-    private var folderId: String? = null
+    private var youtubeUrl: String? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -45,23 +45,11 @@ class UrlProcessActivity : AppCompatActivity() {
             .load(R.drawable.loading)
             .into(loading)
 
-        folderId = intent.getStringExtra("folderId")
-        Log.d("Process folderId", "$folderId")
-        getVideoById(apiService, folderId!!, this) { resultMessage, videoUri ->
-            if (videoUri != null) {
-                Log.d(TAG, "비디오 스트리밍 성공: $videoUri")
+        youtubeUrl = intent.getStringExtra("youtubeUrl")
 
-                // 다음 액티비티로 이동
-                val intent = Intent(this, CameraActivity::class.java).apply {
-                    putExtra("youtubeVideoPath", videoUri)
-                    putExtra("folderId", folderId)
-                }
-                startActivity(intent)
-            } else {
-                Log.e(TAG, resultMessage)
-                Toast.makeText(this, resultMessage, Toast.LENGTH_SHORT).show()
-            }
-        }
+        sendUrlToServer(youtubeUrl!!)
+
+
     }
 
 //    private fun sendUrlToServer(youtubeUrl: String?) {
@@ -88,6 +76,37 @@ class UrlProcessActivity : AppCompatActivity() {
 //            }
 //        })
 //    }
+    private fun sendUrlToServer(youtubeUrl: String) {
+        val requestBody = mapOf("url" to youtubeUrl)
+
+        apiService.downloadVideo(requestBody).enqueue(object : Callback<Map<String, String>> {
+            override fun onResponse(call: Call<Map<String, String>>, response: Response<Map<String, String>>) {
+                Log.d("onResponse", "success")
+                if (response.isSuccessful) {
+                    Log.d("isSuccessful", "success")
+                    val folderId = response.body()?.get("folder_id")
+                    Toast.makeText(this@UrlProcessActivity, "동영상 다운로드 요청 성공!", Toast.LENGTH_SHORT).show()
+
+                    getVideoById(apiService, folderId!!, this@UrlProcessActivity) { resultMessage, videoUri ->
+                        if (videoUri != null) {
+                            Log.d(TAG, "비디오 스트리밍 성공: $videoUri")
+
+                        } else {
+                            Log.e(TAG, resultMessage)
+                            Toast.makeText(this@UrlProcessActivity, resultMessage, Toast.LENGTH_SHORT).show()
+                        }
+                    }
+
+                } else {
+                    Toast.makeText(this@UrlProcessActivity, "서버 오류: ${response.code()}", Toast.LENGTH_SHORT).show()
+                }
+            }
+
+            override fun onFailure(call: Call<Map<String, String>>, t: Throwable) {
+                Toast.makeText(this@UrlProcessActivity, "네트워크 오류: ${t.message}", Toast.LENGTH_SHORT).show()
+            }
+        })
+    }
 
     private fun getVideoById(
         apiService: ApiService,
@@ -99,7 +118,7 @@ class UrlProcessActivity : AppCompatActivity() {
             override fun onResponse(call: Call<ResponseBody>, response: Response<ResponseBody>) {
                 if (response.isSuccessful && response.body() != null) {
                     response.body()?.let { body ->
-                        saveVideoToFile(body)
+                        saveVideoToFile(body, folderId)
                     }
                 } else {
                     val errorMessage = "응답 실패: ${response.code()}"
@@ -113,7 +132,7 @@ class UrlProcessActivity : AppCompatActivity() {
         })
     }
 
-    private fun saveVideoToFile(responseBody: ResponseBody) {
+    private fun saveVideoToFile(responseBody: ResponseBody, folderId: String?) {
         try {
             val videoFile = File(getExternalFilesDir(Environment.DIRECTORY_MOVIES), "${folderId}.mp4")
             val inputStream: InputStream = responseBody?.byteStream() ?: return

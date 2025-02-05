@@ -38,38 +38,16 @@ class UrlActivity : AppCompatActivity() {
             Log.d("Button", "Search button clicked")
 
             if (youtubeUrl.isNotBlank()) {
-                sendUrlToServer(youtubeUrl)
+                // 다음 UrlProcessActivity로 이동
+                val intent = Intent(this@UrlActivity, UrlProcessActivity::class.java).apply {
+                    putExtra("youtubeUrl", youtubeUrl)
+                }
+                startActivity(intent)
             } else {
                 Toast.makeText(this, "URL을 입력해주세요.", Toast.LENGTH_SHORT).show()
             }
         }
 
     }
-    private fun sendUrlToServer(youtubeUrl: String) {
-        val requestBody = mapOf("url" to youtubeUrl)
-        Log.d("server", "server api")
 
-        apiService.downloadVideo(requestBody).enqueue(object : Callback<Map<String, String>> {
-            override fun onResponse(call: Call<Map<String, String>>, response: Response<Map<String, String>>) {
-                Log.d("onResponse", "success")
-                if (response.isSuccessful) {
-                    Log.d("isSuccessful", "success")
-                    val folderId = response.body()?.get("folder_id")
-                    Toast.makeText(this@UrlActivity, "동영상 다운로드 요청 성공!", Toast.LENGTH_SHORT).show()
-                    Log.d("folderId", "$folderId")
-                    // 다음 UrlProcessActivity로 이동
-                    val intent = Intent(this@UrlActivity, UrlProcessActivity::class.java).apply {
-                        putExtra("folderId", folderId)
-                    }
-                    startActivity(intent)
-                } else {
-                    Toast.makeText(this@UrlActivity, "서버 오류: ${response.code()}", Toast.LENGTH_SHORT).show()
-                }
-            }
-
-            override fun onFailure(call: Call<Map<String, String>>, t: Throwable) {
-                Toast.makeText(this@UrlActivity, "네트워크 오류: ${t.message}", Toast.LENGTH_SHORT).show()
-            }
-        })
-    }
 }

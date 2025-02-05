@@ -48,7 +48,7 @@ class FinalActivity : AppCompatActivity() {
 
         retryBtn.setOnClickListener {
                 val intent = Intent(this, CameraActivity::class.java).apply {
-                    putExtra("originalVideo", originalVideo)
+                    putExtra("originalVideoPath", originalVideo)
                     putExtra("folderId", folderId)
                 }
                 startActivity(intent)
@@ -61,7 +61,7 @@ class FinalActivity : AppCompatActivity() {
         }
 
         mainBtn.setOnClickListener {
-            val intent = Intent(this, SongActivity::class.java)
+            val intent = Intent(this, UrlActivity::class.java)
             startActivity(intent)
         }
 
