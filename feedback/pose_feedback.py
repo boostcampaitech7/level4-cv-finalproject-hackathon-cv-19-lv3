@@ -116,6 +116,7 @@ def generate_korean_feedback(feature_differences, threshold = 30):
 def calculate_two_points_angle(point1, point2):
     vector = point2 - point1
     angle = math.degrees(math.atan2(vector[1], vector[0]))
+    print(vector)
 
     return angle
 
@@ -486,6 +487,8 @@ class FramePose3D:
             landmarks_data['right_leg']['28']['y'],
             landmarks_data['right_leg']['28']['z']
         ])
+        print(self.left_pelvis, self.left_knee)
+        print(self.right_pelvis, self.right_knee)
 
         # 몸이 움직임에 따라 좌표축 역할을 해줄 2개의 벡터 정의
         x_direction = (self.left_shoulder - self.right_shoulder)
@@ -496,7 +499,7 @@ class FramePose3D:
         x_direction[1] = 0.
         self.pelvis_vector = x_direction # 다리의 움직임과 연관
 
-
+    #################################### HEAD
     def get_head_angle_1(self):
         '''
         귀 중점, 어깨중점, 엉덩이 중점의 3point
@@ -530,7 +533,7 @@ class FramePose3D:
 
         return calculate_two_points_angle_reverse(ear_center[[0, 2]], eye_center[[0, 2]])
 
-    
+    #################################### BODY
     def get_waist_angle_1(self):
         '''
         어깨중점, 엉덩이중점, 무릎 중점의 3 point
@@ -549,68 +552,96 @@ class FramePose3D:
         '''
         return calculate_two_points_angle(self.right_pelvis[[0, 2]], self.left_pelvis[[0, 2]])
     
+    #################################### LEFT ARM
     def get_left_elbow_angle(self):
-        # 왼팔 굽혀진 정도
+        # 왼팔 굽혀진 정도. 0 ~ 180
         return calculate_three_points_angle(self.left_shoulder, self.left_elbow, self.left_wrist)
     
-    def get_left_arm_angle(self):
+    def get_left_arm_height(self):
         '''
-        - 어깨를 기준으로 한 왼팔의 방향
-        - forward : 어깨 앞쪽인 경우 양수, 어깨 뒤쪽인 경우 음수
-        - rotate : 몸 바깥쪽인 경우 양수, 몸 안쪽인 경우 음수
+        - 왼팔이 얼마나 올라가 있는지
+        - 어깨 위면 양수, 어깨 아래면 음수
         '''
-        
-        forward_angle = calculate_three_points_angle_with_sign(
-            self.left_pelvis, self.left_shoulder, self.left_elbow, normal=np.array([-1,0,0])
-        )
-        rotate_angle = calculate_three_points_angle_with_sign(
-            self.left_pelvis, self.left_shoulder, self.left_elbow, normal=np.array([0,1,0])
-        )
-        return(forward_angle, rotate_angle)
+        vector = (self.left_elbow - self.left_shoulder)
+        projection = project_onto_plane(np.array([0,1,0]), vector)
+        return calculate_two_vector_angle(vector, projection, normal=np.array([1,0,0]))
+    
+    def get_left_arm_dir(self):
+        '''
+        왼팔의 방향각을 구합니다
+        - 0 ~ 180 몸 뒤쪽
+        - 0 ~ -180 몸 앞쪽
+        '''
+        return calculate_two_points_angle(self.left_shoulder[[0, 2]], self.left_elbow[[0, 2]])
 
+    #################################### RIGHT ARM
     def get_right_elbow_angle(self):
-        # 오른팔 굽혀진 정도
+        # 오른팔 굽혀진 정도. 0 ~ 180
         return calculate_three_points_angle(self.right_shoulder, self.right_elbow, self.right_wrist)
     
 
-    def get_right_arm_angle(self):
+    def get_right_arm_height(self):
         '''
-        - 어깨를 기준으로 한 오른팔의 방향
-        - forward : 어깨 앞쪽인 경우 양수, 어깨 뒤쪽인 경우 음수
-        - rotate : 몸 바깥쪽인 경우 양수, 몸 안쪽인 경우 음수
+        - 오른팔이 얼마나 올라가 있는지
+        - 어깨 위면 양수, 어깨 아래면 음수
         '''
-        forward_angle = calculate_three_points_angle_with_sign(
-            self.right_pelvis, self.right_shoulder, self.right_elbow, normal=np.array([-1,0,0])
-        )
-        rotate_angle = calculate_three_points_angle_with_sign(
-            self.right_pelvis, self.right_shoulder, self.right_elbow, normal=np.array([0,-1,0])
-        )
-        return(forward_angle, rotate_angle)
+        vector = (self.right_elbow - self.right_shoulder)
+        projection = project_onto_plane(np.array([0,1,0]), vector)
+        return calculate_two_vector_angle(vector, projection, normal=np.array([1,0,0]))
 
+    def get_right_arm_dir(self):
+        '''
+        오른팔의 방향각을 구합니다
+        - 0 ~ 180 몸 뒤쪽
+        - 0 ~ -180 몸 앞쪽
+        '''
+        return calculate_two_points_angle(self.right_shoulder[[0, 2]], self.right_elbow[[0, 2]])
+
+    #################################### LEFT LEG
     def get_left_knee_angle(self):
-        # 왼다리 굽혀진 정도
+        # 왼다리 굽혀진 정도. 0 ~ 180
         return calculate_three_points_angle(self.left_pelvis, self.left_knee, self.left_ankle)
     
-    def get_left_leg_angle(self):
+    def get_left_leg_height(self):
         '''
-        - 골반을 기준으로 왼다리를 얼마나 앞으로/뒤로 뻗고 있는지
+        - 골반을 기준으로 왼다리를 얼마나 올라가 있는지.
+        - 다리가 골반 위로 올라가면 양수, 아래에 있으면 음수
         '''
         vector = (self.left_knee - self.left_pelvis)
-        projection = project_onto_plane((self.pelvis_vector-self.shoulder_vector), vector)
+        projection = project_onto_plane(np.array([0,1,0]), vector)
         return calculate_two_vector_angle(vector, projection, normal=np.array([1,0,0]))
+    
+    def get_left_leg_dir(self):
+        '''
+        왼다리의 방향각을 구합니다
+        - 0 ~ 180 몸 뒤쪽
+        - 0 ~ -180 몸 앞쪽
+        '''
+        return calculate_two_points_angle(self.left_pelvis[[0, 2]], self.left_knee[[0, 2]])
 
+    #################################### RIGHT LEG
     def get_right_knee_angle(self):
-        # 오른다리 굽혀진 정도
+        # 오른다리 굽혀진 정도. 0 ~ 180
         return calculate_three_points_angle(self.right_pelvis, self.right_knee, self.right_ankle)
     
-    def get_right_leg_angle(self):
+    def get_right_leg_height(self):
         '''
-        - 골반을 기준으로 오른다리를 얼마나 앞으로/뒤로 뻗고 있는지
+        - 골반을 기준으로 오른다리가 얼마나 올라가 있는지.
+        - 다리가 골반 위로 올라가면 양수, 아래에 있으면 음수
         '''
         vector = (self.right_knee - self.right_pelvis)
-        projection = project_onto_plane((self.pelvis_vector-self.shoulder_vector), vector)
+        projection = project_onto_plane(np.array([0,1,0]), vector)
         return calculate_two_vector_angle(vector, projection, normal=np.array([1,0,0]))
     
+    def get_right_leg_dir(self):
+        '''
+        오른다리의 방향각을 구합니다
+        - 0 ~ 180 몸 뒤쪽
+        - 0 ~ -180 몸 앞쪽
+        '''
+        return calculate_two_points_angle(self.right_pelvis[[0, 2]], self.right_knee[[0, 2]])
+    
+    #################################### EXTRA
     def get_leg_angle(self):
         '''
         다리가 벌려져 있을수록 180, 모아져 있을수록 0
@@ -641,12 +672,12 @@ def json_to_prompt_2(target_landmarks_json_path, compare_landmarks_json_path):
 if __name__ == "__main__":
     import sys
     sys.path.append("./")
-    from dance_scoring import detector, scoring
+    from dance_scoring import detector
     from feedback.pose_compare import extract_pose_world_landmarks
 
     det = detector.PoseDetector()
 
-    img_path = './images/stretch_arm.jpg'
+    img_path = './images/kick.jpg'
     landmark, _, _, _ = det.get_image_landmarks(img_path)
     result = extract_pose_world_landmarks(landmark)
 
@@ -663,17 +694,21 @@ if __name__ == "__main__":
 
     print("################ LEFT ARM ################")
     print("왼팔 굽혀진 정도 : ", feedback_module.get_left_elbow_angle())
-    print("왼팔 각도(forward, rotate): ", feedback_module.get_left_arm_angle())
+    print("왼팔 높이: ", feedback_module.get_left_arm_height())
+    print("왼팔 방향: ", feedback_module.get_left_arm_dir())
 
     print("################ RIGHT ARM ################")
     print("오른팔 굽혀진 정도 : ", feedback_module.get_right_elbow_angle())
-    print("오른팔 각도(forward, rotate): ", feedback_module.get_right_arm_angle())
+    print("오른팔 높이: ", feedback_module.get_right_arm_height())
+    print("오른팔 방향: ", feedback_module.get_right_arm_dir())
 
     print("################ LEFT LEG ################")
     print("왼다리 굽혀진 정도 : ", feedback_module.get_left_knee_angle())
-    print("왼다리 앞으로 펴진 정도: ", feedback_module.get_left_leg_angle())
+    print("왼다리 높이: ", feedback_module.get_left_leg_height())
+    print("왼다리 방향: ", feedback_module.get_left_leg_dir())
 
     print("################ RIGHT LEG ################")
     print("오른다리 굽혀진 정도 : ", feedback_module.get_right_knee_angle())
-    print("오른다리 앞으로 펴진 정도: ", feedback_module.get_right_leg_angle())
+    print("오른다리 높이: ", feedback_module.get_right_leg_height())
+    print("오른다리 방향: ", feedback_module.get_right_leg_dir())
     print("다리가 벌어진 정도: ", feedback_module.get_leg_angle())
