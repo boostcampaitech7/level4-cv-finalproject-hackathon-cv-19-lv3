@@ -64,6 +64,13 @@ def parse_arguments():
         help="수치를 문장화시킬지 여부."
     )
 
+    parser.add_argument(
+        '--perfect_rate',
+        type=float,
+        default=0.1,
+        help='랜덤 데이터 중 몇%가 완벽한 자세 데이터인지 결정'
+    )
+
     args = parser.parse_args()
     return args
 
@@ -76,6 +83,7 @@ def main():
     threshold = args.threshold
     ignore_low_difference = args.ignore_low_difference
     do_numeric_to_text= args.do_numeric_to_text
+    perfect_rate = args.perfect_rate
 
     # system prompt 가져오기
     if system_prompt_path:
@@ -118,7 +126,7 @@ def main():
             random_cnt = int(random_cnt)
         except:
             random_cnt = 1000
-        total_result = make_random_dataset(random_cnt, system_prompt, threshold=threshold, ignore_low_difference=ignore_low_difference, do_numeric_to_text=do_numeric_to_text)
+        total_result = make_random_dataset(random_cnt, system_prompt, threshold=threshold, perfect_rate=perfect_rate, ignore_low_difference=ignore_low_difference, do_numeric_to_text=do_numeric_to_text)
 
     # instruction 형식이 아닌 경우 text, completion 열만 필요함
     if not instruction_dataset:

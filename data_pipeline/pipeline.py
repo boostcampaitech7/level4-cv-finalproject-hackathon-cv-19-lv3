@@ -115,6 +115,20 @@ def input_prompt_from_dict(difference_dict):
 
 
 def output_sentence_from_dict(feedback_dict):
+    startings = [
+        "자세 차이를 기반으로 피드백을 드리도록 하겠습니다.",
+        "자세 분석을 기반으로 피드백을 제공해 드리겠습니다.",
+        "현재 동작을 비교하여 개선점을 안내해 드릴게요.",
+        "댄스 자세를 분석하여 유용한 피드백을 드리겠습니다.",
+        "당신의 움직임을 평가하고 맞춤 피드백을 제공하겠습니다.",
+        "정확한 자세 분석을 통해 개선할 점을 알려드리겠습니다.",
+        "댄스 동작을 비교하여 최적의 피드백을 드릴게요.",
+        "자세를 분석한 후 효과적인 조언을 드리겠습니다.",
+        "현재 자세와 기준 자세를 비교하여 피드백을 제공하겠습니다.",
+        "자세 차이를 바탕으로 더 나은 동작을 위한 피드백을 드리겠습니다.",
+        "댄스 퍼포먼스를 향상시킬 수 있도록 피드백을 시작하겠습니다."
+    ]
+
     endings = [
         "나머지 자세는 완벽해요! 계속해서 발전해봅시다!",
         "좋은 자세입니다! 앞으로도 꾸준히 연습해볼까요?",
@@ -128,14 +142,13 @@ def output_sentence_from_dict(feedback_dict):
         "멋진 자세예요! 앞으로도 함께 최선을 다해봐요!"
     ]
 
-    output_sentence = "자세 차이를 기반으로 피드백을 드리도록 하겠습니다. "
-    for k, v in feedback_dict.items():
-        output_sentence += f"{v} "
-    
-    if "perfect_msg" not in feedback_dict:
-        output_sentence += random.choice(endings)
+    if "perfect_msg" in feedback_dict:
+        output_sentence = feedback_dict["perfect_msg"]
     else:
-        output_sentence += "대단해요!"
+        output_sentence = f"{random.choice(startings) }"
+        for k, v in feedback_dict.items():
+            output_sentence += f"{v} "
+        output_sentence += random.choice(endings)
     return output_sentence
 
 
@@ -187,7 +200,7 @@ def generate_random_value(mean, min_val, max_val, threshold):
             return value
 
 
-def make_random_dataset(total_data_cnt, system_prompt, threshold=30, ignore_low_difference=True, do_numeric_to_text=False):
+def make_random_dataset(total_data_cnt, system_prompt, threshold=30, perfect_rate=0.1, ignore_low_difference=True, do_numeric_to_text=False):
     df = {
         "System_Prompt": [], # 지시문
         "C_ID": [], #Conversation ID
@@ -214,6 +227,10 @@ def make_random_dataset(total_data_cnt, system_prompt, threshold=30, ignore_low_
     for idx in tqdm(range(total_data_cnt)):
         # 랜덤 값 생성
         differences = {key: generate_random_value(0, *ranges[key], threshold) for key in ranges}
+        if np.random.rand() < perfect_rate:
+            for k, v in differences.items():
+                differences[k] = int(np.random.uniform(-1, 1) * threshold)
+
         feedbacks = generate_korean_feedback(differences, threshold=threshold)
 
         # 낮은 값들 거르는지 여부 보고 input에서 제외
