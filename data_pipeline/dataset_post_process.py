@@ -73,4 +73,4 @@ if __name__ == '__main__':
             df['Completion'][idx] = modified_s
             print(modified_s)
     
-    df.to_csv(dataset_path, index=False)
+    df.to_csv(dataset_path, index=False, encoding="utf-8-sig")

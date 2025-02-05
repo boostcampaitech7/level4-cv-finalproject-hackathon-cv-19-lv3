@@ -682,6 +682,22 @@ def json_to_prompt_2(target_landmarks_json_path, compare_landmarks_json_path):
 
     pose1 = FramePose3D(data1)
     pose2 = FramePose3D(data2)
+    result = {
+        'head':{
+            'lower_angle_difference': (pose1.get_head_angle_1() - pose2.get_head_angle_1()), # 음수인 경우 고개를 좀 더 숙여라, 양수인 경우 고개를 좀 더 들어라
+            'tilt_angle_difference': (pose1.get_head_angle_2() - pose2.get_head_angle_2()), # 음수인 경우 고개를 좀 더 오른쪽으로 꺾어라, 양수인 경우 고개를 좀 더 왼쪽으로 꺾어라
+            'direction_difference': (pose1.get_eye_direction() - pose2.get_eye_direction()) # 음수인 경우 좀 더 오른쪽을 바라봐라, 양수인 경우 좀 더 왼쪽을 바라봐라
+        },
+        'waist':{
+            'bend_angle_difference': (pose1.get_waist_angle_1() - pose2.get_waist_angle_1()), # 음수면 허리를 더 굽혀라, 양수면 허리를 더 펴라
+            'direction_difference': (pose1.get_waist_angle_2() - pose2.get_waist_angle_2()) # 음수면 몸을 더 오른쪽으로 돌려라, 양수면 몸을 더 왼쪽으로 돌려라
+        },
+        'left_arm':{
+            'bend_angle_difference': (pose1.get_left_elbow_angle() - pose2.get_left_elbow_angle()), # 음수면 왼팔을 더 굽혀라, 양수면 왼팔을 더 펴라
+            'height_difference': (pose1.get_left_arm_height() - pose2.get_left_arm_height()), # 음수면 왼팔을 더 내려라, 양수면 왼팔을 더 올려라
+            'direction_difference': (pose1.get_left_arm_dir() - pose2.get_left_arm_dir())
+        }
+    }
 
 
 if __name__ == "__main__":
@@ -692,7 +708,7 @@ if __name__ == "__main__":
 
     det = detector.PoseDetector()
 
-    img_path = './images/kick.jpg'
+    img_path = './images/jun_ude.jpg'
     landmark, _, _, _ = det.get_image_landmarks(img_path)
     result = extract_pose_world_landmarks(landmark)
 
