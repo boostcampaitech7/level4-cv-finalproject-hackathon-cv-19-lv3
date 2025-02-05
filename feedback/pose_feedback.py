@@ -562,11 +562,14 @@ class FramePose3D:
     def get_left_arm_height(self):
         '''
         - 왼팔이 얼마나 올라가 있는지
-        - 어깨 위면 양수, 어깨 아래면 음수
+        - 팔이 높게 위치할수록 1에 가깝고, 낮게 위치할수록 0
         '''
-        vector = (self.left_elbow - self.left_shoulder)
-        projection = project_onto_plane(np.array([0,1,0]), vector)
-        return calculate_two_vector_angle(vector, projection, normal=np.array([1,0,0]))
+        hip_to_shoulder = self.left_pelvis[1] - self.left_shoulder[1]
+        y_max = self.left_pelvis[1]
+        y_min = self.left_shoulder[1] - hip_to_shoulder
+
+        value = (np.clip(self.left_wrist[1], y_min, y_max) - y_min) / (y_max - y_min)
+        return (1 - value)
     
     def get_left_arm_dir(self):
         '''
@@ -585,11 +588,14 @@ class FramePose3D:
     def get_right_arm_height(self):
         '''
         - 오른팔이 얼마나 올라가 있는지
-        - 어깨 위면 양수, 어깨 아래면 음수
+        - 팔이 높게 위치할수록 1에 가깝고, 낮게 위치할수록 0
         '''
-        vector = (self.right_elbow - self.right_shoulder)
-        projection = project_onto_plane(np.array([0,1,0]), vector)
-        return calculate_two_vector_angle(vector, projection, normal=np.array([1,0,0]))
+        hip_to_shoulder = self.right_pelvis[1] - self.right_shoulder[1]
+        y_max = self.right_pelvis[1]
+        y_min = self.right_shoulder[1] - hip_to_shoulder
+
+        value = (np.clip(self.right_wrist[1], y_min, y_max) - y_min) / (y_max - y_min)
+        return (1 - value)
 
     def get_right_arm_dir(self):
         '''
@@ -607,11 +613,14 @@ class FramePose3D:
     def get_left_leg_height(self):
         '''
         - 골반을 기준으로 왼다리를 얼마나 올라가 있는지.
-        - 다리가 골반 위로 올라가면 양수, 아래에 있으면 음수
+        - 아래에 위치할수록 0, 위로갈수록 1
         '''
-        vector = (self.left_knee - self.left_pelvis)
-        projection = project_onto_plane(np.array([0,1,0]), vector)
-        return calculate_two_vector_angle(vector, projection, normal=np.array([1,0,0]))
+        hip_to_ground = 0.9999 - self.left_pelvis[1]
+        y_max = 0.9999
+        y_min = self.left_pelvis[1] - hip_to_ground
+
+        value = (np.clip(self.left_ankle[1], y_min, y_max) - y_min) / (y_max - y_min)
+        return (1 - value)
     
     def get_left_leg_dir(self):
         '''
@@ -629,11 +638,15 @@ class FramePose3D:
     def get_right_leg_height(self):
         '''
         - 골반을 기준으로 오른다리가 얼마나 올라가 있는지.
-        - 다리가 골반 위로 올라가면 양수, 아래에 있으면 음수
+        - 아래에 위치할수록 0, 위로갈수록 1
         '''
-        vector = (self.right_knee - self.right_pelvis)
-        projection = project_onto_plane(np.array([0,1,0]), vector)
-        return calculate_two_vector_angle(vector, projection, normal=np.array([1,0,0]))
+        hip_to_ground = 0.9999 - self.right_pelvis[1]
+        y_max = 0.9999
+        y_min = self.right_pelvis[1] - hip_to_ground
+
+        value = (np.clip(self.right_ankle[1], y_min, y_max) - y_min) / (y_max - y_min)
+        return (1 - value)
+
     
     def get_right_leg_dir(self):
         '''
@@ -679,7 +692,7 @@ if __name__ == "__main__":
 
     det = detector.PoseDetector()
 
-    img_path = './images/head_down.jpg'
+    img_path = './images/kick.jpg'
     landmark, _, _, _ = det.get_image_landmarks(img_path)
     result = extract_pose_world_landmarks(landmark)
 
