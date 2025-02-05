@@ -390,6 +390,59 @@ def project_onto_plane(v1, v2):
     return projection
 
 
+def generate_3D_feedback(result, threshold=30):
+    feedback = {}
+    
+    # 피드백 문구 템플릿
+    templates = {
+        'head': {
+            'lower_angle_difference': ('고개를 좀 더 숙이세요.', '고개를 좀 더 들어 올리세요.'),
+            'tilt_angle_difference': ('고개를 좀 더 오른쪽으로 꺾으세요.', '고개를 좀 더 왼쪽으로 꺾으세요.'),
+            'direction_difference': ('시선을 더 오른쪽으로 돌리세요.', '시선을 더 왼쪽으로 돌리세요.')
+        },
+        'waist': {
+            'bend_angle_difference': ('허리를 더 굽히세요.', '허리를 더 펴세요.'),
+            'direction_difference': ('몸을 더 오른쪽으로 돌리세요.', '몸을 더 왼쪽으로 돌리세요.')
+        },
+        'left_arm': {
+            'bend_angle_difference': ('왼팔을 더 굽히세요.', '왼팔을 더 펴세요.'),
+            'height_difference': ('왼팔을 더 내려주세요.', '왼팔을 더 올려주세요.'),
+            'direction_difference': ('왼팔 방향을 조정하세요.', '왼팔 방향을 조정하세요.')
+        },
+        'right_arm': {
+            'bend_angle_difference': ('오른팔을 더 굽히세요.', '오른팔을 더 펴세요.'),
+            'height_difference': ('오른팔을 더 내려주세요.', '오른팔을 더 올려주세요.'),
+            'direction_difference': ('오른팔 방향을 조정하세요.', '오른팔 방향을 조정하세요.')
+        },
+        'left_leg': {
+            'bend_angle_difference': ('왼쪽 무릎을 더 굽히세요.', '왼쪽 무릎을 더 펴세요.'),
+            'height_difference': ('왼다리를 더 낮추세요.', '왼다리를 더 올리세요.'),
+            'direction_difference': ('왼다리 방향을 조정하세요.', '왼다리 방향을 조정하세요.')
+        },
+        'right_leg': {
+            'bend_angle_difference': ('오른쪽 무릎을 더 굽히세요.', '오른쪽 무릎을 더 펴세요.'),
+            'height_difference': ('오른다리를 더 낮추세요.', '오른다리를 더 올리세요.'),
+            'direction_difference': ('오른다리 방향을 조정하세요.', '오른다리 방향을 조정하세요.')
+        }
+    }
+    
+    for body_part, differences in result.items():
+        messages = []
+        for key, value in differences.items():
+            if value < threshold:
+                continue
+
+            if value < 0:
+                messages.append(templates[body_part][key][0])
+            elif value > 0:
+                messages.append(templates[body_part][key][1])
+        
+        if messages:
+            feedback[body_part] = ' '.join(messages)
+    
+    return feedback
+
+
 class FramePose3D:
     def __init__(self, landmarks_data):
         self.nose = np.array([
@@ -684,33 +737,33 @@ def json_to_prompt_2(target_landmarks_json_path, compare_landmarks_json_path):
     pose2 = FramePose3D(data2)
     result = {
         'head':{
-            'lower_angle_difference': (pose1.get_head_angle_1() - pose2.get_head_angle_1()), # 음수인 경우 고개를 좀 더 숙여라, 양수인 경우 고개를 좀 더 들어라
-            'tilt_angle_difference': (pose1.get_head_angle_2() - pose2.get_head_angle_2()), # 음수인 경우 고개를 좀 더 오른쪽으로 꺾어라, 양수인 경우 고개를 좀 더 왼쪽으로 꺾어라
-            'direction_difference': (pose1.get_eye_direction() - pose2.get_eye_direction()) # 음수인 경우 좀 더 오른쪽을 바라봐라, 양수인 경우 좀 더 왼쪽을 바라봐라
+            'lower_angle_difference': int(pose1.get_head_angle_1() - pose2.get_head_angle_1()), # 음수인 경우 고개를 좀 더 숙여라, 양수인 경우 고개를 좀 더 들어라
+            'tilt_angle_difference': int(pose1.get_head_angle_2() - pose2.get_head_angle_2()), # 음수인 경우 고개를 좀 더 오른쪽으로 꺾어라, 양수인 경우 고개를 좀 더 왼쪽으로 꺾어라
+            'direction_difference': int(pose1.get_eye_direction() - pose2.get_eye_direction()) # 음수인 경우 좀 더 오른쪽을 바라봐라, 양수인 경우 좀 더 왼쪽을 바라봐라
         },
         'waist':{
-            'bend_angle_difference': (pose1.get_waist_angle_1() - pose2.get_waist_angle_1()), # 음수면 허리를 더 굽혀라, 양수면 허리를 더 펴라
-            'direction_difference': (pose1.get_waist_angle_2() - pose2.get_waist_angle_2()) # 음수면 몸을 더 오른쪽으로 돌려라, 양수면 몸을 더 왼쪽으로 돌려라
+            'bend_angle_difference': int(pose1.get_waist_angle_1() - pose2.get_waist_angle_1()), # 음수면 허리를 더 굽혀라, 양수면 허리를 더 펴라
+            'direction_difference': int(pose1.get_waist_angle_2() - pose2.get_waist_angle_2()) # 음수면 몸을 더 오른쪽으로 돌려라, 양수면 몸을 더 왼쪽으로 돌려라
         },
         'left_arm':{
-            'bend_angle_difference': (pose1.get_left_elbow_angle() - pose2.get_left_elbow_angle()), # 음수면 왼팔을 더 굽혀라, 양수면 왼팔을 더 펴라
-            'height_difference': (pose1.get_left_arm_height() - pose2.get_left_arm_height()), # 음수면 왼팔을 더 내려라, 양수면 왼팔을 더 올려라
-            'direction_difference': (pose1.get_left_arm_dir() - pose2.get_left_arm_dir()) # 음수, 양수 관계없이 왼팔 방향이 맞지 않는다
+            'bend_angle_difference': int(pose1.get_left_elbow_angle() - pose2.get_left_elbow_angle()), # 음수면 왼팔을 더 굽혀라, 양수면 왼팔을 더 펴라
+            'height_difference': int(180 * (pose1.get_left_arm_height() - pose2.get_left_arm_height())), # 음수면 왼팔을 더 내려라, 양수면 왼팔을 더 올려라
+            'direction_difference': int(pose1.get_left_arm_dir() - pose2.get_left_arm_dir()) # 음수, 양수 관계없이 왼팔 방향이 맞지 않는다
         },
         'right_arm':{
-            'bend_angle_difference': (pose1.get_right_elbow_angle() - pose2.get_right_elbow_angle()), # 음수면 왼팔을 더 굽혀라, 양수면 왼팔을 더 펴라
-            'height_difference': (pose1.get_right_arm_height() - pose2.get_right_arm_height()), # 음수면 왼팔을 더 내려라, 양수면 왼팔을 더 올려라
-            'direction_difference': (pose1.get_right_arm_dir() - pose2.get_right_arm_dir()) # 음수, 양수 관계없이 왼팔 방향이 맞지 않는다
+            'bend_angle_difference': int(pose1.get_right_elbow_angle() - pose2.get_right_elbow_angle()), # 음수면 왼팔을 더 굽혀라, 양수면 왼팔을 더 펴라
+            'height_difference': int(180 * (pose1.get_right_arm_height() - pose2.get_right_arm_height())), # 음수면 왼팔을 더 내려라, 양수면 왼팔을 더 올려라
+            'direction_difference': int(pose1.get_right_arm_dir() - pose2.get_right_arm_dir()) # 음수, 양수 관계없이 왼팔 방향이 맞지 않는다
         },
         'left_leg':{
-            'bend_angle_difference': (pose1.get_left_knee_angle() - pose2.get_left_knee_angle()), # 음수면 왼팔을 더 굽혀라, 양수면 왼팔을 더 펴라
-            'height_difference': (pose1.get_left_leg_height() - pose2.get_left_leg_height()), # 음수면 왼팔을 더 내려라, 양수면 왼팔을 더 올려라
-            'direction_difference': (pose1.get_left_leg_dir() - pose2.get_left_leg_dir()) # 음수, 양수 관계없이 왼팔 방향이 맞지 않는다
+            'bend_angle_difference': int(pose1.get_left_knee_angle() - pose2.get_left_knee_angle()), # 음수면 왼팔을 더 굽혀라, 양수면 왼팔을 더 펴라
+            'height_difference': int(180 * (pose1.get_left_leg_height() - pose2.get_left_leg_height())), # 음수면 왼팔을 더 내려라, 양수면 왼팔을 더 올려라
+            'direction_difference': int(pose1.get_left_leg_dir() - pose2.get_left_leg_dir()) # 음수, 양수 관계없이 왼팔 방향이 맞지 않는다
         },
         'right_leg':{
-            'bend_angle_difference': (pose1.get_right_knee_angle() - pose2.get_right_knee_angle()), # 음수면 왼팔을 더 굽혀라, 양수면 왼팔을 더 펴라
-            'height_difference': (pose1.get_right_leg_height() - pose2.get_right_leg_height()), # 음수면 왼팔을 더 내려라, 양수면 왼팔을 더 올려라
-            'direction_difference': (pose1.get_right_leg_dir() - pose2.get_right_leg_dir()) # 음수, 양수 관계없이 왼팔 방향이 맞지 않는다
+            'bend_angle_difference': int(pose1.get_right_knee_angle() - pose2.get_right_knee_angle()), # 음수면 왼팔을 더 굽혀라, 양수면 왼팔을 더 펴라
+            'height_difference': int(180 * (pose1.get_right_leg_height() - pose2.get_right_leg_height())), # 음수면 왼팔을 더 내려라, 양수면 왼팔을 더 올려라
+            'direction_difference': int(pose1.get_right_leg_dir() - pose2.get_right_leg_dir()) # 음수, 양수 관계없이 왼팔 방향이 맞지 않는다
         }
     }
     return result
