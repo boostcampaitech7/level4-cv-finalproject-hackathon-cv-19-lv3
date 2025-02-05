@@ -75,21 +75,17 @@ def generate_korean_feedback(feature_differences, threshold = 30):
     for feature, difference in feature_differences.items():
         if abs(difference) >= threshold:
             if feature == "head_difference":
-                feedback_dict["head"] = "머리를 왼쪽으로 기울이세요." if difference > 0 else "머리를 오른쪽으로 기울이세요."
+                feedback_dict["head"] = "고개를 왼쪽으로 좀 더 기울이세요." if difference > 0 else "고개를 오른쪽으로 좀 더 기울이세요."
 
             elif feature == "shoulder_difference":
                 if difference > 0:
-                    random_choice = random.choice(["왼쪽 어깨를 내리세요.", "오른쪽 어깨를 올리세요."])
+                    feedback_dict["shoulder"] = "몸이 너무 오른쪽으로 기울어져 있어요"
                 else:
-                    random_choice = random.choice(["왼쪽 어깨를 올리세요.", "오른쪽 어깨를 내리세요."])
-                feedback_dict["shoulder"] = random_choice
+                    feedback_dict["shoulder"] = "몸이 너무 왼쪽으로 기울어져 있어요"
 
             elif feature in ["left_arm_angle_difference", "right_arm_angle_difference"]:
                 side = "왼쪽" if "left" in feature else "오른쪽"
-                if difference > 0:
-                    feedback_dict[feature.replace("_angle_difference", "")] = f"{side} 팔을 시계 방향으로 더 돌리세요."
-                else:
-                    feedback_dict[feature.replace("_angle_difference", "")] = f"{side} 팔을 반시계 방향으로 더 돌리세요."
+                feedback_dict[feature.replace("_angle_difference", "")] = f"{side} 팔의 방향이 맞지 않습니다. 주의해주세요."
             
             elif feature in ["left_elbow_angle_difference", "right_elbow_angle_difference"]:
                 side = "왼쪽" if "left" in feature else "오른쪽"
@@ -97,11 +93,8 @@ def generate_korean_feedback(feature_differences, threshold = 30):
 
             elif feature in ["left_leg_angle_difference", "right_leg_angle_difference"]:
                 side = "왼쪽" if "left" in feature else "오른쪽"
-                if difference > 0:
-                    feedback_dict[feature.replace("_angle_difference", "")] = f"{side} 다리를 시계 방향으로 더 돌리세요."
-                else:
-                    feedback_dict[feature.replace("_angle_difference", "")] = f"{side} 다리를 반시계 방향으로 더 돌리세요."
-
+                feedback_dict[feature.replace("_angle_difference", "")] = f"{side} 다리의 방향이 맞지 않습니다. 주의해주세요."
+                    
             elif feature in ["left_knee_angle_difference", "right_knee_angle_difference"]:
                 side = "왼쪽" if "left" in feature else "오른쪽"
                 feedback_dict[feature.replace("_angle_difference", "")] = f"{side} 무릎을 펴세요." if difference > 0 else f"{side} 무릎을 구부리세요."
@@ -116,8 +109,6 @@ def generate_korean_feedback(feature_differences, threshold = 30):
 def calculate_two_points_angle(point1, point2):
     vector = point2 - point1
     angle = math.degrees(math.atan2(vector[1], vector[0]))
-    print(vector)
-
     return angle
 
 def calculate_three_points_angle(point1, point2, point3, eps=1e-7):
@@ -487,8 +478,6 @@ class FramePose3D:
             landmarks_data['right_leg']['28']['y'],
             landmarks_data['right_leg']['28']['z']
         ])
-        print(self.left_pelvis, self.left_knee)
-        print(self.right_pelvis, self.right_knee)
 
         # 몸이 움직임에 따라 좌표축 역할을 해줄 2개의 벡터 정의
         x_direction = (self.left_shoulder - self.right_shoulder)
@@ -677,7 +666,7 @@ if __name__ == "__main__":
 
     det = detector.PoseDetector()
 
-    img_path = './images/kick.jpg'
+    img_path = './images/jun_v.jpg'
     landmark, _, _, _ = det.get_image_landmarks(img_path)
     result = extract_pose_world_landmarks(landmark)
 
