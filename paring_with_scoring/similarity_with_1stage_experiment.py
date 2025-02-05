@@ -317,8 +317,8 @@ def save_random_pair_frames(pairs, frames1, frames2, output_dir, keypoint2_index
             print(f"Invalid keypoint1 index: {idx1}")
 
 # 비디오 경로
-video1 = "video_kdb1.mp4"
-video2 = "video_kdb2.mp4"
+video1 = "../video/video_tiktok1.mp4" 
+video2 = "../video/video_reverse2.mp4"
 
 # keypoints 및 프레임 추출
 keypoints1, frames1 = extract_keypoints_with_frames(video1)
@@ -338,28 +338,46 @@ distance, avg_cosine, avg_euclidean, avg_weighted, average_oks, average_pck, pai
 )
 
 # 랜덤한 매칭된 프레임 저장
-output_dir = "output_frames"
+output_dir = "../output_frames"
 save_random_pair_frames(pairs, frames1, frames2, output_dir, 100)
 
 print(f"{video1} pairing with {video2} in in 1-stage experiment")
-print(f"Average Cosine Similarity score: {avg_cosine}")
-print(f"Average Euclidean Similarity score: {avg_euclidean}")
-print(f"Average Weighted Similarity score: {avg_weighted}")
-print(f"Average OKS score: {average_oks}")
-print(f"Average PCK score: {average_pck}")
-print()
-print(f"Cos(0.3) + Euc(0.3) + OKS(0.4): {avg_cosine*0.3 + avg_euclidean*0.3 + average_oks*0.4}")
-print(f"Cos(0.4) + Euc(0.4) + OKS(0.2): {avg_cosine*0.4 + avg_euclidean*0.4 + average_oks*0.2}")
-print(f"Cos(0.5) + Euc(0.3) + OKS(0.2): {avg_cosine*0.5 + avg_euclidean*0.3 + average_oks*0.2}")
+# print(f"Average Cosine Similarity score: {avg_cosine}")
+# print(f"Average Euclidean Similarity score: {avg_euclidean}")
+# print(f"Average Weighted Similarity score: {avg_weighted}")
+# print(f"Average OKS score: {average_oks}")
+# print(f"Average PCK score: {average_pck}")
 
-print(f"Cos(0.3) + Euc(0.3) + PKS(0.4): {avg_cosine*0.3 + avg_euclidean*0.3 + average_pck*0.4}")
-print(f"Cos(0.4) + Euc(0.4) + PKS(0.2): {avg_cosine*0.4 + avg_euclidean*0.4 + average_pck*0.2}")
-print(f"Cos(0.5) + Euc(0.3) + PKS(0.2): {avg_cosine*0.5 + avg_euclidean*0.3 + average_pck*0.2}")
+# print()
 
-print(f"Cos(0.3) + Euc(0.3) + OKS(0.2) + PCK(0.2): {avg_cosine*0.3 + avg_euclidean*0.3 + average_oks*0.2 + average_pck*0.2}")
-print(f"Cos(0.4) + Euc(0.2) + OKS(0.2) + PCK(0.2): {avg_cosine*0.4 + avg_euclidean*0.2 + average_oks*0.2 + average_pck*0.2}")
-print(f"Cos(0.4) + Euc(0.4) + OKS(0.1) + PCK(0.1): {avg_cosine*0.4 + avg_euclidean*0.4 + average_oks*0.1 + average_pck*0.1}")
-print(f"Cos(0.5) + Euc(0.3) + OKS(0.1) + PCK(0.1): {avg_cosine*0.5 + avg_euclidean*0.3 + average_oks*0.1 + average_pck*0.1}")
-print(f"Cos(0.6) + Euc(0.2) + OKS(0.1) + PCK(0.1): {avg_cosine*0.6 + avg_euclidean*0.2 + average_oks*0.1 + average_pck*0.1}")
-print(f"Cos(0.65) + Euc(0.15) + OKS(0.1) + PCK(0.1): {avg_cosine*0.65 + avg_euclidean*0.15 + average_oks*0.1 + average_pck*0.1}")
-print(f"Cos(0.7) + Euc(0.1) + OKS(0.1) + PCK(0.1): {avg_cosine*0.7 + avg_euclidean*0.1 + average_oks*0.1 + average_pck*0.1}")
+# print(f"Cos(0.3) + Euc(0.3) + OKS(0.4): {avg_cosine*0.3 + avg_euclidean*0.3 + average_oks*0.4}")
+# print(f"Cos(0.4) + Euc(0.4) + OKS(0.2): {avg_cosine*0.4 + avg_euclidean*0.4 + average_oks*0.2}")
+# print(f"Cos(0.5) + Euc(0.3) + OKS(0.2): {avg_cosine*0.5 + avg_euclidean*0.3 + average_oks*0.2}")
+# print(f"Cos(0.8) + Euc(0.1) + OKS(0.1): {avg_cosine*0.8 + avg_euclidean*0.1 + average_oks*0.1}")
+
+# print(f"Cos(0.3) + Euc(0.3) + PKS(0.4): {avg_cosine*0.3 + avg_euclidean*0.3 + average_pck*0.4}")
+# print(f"Cos(0.4) + Euc(0.4) + PKS(0.2): {avg_cosine*0.4 + avg_euclidean*0.4 + average_pck*0.2}")
+# print(f"Cos(0.5) + Euc(0.3) + PKS(0.2): {avg_cosine*0.5 + avg_euclidean*0.3 + average_pck*0.2}")
+# print(f"Cos(0.8) + Euc(0.1) + PKS(0.1): {avg_cosine*0.8 + avg_euclidean*0.1 + average_pck*0.1}")
+
+# print(f"Cos(0.3) + Euc(0.3) + OKS(0.2) + PCK(0.2): {avg_cosine*0.3 + avg_euclidean*0.3 + average_oks*0.2 + average_pck*0.2}")
+# print(f"Cos(0.4) + Euc(0.2) + OKS(0.2) + PCK(0.2): {avg_cosine*0.4 + avg_euclidean*0.2 + average_oks*0.2 + average_pck*0.2}")
+# print(f"Cos(0.4) + Euc(0.4) + OKS(0.1) + PCK(0.1): {avg_cosine*0.4 + avg_euclidean*0.4 + average_oks*0.1 + average_pck*0.1}")
+# print(f"Cos(0.5) + Euc(0.3) + OKS(0.1) + PCK(0.1): {avg_cosine*0.5 + avg_euclidean*0.3 + average_oks*0.1 + average_pck*0.1}")
+# print(f"Cos(0.6) + Euc(0.2) + OKS(0.1) + PCK(0.1): {avg_cosine*0.6 + avg_euclidean*0.2 + average_oks*0.1 + average_pck*0.1}")
+# print(f"Cos(0.65) + Euc(0.15) + OKS(0.1) + PCK(0.1): {avg_cosine*0.65 + avg_euclidean*0.15 + average_oks*0.1 + average_pck*0.1}")
+# print(f"Cos(0.7) + Euc(0.1) + OKS(0.1) + PCK(0.1): {avg_cosine*0.7 + avg_euclidean*0.1 + average_oks*0.1 + average_pck*0.1}")
+# print(f"Cos(0.8) + Euc(0.1) + OKS(0.05) + PCK(0.05): {avg_cosine*0.8 + avg_euclidean*0.1 + average_oks*0.05 + average_pck*0.05}")
+
+if avg_cosine > 0.9 and avg_euclidean > 0.9:
+    final_score = max(avg_cosine, avg_euclidean)
+elif avg_cosine > 0.9 and avg_euclidean > 0.8:
+    final_score = (avg_cosine+avg_euclidean) / 2
+elif avg_cosine > 0.8 and avg_euclidean > 0.8:
+    final_score = avg_cosine*0.7 + avg_euclidean*0.1 + average_oks*0.1 + average_pck*0.1
+elif average_oks < 0.2 and average_pck < 0.1:
+    final_score = min(average_oks, average_pck)
+else:
+    final_score = avg_cosine*0.3 + avg_euclidean*0.3 + average_oks*0.2 + average_pck*0.2
+
+print(f"Final score is {final_score}")
