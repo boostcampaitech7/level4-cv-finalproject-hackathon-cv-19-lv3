@@ -2,6 +2,7 @@ import math
 import json
 import numpy as np
 import random
+import matplotlib.pyplot as plt
 
 def generate_feedback(feature_differences, threshold=30):
     """
@@ -284,21 +285,9 @@ def calculate_two_vector_angle(v1, v2, normal, eps=1e-7):
     
     return angle
 
-def calculate_two_points_angle_xy(point1, point2):
+def calculate_two_points_angle_reverse(point1, point2):
     vector = point2 - point1
-    angle = math.degrees(math.atan2(vector[1], vector[0]))
-
-    return angle
-
-def calculate_two_points_angle_xz(point1, point2):
-    vector = point2 - point1
-    angle = math.degrees(math.atan2(vector[2], vector[0]))
-
-    return angle
-
-def calculate_two_points_angle_zx(point1, point2):
-    vector = point2 - point1
-    angle = math.degrees(math.atan2(vector[0], vector[2]))
+    angle = math.degrees(math.atan2(vector[0], vector[1]))
 
     return angle
 
@@ -322,6 +311,78 @@ def calculate_three_points_angle_with_sign(point1, point2, point3, normal, eps=1
         angle = -angle
 
     return angle
+
+
+def visualize_angle(p1, p2, p3):
+    # 벡터 정의
+    v1 = np.array(p1) - np.array(p2)
+    v2 = np.array(p3) - np.array(p2)
+    
+    # 단위 벡터 계산
+    v1_u = v1 / np.linalg.norm(v1)
+    v2_u = v2 / np.linalg.norm(v2)
+    
+    # 각도 계산 (라디안)
+    angle_rad = np.arccos(np.clip(np.dot(v1_u, v2_u), -1.0, 1.0))
+    angle_deg = np.degrees(angle_rad)
+    
+    # 플로팅
+    fig, ax = plt.subplots()
+    ax.set_aspect('equal')
+    ax.grid(True, linestyle='--')
+    
+    # 점 그리기
+    ax.scatter(*p1, color='red', label='P1')
+    ax.scatter(*p2, color='blue', label='P2 (Center)')
+    ax.scatter(*p3, color='green', label='P3')
+    
+    # 벡터 그리기
+    ax.quiver(*p2, v1[0], v1[1], angles='xy', scale_units='xy', scale=1, color='red')
+    ax.quiver(*p2, v2[0], v2[1], angles='xy', scale_units='xy', scale=1, color='green')
+    
+    # 각도 표시
+    ax.text(p2[0], p2[1], f'{angle_deg:.2f}°', fontsize=12, ha='right', color='black')
+    
+    ax.legend()
+    plt.show()
+    
+    return angle_deg
+
+def visualize_vector(v1, v2):
+    # 단위 벡터 계산
+    v1_u = v1 / np.linalg.norm(v1)
+    v2_u = v2 / np.linalg.norm(v2)
+    
+    # 각도 계산 (라디안)
+    angle_rad = np.arccos(np.clip(np.dot(v1_u, v2_u), -1.0, 1.0))
+    angle_deg = np.degrees(angle_rad)
+    
+    # 플로팅
+    fig, ax = plt.subplots()
+    ax.set_aspect('equal')
+    ax.grid(True, linestyle='--')
+    
+    # 원점 및 벡터 그리기
+    origin = np.array([0, 0])
+    ax.quiver(*origin, v1[0], v1[1], angles='xy', scale_units='xy', scale=1, color='red', label='V1')
+    ax.quiver(*origin, v2[0], v2[1], angles='xy', scale_units='xy', scale=1, color='green', label='V2')
+    
+    ax.legend()
+    plt.show()
+    
+    return angle_deg
+
+
+def project_onto_plane(v1, v2):
+    """
+    v1을 법선 벡터로 하는 평면에 v2를 정사영하는 함수
+    :param v1: 기준이 되는 법선 벡터 (3차원)
+    :param v2: 평면에 정사영할 벡터 (3차원)
+    :return: 정사영된 벡터
+    """
+    v1_u = v1 / np.linalg.norm(v1)  # v1을 단위 벡터로 변환
+    projection = v2 - np.dot(v2, v1_u) * v1_u  # 정사영 계산
+    return projection
 
 
 class FramePose3D:
@@ -433,7 +494,7 @@ class FramePose3D:
 
         x_direction = (self.left_pelvis - self.right_pelvis)
         x_direction[1] = 0.
-        self.pervis_vector = x_direction # 다리의 움직임과 연관
+        self.pelvis_vector = x_direction # 다리의 움직임과 연관
 
 
     def get_head_angle_1(self):
@@ -441,6 +502,7 @@ class FramePose3D:
         귀 중점, 어깨중점, 엉덩이 중점의 3point
         - 고개가 앞/뒤로 얼마나 숙여져/젖혀져 있는지 구합니다.
         - 0 ~ 180 : 앞으로 숙임
+        - 0 ~ -180 : 뒤로 젖힘
         '''
         shoulder_center = (self.right_shoulder + self.left_shoulder) / 2
         hip_center = (self.left_pelvis + self.right_pelvis) / 2
@@ -449,7 +511,7 @@ class FramePose3D:
     
     def get_head_angle_2(self):
         '''
-        - 고개가 어느쪽으로 얼마나 꺾여있는지 구합니다.
+        - 고개가 어깨를 기준으로 어느쪽으로 얼마나 꺾여있는지 구합니다.
         - 0인경우 안꺾임
         - 왼쪽으로 꺾여 있으면 양수
         - 오른쪽으로 꺾여 있으면 음수
@@ -459,16 +521,14 @@ class FramePose3D:
     
     def get_eye_direction(self):
         '''
-        - 시선이 왼쪽/오른쪽 어디를 바라보고 있는지 구합니다
+        - 시선이 카메라를 기준으로 왼쪽/오른쪽 어디를 바라보고 있는지 구합니다
         - 180이 정면, 0이 완전 후면
         - 음수면 오른쪽 보는중, 양수면 왼쪽 보는중
         '''
         eye_center = (self.right_eye + self.left_eye) / 2
-        eye_center[1] = 0.
         ear_center = (self.right_ear + self.left_ear) / 2
-        ear_center[1] = 0.
 
-        return calculate_two_points_angle_zx(ear_center, eye_center)
+        return calculate_two_points_angle_reverse(ear_center[[0, 2]], eye_center[[0, 2]])
 
     
     def get_waist_angle_1(self):
@@ -487,12 +547,95 @@ class FramePose3D:
         - 사람의 몸이 전체적으로 얼마나 뒤를 돌아 있는지 판단하기위해 엉덩이 point 2개를 이용
         - 왼쪽으로 돌고 있으면 양수, 오른쪽으로 돌고 있으면 음수
         '''
-        left_pelvis = np.copy(self.left_pelvis)
-        left_pelvis[1] = 0.
-        right_pelvis = np.copy(self.right_pelvis)
-        right_pelvis[1] = 0.
+        return calculate_two_points_angle(self.right_pelvis[[0, 2]], self.left_pelvis[[0, 2]])
+    
+    def get_left_elbow_angle(self):
+        # 왼팔 굽혀진 정도
+        return calculate_three_points_angle(self.left_shoulder, self.left_elbow, self.left_wrist)
+    
+    def get_left_arm_angle(self):
+        '''
+        - 어깨를 기준으로 한 왼팔의 방향
+        - forward : 어깨 앞쪽인 경우 양수, 어깨 뒤쪽인 경우 음수
+        - rotate : 몸 바깥쪽인 경우 양수, 몸 안쪽인 경우 음수
+        '''
+        
+        forward_angle = calculate_three_points_angle_with_sign(
+            self.left_pelvis, self.left_shoulder, self.left_elbow, normal=np.array([-1,0,0])
+        )
+        rotate_angle = calculate_three_points_angle_with_sign(
+            self.left_pelvis, self.left_shoulder, self.left_elbow, normal=np.array([0,1,0])
+        )
+        return(forward_angle, rotate_angle)
 
-        return calculate_two_points_angle_xz(right_pelvis, left_pelvis)
+    def get_right_elbow_angle(self):
+        # 오른팔 굽혀진 정도
+        return calculate_three_points_angle(self.right_shoulder, self.right_elbow, self.right_wrist)
+    
+
+    def get_right_arm_angle(self):
+        '''
+        - 어깨를 기준으로 한 오른팔의 방향
+        - forward : 어깨 앞쪽인 경우 양수, 어깨 뒤쪽인 경우 음수
+        - rotate : 몸 바깥쪽인 경우 양수, 몸 안쪽인 경우 음수
+        '''
+        forward_angle = calculate_three_points_angle_with_sign(
+            self.right_pelvis, self.right_shoulder, self.right_elbow, normal=np.array([-1,0,0])
+        )
+        rotate_angle = calculate_three_points_angle_with_sign(
+            self.right_pelvis, self.right_shoulder, self.right_elbow, normal=np.array([0,-1,0])
+        )
+        return(forward_angle, rotate_angle)
+
+    def get_left_knee_angle(self):
+        # 왼다리 굽혀진 정도
+        return calculate_three_points_angle(self.left_pelvis, self.left_knee, self.left_ankle)
+    
+    def get_left_leg_angle(self):
+        '''
+        - 골반을 기준으로 왼다리를 얼마나 앞으로/뒤로 뻗고 있는지
+        '''
+        vector = (self.left_knee - self.left_pelvis)
+        projection = project_onto_plane((self.pelvis_vector-self.shoulder_vector), vector)
+        return calculate_two_vector_angle(vector, projection, normal=np.array([1,0,0]))
+
+    def get_right_knee_angle(self):
+        # 오른다리 굽혀진 정도
+        return calculate_three_points_angle(self.right_pelvis, self.right_knee, self.right_ankle)
+    
+    def get_right_leg_angle(self):
+        '''
+        - 골반을 기준으로 오른다리를 얼마나 앞으로/뒤로 뻗고 있는지
+        '''
+        vector = (self.right_knee - self.right_pelvis)
+        projection = project_onto_plane((self.pelvis_vector-self.shoulder_vector), vector)
+        return calculate_two_vector_angle(vector, projection, normal=np.array([1,0,0]))
+    
+    def get_leg_angle(self):
+        '''
+        다리가 벌려져 있을수록 180, 모아져 있을수록 0
+        '''
+        hip_center = (self.left_pelvis + self.right_pelvis) / 2
+        return calculate_three_points_angle(
+            self.left_knee, hip_center, self.right_knee
+        )
+
+
+def json_to_prompt_2(target_landmarks_json_path, compare_landmarks_json_path):
+    if isinstance(target_landmarks_json_path, str):
+        with open(target_landmarks_json_path, 'r') as f:
+            data1 = json.load(f)
+    else:
+        data1 = target_landmarks_json_path
+    
+    if isinstance(compare_landmarks_json_path, str):
+        with open(compare_landmarks_json_path, 'r') as f:
+            data2 = json.load(f)
+    else:
+        data2 = compare_landmarks_json_path
+
+    pose1 = FramePose3D(data1)
+    pose2 = FramePose3D(data2)
 
 
 if __name__ == "__main__":
@@ -503,7 +646,7 @@ if __name__ == "__main__":
 
     det = detector.PoseDetector()
 
-    img_path = './images/look_back.jpg'
+    img_path = './images/stretch_arm.jpg'
     landmark, _, _, _ = det.get_image_landmarks(img_path)
     result = extract_pose_world_landmarks(landmark)
 
@@ -519,3 +662,18 @@ if __name__ == "__main__":
     print("사용자 몸이 돌아간 정도: ", feedback_module.get_waist_angle_2())
 
     print("################ LEFT ARM ################")
+    print("왼팔 굽혀진 정도 : ", feedback_module.get_left_elbow_angle())
+    print("왼팔 각도(forward, rotate): ", feedback_module.get_left_arm_angle())
+
+    print("################ RIGHT ARM ################")
+    print("오른팔 굽혀진 정도 : ", feedback_module.get_right_elbow_angle())
+    print("오른팔 각도(forward, rotate): ", feedback_module.get_right_arm_angle())
+
+    print("################ LEFT LEG ################")
+    print("왼다리 굽혀진 정도 : ", feedback_module.get_left_knee_angle())
+    print("왼다리 앞으로 펴진 정도: ", feedback_module.get_left_leg_angle())
+
+    print("################ RIGHT LEG ################")
+    print("오른다리 굽혀진 정도 : ", feedback_module.get_right_knee_angle())
+    print("오른다리 앞으로 펴진 정도: ", feedback_module.get_right_leg_angle())
+    print("다리가 벌어진 정도: ", feedback_module.get_leg_angle())
