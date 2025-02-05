@@ -679,7 +679,7 @@ if __name__ == "__main__":
 
     det = detector.PoseDetector()
 
-    img_path = './images/jun_v.jpg'
+    img_path = './images/head_down.jpg'
     landmark, _, _, _ = det.get_image_landmarks(img_path)
     result = extract_pose_world_landmarks(landmark)
 
