@@ -695,9 +695,25 @@ def json_to_prompt_2(target_landmarks_json_path, compare_landmarks_json_path):
         'left_arm':{
             'bend_angle_difference': (pose1.get_left_elbow_angle() - pose2.get_left_elbow_angle()), # 음수면 왼팔을 더 굽혀라, 양수면 왼팔을 더 펴라
             'height_difference': (pose1.get_left_arm_height() - pose2.get_left_arm_height()), # 음수면 왼팔을 더 내려라, 양수면 왼팔을 더 올려라
-            'direction_difference': (pose1.get_left_arm_dir() - pose2.get_left_arm_dir())
+            'direction_difference': (pose1.get_left_arm_dir() - pose2.get_left_arm_dir()) # 음수, 양수 관계없이 왼팔 방향이 맞지 않는다
+        },
+        'right_arm':{
+            'bend_angle_difference': (pose1.get_right_elbow_angle() - pose2.get_right_elbow_angle()), # 음수면 왼팔을 더 굽혀라, 양수면 왼팔을 더 펴라
+            'height_difference': (pose1.get_right_arm_height() - pose2.get_right_arm_height()), # 음수면 왼팔을 더 내려라, 양수면 왼팔을 더 올려라
+            'direction_difference': (pose1.get_right_arm_dir() - pose2.get_right_arm_dir()) # 음수, 양수 관계없이 왼팔 방향이 맞지 않는다
+        },
+        'left_leg':{
+            'bend_angle_difference': (pose1.get_left_knee_angle() - pose2.get_left_knee_angle()), # 음수면 왼팔을 더 굽혀라, 양수면 왼팔을 더 펴라
+            'height_difference': (pose1.get_left_leg_height() - pose2.get_left_leg_height()), # 음수면 왼팔을 더 내려라, 양수면 왼팔을 더 올려라
+            'direction_difference': (pose1.get_left_leg_dir() - pose2.get_left_leg_dir()) # 음수, 양수 관계없이 왼팔 방향이 맞지 않는다
+        },
+        'right_leg':{
+            'bend_angle_difference': (pose1.get_right_knee_angle() - pose2.get_right_knee_angle()), # 음수면 왼팔을 더 굽혀라, 양수면 왼팔을 더 펴라
+            'height_difference': (pose1.get_right_leg_height() - pose2.get_right_leg_height()), # 음수면 왼팔을 더 내려라, 양수면 왼팔을 더 올려라
+            'direction_difference': (pose1.get_right_leg_dir() - pose2.get_right_leg_dir()) # 음수, 양수 관계없이 왼팔 방향이 맞지 않는다
         }
     }
+    return result
 
 
 if __name__ == "__main__":
