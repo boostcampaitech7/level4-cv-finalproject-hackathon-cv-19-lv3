@@ -12,7 +12,10 @@ val okHttpClient = OkHttpClient.Builder()
     .build()
 
 object RetrofitClient {
-    private const val BASE_URL = "http://192.168.0.111:8000/"
+    private const val BASE_URL = "http://10.79.40.64:8000/"
+    //192.168.0.111
+    //
+    //192.168.9.37
 
     val instance: ApiService by lazy {
         val retrofit = Retrofit.Builder()

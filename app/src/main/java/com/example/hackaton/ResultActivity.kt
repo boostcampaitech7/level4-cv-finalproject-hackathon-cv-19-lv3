@@ -80,28 +80,13 @@ class ResultActivity : AppCompatActivity() {
         }
 
         feedbackButton.setOnClickListener {
-            flippedVideoPath?.let { path ->
-                val currentFrameIndex = videoView.currentPosition // 현재 재생 위치 (밀리초 단위)
-                val frameIndex = frameOutput(path, currentFrameIndex) // frameOutput 호출
-
-                if (frameIndex != -1) {
-                    val retriever = MediaMetadataRetriever()
-                    retriever.setDataSource(path)
-                    val frameBitmap = retriever.getFrameAtTime(frameIndex * 1000L, MediaMetadataRetriever.OPTION_CLOSEST_SYNC)
-                    val frameUri = frameBitmap?.let { saveFrameToCache(it) }
-                    val frameIndexInt = (frameIndex / (1000 / 30f)).toInt()
-
-                    if (frameUri != null) {
-                        findViewById<FrameLayout>(R.id.feedbackFrameLayout).visibility = View.VISIBLE
-                        frameImageView.setImageURI(frameUri)
-
-                        // 서버에 피드백 요청 함수 실행
-                        feedbackRequest(frameIndexInt, path)
-                    } else {
-                        Toast.makeText(this, "프레임을 저장할 수 없습니다.", Toast.LENGTH_SHORT).show()
-                    }
-                } else {
-                    Toast.makeText(this, "프레임을 추출하는 데 실패했습니다.", Toast.LENGTH_SHORT).show()
+            flippedVideoPath?.let { flippedPath ->
+                originalVideo?.let { originalPath ->
+                    val currentPosition = videoView.currentPosition // 현재 재생 위치 (밀리초 단위)
+                    val frameIndex = (currentPosition / (1000 / 30))
+                    Log.d("currentFrameIndex", "$frameIndex")
+                    // 서버 피드백 요청
+                    feedbackRequest(frameIndex, originalPath)
                 }
             }
         }
@@ -109,34 +94,34 @@ class ResultActivity : AppCompatActivity() {
         setupSeekBar()
     }
 
-    private fun frameOutput(videoPath: String, frameTimeMs: Int): Int {
-        val retriever = MediaMetadataRetriever()
-        try {
-            retriever.setDataSource(videoPath) // 비디오 파일 경로 설정
-            val durationStr = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)
-            val durationMs = durationStr?.toIntOrNull() ?: 0
-
-            if (frameTimeMs > durationMs) {
-                Log.e("FrameOutput", "지정된 시간이 동영상 길이를 초과했습니다.")
-                return -1 // 잘못된 인덱스
-            }
-
-            val frameBitmap = retriever.getFrameAtTime(frameTimeMs * 1000L, MediaMetadataRetriever.OPTION_CLOSEST_SYNC)
-
-            if (frameBitmap != null) {
-                saveFrameToCache(frameBitmap) // 프레임 이미지를 임시 저장 (원한다면)
-                return frameTimeMs // 성공적으로 캡처된 프레임의 시간 반환
-            } else {
-                Log.e("FrameOutput", "프레임을 가져올 수 없습니다.")
-                return -1
-            }
-        } catch (e: Exception) {
-            e.printStackTrace()
-            return -1
-        } finally {
-            retriever.release() // 리소스 해제
-        }
-    }
+//    private fun frameOutput(videoPath: String, frameTimeMs: Int): Int {
+//        val retriever = MediaMetadataRetriever()
+//        try {
+//            retriever.setDataSource(videoPath) // 비디오 파일 경로 설정
+//            val durationStr = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)
+//            val durationMs = durationStr?.toIntOrNull() ?: 0
+//
+//            if (frameTimeMs > durationMs) {
+//                Log.e("FrameOutput", "지정된 시간이 동영상 길이를 초과했습니다.")
+//                return -1 // 잘못된 인덱스
+//            }
+//
+//            val frameBitmap = retriever.getFrameAtTime(frameTimeMs * 1000L, MediaMetadataRetriever.OPTION_CLOSEST_SYNC)
+//
+//            if (frameBitmap != null) {
+//                saveFrameToCache(frameBitmap) // 프레임 이미지를 임시 저장 (원한다면)
+//                return frameTimeMs // 성공적으로 캡처된 프레임의 시간 반환
+//            } else {
+//                Log.e("FrameOutput", "프레임을 가져올 수 없습니다.")
+//                return -1
+//            }
+//        } catch (e: Exception) {
+//            e.printStackTrace()
+//            return -1
+//        } finally {
+//            retriever.release() // 리소스 해제
+//        }
+//    }
 
     private fun saveFrameToCache(bitmap: Bitmap): Uri {
         val cachePath = File(cacheDir, "frames")
@@ -214,7 +199,27 @@ class ResultActivity : AppCompatActivity() {
         apiService.getFeedback(request).enqueue(object : Callback<Map<String, String>> {
             override fun onResponse(call: Call<Map<String, String>>, response: Response<Map<String, String>>) {
                 if (response.isSuccessful) {
+                    Log.d("Response Body", "${response.body()}")
                     val feedback = response.body()?.get("feedback")
+                    val targetFrame = response.body()?.get("frame")?.toIntOrNull()
+                    Log.d("frame", "$targetFrame")
+                    if (targetFrame != null) {
+                        val frameBitmap = extractFrameAtTime(targetFrame * 1000L * 30, videoPath)
+                        Log.d("Bitmap", "$frameBitmap")
+                        frameBitmap?.let { bitmap ->
+                            val frameUri = saveFrameToCache(bitmap)
+                            findViewById<FrameLayout>(R.id.feedbackFrameLayout).visibility = View.VISIBLE
+                            frameImageView.setImageURI(frameUri)
+                        } ?: run {
+                            Toast.makeText(
+                                this@ResultActivity,
+                                "프레임 추출 실패.",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
+                    } else {
+                        Toast.makeText(this@ResultActivity, "올바른 프레임 값을 받지 못했습니다.", Toast.LENGTH_SHORT).show()
+                    }
                     if (!feedback.isNullOrEmpty()) {
                         feedbackTextView.text = feedback // 피드백 텍스트를 화면에 표시
                     } else {
@@ -229,5 +234,18 @@ class ResultActivity : AppCompatActivity() {
                 Toast.makeText(this@ResultActivity, "서버 연결 실패: ${t.message}", Toast.LENGTH_SHORT).show()
             }
         })
+    }
+
+    private fun extractFrameAtTime(frameTimeMs: Long, videoPath: String): Bitmap? {
+        val retriever = MediaMetadataRetriever()
+        return try {
+            retriever.setDataSource(videoPath)
+            retriever.getFrameAtTime(frameTimeMs, MediaMetadataRetriever.OPTION_CLOSEST)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
+        } finally {
+            retriever.release()
+        }
     }
 }

@@ -9,6 +9,9 @@ import android.provider.MediaStore
 import android.widget.Button
 import android.widget.Toast
 import android.widget.VideoView
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
 import java.io.File
 import java.io.FileInputStream
 
@@ -21,6 +24,8 @@ class FinalActivity : AppCompatActivity() {
     private var flippedVideoPath: String? = null
     private var originalVideo: String? = null
     private var folderId: String? = null
+
+    private val apiService = RetrofitClient.instance
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -45,6 +50,8 @@ class FinalActivity : AppCompatActivity() {
 
         originalVideoView = findViewById(R.id.originalVideo)
         startVideo(videoUri)
+
+        clearCacheAndFiles(apiService, folderId!!)
 
         retryBtn.setOnClickListener {
                 val intent = Intent(this, CameraActivity::class.java).apply {
@@ -97,5 +104,12 @@ class FinalActivity : AppCompatActivity() {
             }
             Toast.makeText(this, "갤러리에 저장되었습니다.", Toast.LENGTH_SHORT).show()
         }
+    }
+
+    private fun clearCacheAndFiles(apiService: ApiService, folderId: String) {
+        apiService.clearCacheAndFiles(folderId).enqueue(object : Callback<Map<String, String>> {
+            override fun onResponse(call: Call<Map<String, String>>, response: Response<Map<String, String>>) {}
+            override fun onFailure(call: Call<Map<String, String>>, t: Throwable) {}
+        })
     }
 }

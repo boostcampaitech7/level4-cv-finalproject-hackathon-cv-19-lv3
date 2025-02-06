@@ -5,9 +5,11 @@ import android.hardware.Camera
 import android.media.CamcorderProfile
 import android.media.MediaRecorder
 import android.net.Uri
+import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.os.Environment
+import android.provider.Settings
 import android.util.Log
 import android.view.SurfaceHolder
 import android.view.SurfaceView
@@ -24,6 +26,8 @@ import java.util.Date
 import java.util.Locale
 
 class CameraActivity : AppCompatActivity(), SurfaceHolder.Callback {
+
+    private val REQUEST_MANAGE_STORAGE_PERMISSION = 102
 
     private lateinit var btnRecord: FloatingActionButton
     private lateinit var surfaceView: SurfaceView
@@ -43,6 +47,11 @@ class CameraActivity : AppCompatActivity(), SurfaceHolder.Callback {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_camera)
 
+        // MANAGE_EXTERNAL_STORAGE 권한 체크 및 요청
+        if (!hasManageExternalStoragePermission()) {
+            requestManageExternalStoragePermission()
+        }
+
         youtubeVideoPath = intent.getStringExtra("originalVideoPath")
         folderId = intent.getStringExtra("folderId")
         Log.d(TAG, "$folderId")
@@ -55,8 +64,8 @@ class CameraActivity : AppCompatActivity(), SurfaceHolder.Callback {
             .setDeniedMessage("권한이 거부되었습니다. 설정 > 권한에서 허용할 수 있습니다.")
             .setPermissions(
                 android.Manifest.permission.CAMERA,
-                android.Manifest.permission.WRITE_EXTERNAL_STORAGE,
-                android.Manifest.permission.READ_EXTERNAL_STORAGE,
+//                android.Manifest.permission.WRITE_EXTERNAL_STORAGE,
+//                android.Manifest.permission.READ_EXTERNAL_STORAGE,
                 android.Manifest.permission.RECORD_AUDIO
             )
             .check()
@@ -193,6 +202,37 @@ class CameraActivity : AppCompatActivity(), SurfaceHolder.Callback {
         } catch (e: Exception) {
             Log.e(TAG, "녹화 중지 오류: ${e.message}")
             e.printStackTrace()
+        }
+    }
+
+    // MANAGE_EXTERNAL_STORAGE 권한 체크
+    private fun hasManageExternalStoragePermission(): Boolean {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            Environment.isExternalStorageManager()
+        } else {
+            true
+        }
+    }
+
+    // MANAGE_EXTERNAL_STORAGE 권한 요청
+    private fun requestManageExternalStoragePermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            val intent = Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION).apply {
+                data = Uri.parse("package:$packageName")
+            }
+            startActivityForResult(intent, REQUEST_MANAGE_STORAGE_PERMISSION)
+        }
+    }
+
+    // 권한 요청 결과 처리
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == REQUEST_MANAGE_STORAGE_PERMISSION) {
+            if (hasManageExternalStoragePermission()) {
+                Toast.makeText(this, "MANAGE_EXTERNAL_STORAGE 권한 허용됨", Toast.LENGTH_SHORT).show()
+            } else {
+                Toast.makeText(this, "MANAGE_EXTERNAL_STORAGE 권한 거부됨", Toast.LENGTH_SHORT).show()
+            }
         }
     }
 
