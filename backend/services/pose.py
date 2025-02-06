@@ -2,13 +2,23 @@ import os
 import cv2
 import time
 import h5py
-from fastapi.responses import JSONResponse
+import subprocess
+from fastapi.responses import JSONResponse, FileResponse
 from config import logger
 from constants import FilePaths, ResponseMessages
 from models.mediapipe import mp_model
 
 SELECTED_POINTS = [0, 7, 8, 11, 12, 13, 14, 15, 16, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32]
 pose = mp_model()
+
+def hflip_video_ffmpeg(video_path: str) -> None:
+    command = [
+        "ffmpeg", "-y",
+        "-i", video_path, 
+        "-vf", "hflip", 
+        "-c:a", "copy", video_path
+    ]
+    subprocess.run(command, check=True)
 
 def extract_pose(video_path: str):
     """Extract pose landmarks from video file."""
@@ -68,12 +78,13 @@ async def extract_user_pose(folder_id: str, video):
         video_path = os.path.join(root_path, video_file)
         h5_path = os.path.join(root_path, h5_file)
 
-        # 유저 영상 저장
+        start_time = time.time()
+        # 유저 영상 저장 및 좌우 반전
         with open(video_path, "wb") as buffer:
             buffer.write(await video.read())
+        hflip_video_ffmpeg(video_path)
 
         # 유저 영상 포즈 추출 및 h5 파일로 저장
-        start_time = time.time()
         fps, width, height, all_frames_points = extract_pose(video_path)
         with h5py.File(h5_path, "w") as f:
             f.create_dataset("fps", data=fps)
