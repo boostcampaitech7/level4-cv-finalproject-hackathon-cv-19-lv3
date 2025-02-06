@@ -53,7 +53,7 @@ def parse_arguments():
     parser.add_argument(
         '--ignore_low_difference',
         type=str_to_bool,
-        default=True,
+        default=False,
         help="threshold보다 낮은 difference의 정보를 input에 넣을지 여부."
     )
 
