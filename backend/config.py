@@ -1,3 +1,4 @@
+import logging
 from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
@@ -9,3 +10,11 @@ class Settings(BaseSettings):
         env_file = '.env'
 
 settings = Settings()
+
+logging.basicConfig(
+    filename="app.log",
+    format="%(asctime)s - %(levelname)s - %(message)s",
+    level=logging.INFO,
+)
+
+logger = logging.getLogger(__name__)

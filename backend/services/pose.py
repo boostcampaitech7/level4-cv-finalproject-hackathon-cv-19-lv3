@@ -1,7 +1,9 @@
 import os
 import cv2
+import time
 import h5py
 from fastapi.responses import JSONResponse
+from config import logger
 from constants import FilePaths
 from models.mediapipe import mp_model
 
@@ -15,7 +17,6 @@ def extract_pose(video_path: str):
     width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
     height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
     all_frames_points = []
-
     while cap.isOpened():
         ret, frame = cap.read()
         if not ret:
@@ -23,7 +24,6 @@ def extract_pose(video_path: str):
 
         frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         result = pose.get_result(frame_rgb)
-
         if result.pose_landmarks:
             points = [
                 (round(lm.x, 4), round(lm.y, 4), round(lm.z, 4))
@@ -32,10 +32,9 @@ def extract_pose(video_path: str):
             ]
         else:
             points = [(-1, -1, -1)] * len(SELECTED_POINTS)
-
         all_frames_points.append(points)
-
     cap.release()
+
     return fps, width, height, all_frames_points
 
 async def extract_pose_from_video(folder_id: str):
@@ -46,14 +45,20 @@ async def extract_pose_from_video(folder_id: str):
         h5_path = os.path.join(root_path, h5_file)
 
         # 원본 영상 포즈 추출 및 h5 파일로 저장
+        start_time = time.time()
         fps, width, height, all_frames_points = extract_pose(video_path)
         with h5py.File(h5_path, "w") as f:
             f.create_dataset("fps", data=fps)
             f.create_dataset("width", data=width)
             f.create_dataset("height", data=height)
             f.create_dataset("all_frames_points", data=all_frames_points, compression="gzip")
+        end_time = time.time()
+
+        logger.info(f"[{folder_id}] extract origin video success: {end_time - start_time} sec")
         return JSONResponse(content={"message": "Success"}, status_code=200)
+
     except Exception as e:
+        logger.error(f"[{folder_id}] extract origin video fail: {str(e)}")
         return JSONResponse(content={"error": str(e)}, status_code=400)
     
 async def extract_user_pose(folder_id: str, video):
@@ -68,12 +73,18 @@ async def extract_user_pose(folder_id: str, video):
             buffer.write(await video.read())
 
         # 유저 영상 포즈 추출 및 h5 파일로 저장
+        start_time = time.time()
         fps, width, height, all_frames_points = extract_pose(video_path)
         with h5py.File(h5_path, "w") as f:
             f.create_dataset("fps", data=fps)
             f.create_dataset("width", data=width)
             f.create_dataset("height", data=height)
             f.create_dataset("all_frames_points", data=all_frames_points, compression="gzip")
+        end_time = time.time()
+
+        logger.info(f"[{folder_id}] extract user video success: {end_time - start_time} sec")
         return JSONResponse(content={"message": "Success"}, status_code=200)
+
     except Exception as e:
+        logger.error(f"[{folder_id}] extract user video fail: {str(e)}")
         return JSONResponse(content={"error": str(e)}, status_code=400)

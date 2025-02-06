@@ -4,6 +4,7 @@ import numpy as np
 from fastdtw import fastdtw
 from fastapi.responses import JSONResponse
 from scipy.spatial.distance import euclidean, cosine
+from config import logger
 from constants import FilePaths, ResponseMessages
 
 def read_pose(h5_path: str):
@@ -15,6 +16,7 @@ def read_pose(h5_path: str):
             all_frame_points = f["all_frames_points"][()]
 
         return width, height, all_frame_points
+
     except Exception as e:
         raise ValueError(ResponseMessages.H5FILE_LOAD_FAIL.value.format(h5_path, str(e)))
     
@@ -46,12 +48,14 @@ def oks(gt: np.ndarray, preds: np.ndarray) -> float:
     ])
     distance = np.linalg.norm(gt - preds, axis=1)
     kp_c = SELECTED_SIGMAS * 2
+
     return np.mean(np.exp(-(distance ** 2) / (2 * (kp_c ** 2))))
 
 def pck(gt: np.ndarray, preds: np.ndarray, threshold: float = 0.1):
     """Calculate Percentage of Correct Keypoints."""
     distance = np.linalg.norm(gt - preds, axis=1)
     matched = distance < threshold
+
     return np.mean(matched), matched
 
 def calculate_similarity(keypoints1: np.ndarray, keypoints2: np.ndarray):
@@ -137,6 +141,8 @@ async def get_score_service(folder_id: str):
         # 원본 포즈와 유저 포즈 점수 계산
         score = calculate_score(all_frame_points1, all_frame_points2)
 
+        logger.info(f"[{folder_id}] get score success")
         return JSONResponse(content={"score": score}, status_code=200)
     except Exception as e:
+        logger.error(f"[{folder_id}] get score fail: {str(e)}")
         return JSONResponse(content={"error": str(e)}, status_code=400)

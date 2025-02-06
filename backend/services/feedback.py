@@ -1,11 +1,12 @@
 import os
 import math
+import time
 import json
 import numpy as np
 from fastdtw import fastdtw
 from collections import defaultdict
 from fastapi.responses import JSONResponse
-from config import settings
+from config import settings, logger
 from constants import FilePaths, ResponseMessages
 from models.clova import CompletionExecutor
 from services.score import read_pose, normalize_landmarks_to_range
@@ -53,7 +54,7 @@ class FramePose:
         cos_angle = dot_product / (magnitude1 * magnitude2)
         cos_angle = min(1.0, max(-1.0, cos_angle))
         angle = math.degrees(math.acos(cos_angle))
-        
+
         return angle
 
 def get_content(pose1: FramePose, pose2: FramePose) -> str:
@@ -70,7 +71,7 @@ def get_content(pose1: FramePose, pose2: FramePose) -> str:
         'left_knee_angle_difference': pose1.get_joint_angle('left_hip', 'left_knee', 'left_ankle') - pose2.get_joint_angle('left_hip', 'left_knee', 'left_ankle'),
         'right_knee_angle_difference': pose1.get_joint_angle('right_hip', 'right_knee', 'right_ankle') - pose2.get_joint_angle('right_hip', 'right_knee', 'right_ankle'),
     }
-    
+
     return json.dumps({key: int(value) for key, value in angle_differences.items()})
 
 def get_feedback(content: str) -> str:
@@ -91,60 +92,76 @@ def get_feedback(content: str) -> str:
     result_dict = completion_executor.execute(request_data)
     result_dict = json.loads(result_dict)
     feedback = result_dict['message']['content']
+
     return feedback
 
 async def get_frame_feedback_service(request):
-    folder_id = request.folder_id
-    if folder_id not in pose_cache:
-        root_path = os.path.join("data", folder_id)
-        target_path = os.path.join(root_path, FilePaths.ORIGIN_H5.value)
-        user_path = os.path.join(root_path, FilePaths.USER_H5.value)
+    try:
+        folder_id = request.folder_id
+        if folder_id not in pose_cache:
+            root_path = os.path.join("data", folder_id)
+            target_path = os.path.join(root_path, FilePaths.ORIGIN_H5.value)
+            user_path = os.path.join(root_path, FilePaths.USER_H5.value)
 
-        # 원본 영상 및 유저 영상 포즈 정보 읽기
-        _, _, all_frame_points1 = read_pose(target_path)
-        _, _, all_frame_points2 = read_pose(user_path)
-        pose_cache[folder_id] = (all_frame_points1, all_frame_points2)
+            # 원본 영상 및 유저 영상 포즈 정보 읽기
+            _, _, all_frame_points1 = read_pose(target_path)
+            _, _, all_frame_points2 = read_pose(user_path)
+            pose_cache[folder_id] = (all_frame_points1, all_frame_points2)
 
-    all_frame_points1, all_frame_points2 = pose_cache.get(folder_id, ([], []))
+        all_frame_points1, all_frame_points2 = pose_cache.get(folder_id, ([], []))
 
-    if folder_id not in index_map_cache:
-        # DTW를 이용한 유저 영상 프레임에 대응하는 원본 영상 프레임 추출
-        index_map = defaultdict(list)
-        _, pairs = fastdtw(all_frame_points1, all_frame_points2, dist=normalize_landmarks_to_range)
-        for i in pairs:
-            index_map[i[1]].append(i[0])
-        index_map_cache[folder_id] = index_map
+        if folder_id not in index_map_cache:
+            # DTW를 이용한 유저 영상 프레임에 대응하는 원본 영상 프레임 추출
+            index_map = defaultdict(list)
+            _, pairs = fastdtw(all_frame_points1, all_frame_points2, dist=normalize_landmarks_to_range)
+            for i in pairs:
+                index_map[i[1]].append(i[0])
+            index_map_cache[folder_id] = index_map
 
-    index_map = index_map_cache.get(folder_id, {})
-    user_frame = int(request.frame)
-    target_frame = index_map.get(user_frame, [0])[0]
+        index_map = index_map_cache.get(folder_id, {})
+        user_frame = int(request.frame)
+        target_frame = index_map.get(user_frame, [0])[0]
 
-    # Clova API를 이용한 원본 영상 프레임과 유저 영상 프레임 포즈 피드백 받기
-    points1 = all_frame_points1[target_frame]
-    points2 = all_frame_points2[user_frame]
-    if np.any(points1 == (-1, -1, -1)) or np.any(points2 == (-1, -1, -1)):
-        return JSONResponse(content={"feedback": ResponseMessages.FEEDBACK_POSE_FAIL.value}, status_code=200)
-    
-    pose1 = FramePose(points1)
-    pose2 = FramePose(points2)
+        # Clova API를 이용한 원본 영상 프레임과 유저 영상 프레임 포즈 피드백 받기
+        start_time = time.time()
+        points1 = all_frame_points1[target_frame]
+        points2 = all_frame_points2[user_frame]
 
-    content = get_content(pose1, pose2)
-    feedback = get_feedback(content=content)
+        feedback = ResponseMessages.FEEDBACK_POSE_FAIL.value
+        
+        if np.any(points1 != (-1, -1, -1)) and np.any(points2 != (-1, -1, -1)):
+            pose1 = FramePose(points1)
+            pose2 = FramePose(points2)
 
-    return JSONResponse(content={"feedback": feedback, "frame": str(target_frame)}, status_code=200)
+            content = get_content(pose1, pose2)
+            feedback = get_feedback(content=content)
+        end_time = time.time()
+
+        logger.info(f"[{folder_id}] get pose feedback success: {end_time - start_time} sec")
+        return JSONResponse(content={"feedback": feedback, "frame": str(target_frame)}, status_code=200)
+
+    except Exception as e:
+        logger.error(f"[{folder_id}] get pose feedback fail: {str(e)}")
+        return JSONResponse(content={"error": str(e)}, status_code=400)
 
 async def clear_cache_and_files(folder_id: str):
-    # 포즈 정보 및 DTW 정보 캐시 정리
-    if folder_id in pose_cache:
-        del pose_cache[folder_id]
-    if folder_id in index_map_cache:
-        del index_map_cache[folder_id]
+    try:
+        # 포즈 정보 및 DTW 정보 캐시 정리
+        if folder_id in pose_cache:
+            del pose_cache[folder_id]
+        if folder_id in index_map_cache:
+            del index_map_cache[folder_id]
 
-    # 원본 영상 및 유저 영상 삭제
-    folder_path = os.path.join("data", folder_id)
-    origin_path = os.path.join(folder_path, FilePaths.ORIGIN_MP4.value)
-    user_path = os.path.join(folder_path, FilePaths.USER_MP4.value)
-    os.remove(origin_path)
-    os.remove(user_path)
-    
-    return JSONResponse(content={"message": ResponseMessages.FEEDBACK_CLEAR_SUCCESS.value.format(folder_id)}, status_code=200)
+        # 원본 영상 및 유저 영상 삭제
+        folder_path = os.path.join("data", folder_id)
+        origin_path = os.path.join(folder_path, FilePaths.ORIGIN_MP4.value)
+        user_path = os.path.join(folder_path, FilePaths.USER_MP4.value)
+        os.remove(origin_path)
+        os.remove(user_path)
+
+        logger.info(f"[{folder_id}] clear cache and files success")
+        return JSONResponse(content={"message": ResponseMessages.FEEDBACK_CLEAR_SUCCESS.value.format(folder_id)}, status_code=200)
+
+    except Exception as e:
+        logger.error(f"[{folder_id}] clear cache and files fail: {str(e)}")
+        return JSONResponse(content={"error": str(e)}, status_code=400)
