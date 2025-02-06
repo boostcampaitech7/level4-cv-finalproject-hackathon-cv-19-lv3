@@ -7,7 +7,7 @@ from fastdtw import fastdtw
 from collections import defaultdict
 from fastapi.responses import JSONResponse
 from config import settings
-from constants import FilePaths
+from constants import FilePaths, ResponseMessages
 from models.clova import CompletionExecutor
 from services.score import normalize_landmarks_to_range
 
@@ -28,7 +28,7 @@ def read_pose(h5_path):
 
         return width, height, all_frame_points
     except Exception as e:
-        raise ValueError(f"Failed to read pose data from {h5_path}: {str(e)}")
+        raise ValueError(ResponseMessages.H5FILE_LOAD_FAIL.value.format(h5_path, str(e)))
 
 class FramePose:
     keypoints = [
@@ -86,7 +86,7 @@ def get_content(pose1, pose2) -> str:
 
 def get_feedback(content):
     preset_text = [{"role":"system","content":"{\r\n    \"ANGLE DIFFERENCES\": {\r\n        \"Explation\": \"**모범 포즈와 사용자의 포즈에서 ANGLE_FEATURES를 각각 구해 그 차이를 계산한 값.**\",\r\n        \"head difference\": [\"{'target face angle'-'user face angle'}\", \"양수값일 경우 'target face angle'보다 user의 머리가 더 오른쪽으로 기울어져 있다는 뜻이다.\"],\r\n        \"shoulder difference\": [\"{'target shoulder angle'-'user shoulder angle'}\", \"양수값일 경우 'target shoulder angle'보다 user의 어깨가 더 오른쪽으로 기울어져 있다는 뜻이다.\"],\r\n        \"left arm angle difference\": [\"{'target left arm angle'-'user left arm angle'}\", \"양수값일 경우 'target left arm angle'보다 user의 왼팔이 더 반시계 방향으로 difference만큼, 혹은 시계방향으로 (360-difference)만큼 돌아가 있다는 뜻이다.\"],\r\n        \"right arm angle difference\": [\"{'target right arm angle'-'user right arm angle'}\", \"양수값일 경우 'target right arm angle'보다 user의 오른팔이 더 반시계 방향으로 difference만큼, 혹은 시계방향으로 (360-difference)만큼 돌아가 있다는 뜻이다.\"],\r\n        \"left elbow angle difference\": [{'target left elbow angle'-'user left elbow angle'}, \"양수값일 경우 'target left elbow angle'보다 user의 왼팔이 더 굽혀져있다는 뜻이다.\"],\r\n        \"right elbow angle difference\": [{'target right elbow angle'-'user right elbow angle'}, \"양수값일 경우 'target right elbow angle'보다 user의 오른팔이 더 굽혀져있다는 뜻이다.\"],\r\n        \"left leg angle difference\": [\"{'target left leg angle'-'target right leg angle'}\", \"양수값일 경우 'target left leg angle'보다 user의 왼다리가 더 반시계 방향으로 difference만큼, 혹은 시계방향으로 (360-difference)만큼 돌아가 있다는 뜻이다.\"],\r\n        \"right leg angle difference\": [\"{'user right leg angle'-'target right leg angle'}\", \"양수값일 경우 'target right leg angle'보다 user의 오른다리가 더 반시계 방향으로 difference만큼, 혹은 시계방향으로 (360-difference)만큼 돌아가 있다는 뜻이다.\"],\r\n        \"left knee angle difference\": [\"{'target left knee angle'-'user left knee angle'}\", \"양수값의 경우 'target left knee angle'보다 user의 왼다리가 더 굽혀져있다는 뜻이다.\"],\r\n        \"right knee angle difference\": [\"{'target right knee angle'-'user right knee angle'}\", \"양수값의 경우 'target right knee angle'보다 user의 오른다리가 더 굽혀져있다는 뜻이다.\"]\r\n    },\r\n    \"ROLE\": '''\r\n        당신은 서로 다른 두 사람의 Pose Difference 정보를 기반으로 피드백을 주는 댄스 서포터 AI입니다.\r\n        입력값으로는 두 사람 포즈의 차이에 대한 설명이 총 10가지 주어집니다.\r\n        * difference의 절댓값이 30 이상일 경우에 대해서만 피드백을 주도록 합니다. difference의 절댓값이 30 이하의 경우에는 피드백을 전달하지 않도록 합니다.\r\n        * 구체적인 수치를 나타내기보다는, 단순한 문장으로 바꾸어 표현합니다.(예시 - 왼쪽 팔꿈치는 70도만큼 덜 굽혀져 있습니다 -> 왼쪽 팔꿈치를 더 펴주세요.)\r\n    '''\r\n *모든 차이값의 절대값이 30이하여서 피드백을 줄 필요가 없을 때에는 '완벽합니다!'를 출력합니다.}"},
-                    {"role":"user","content":content}]
+                    {"role":"user", "content":content}]
     request_data = {
         'messages': preset_text,
         'topP': 0.8,
@@ -130,7 +130,7 @@ async def get_frame_feedback_service(request):
     points1 = all_frame_points1[target_frame]
     points2 = all_frame_points2[user_frame]
     if np.any(points1 == (-1, -1, -1)) or np.any(points2 == (-1, -1, -1)):
-        return JSONResponse(content={"feedback": "포즈가 감지되지 않아 피드백을 드릴 수 없습니다 (┬┬﹏┬┬)"}, status_code=200)
+        return JSONResponse(content={"feedback": ResponseMessages.FEEDBACK_POSE_FAIL.value}, status_code=200)
     
     pose1 = FramePose(points1)
     pose2 = FramePose(points2)
@@ -152,4 +152,4 @@ async def clear_cache_and_files(folder_id: str):
     os.remove(origin_path)
     os.remove(user_path)
     
-    return {"message": f"Cache cleared for folder_id: {folder_id}"}
+    return JSONResponse(content={"message": ResponseMessages.FEEDBACK_CLEAR_SUCCESS.value.format(folder_id)}, status_code=200)

@@ -4,7 +4,7 @@ import numpy as np
 from fastdtw import fastdtw
 from fastapi.responses import JSONResponse
 from scipy.spatial.distance import euclidean, cosine
-from constants import FilePaths
+from constants import FilePaths, ResponseMessages
 
 def read_pose(h5_path):
     try:
@@ -15,7 +15,7 @@ def read_pose(h5_path):
 
         return width, height, all_frame_points
     except Exception as e:
-        raise ValueError(f"Failed to read pose data from {h5_path}: {str(e)}")
+        raise ValueError(ResponseMessages.H5FILE_LOAD_FAIL.value.format(h5_path, str(e)))
     
 def normalize_landmarks_to_range(keypoints1: np.ndarray, keypoints2: np.ndarray, eps: float = 1e-7) -> float:
     min1 = np.min(keypoints1, axis=0)
@@ -121,14 +121,17 @@ def calculate_score(keypoints1, keypoints2):
 
     return int(final_score * 100)
 
-async def get_scores_service(folder_id: str):
-    root_path = os.path.join("data", folder_id)
-    target_path = os.path.join(root_path, FilePaths.ORIGIN_H5.value)
-    user_path = os.path.join(root_path, FilePaths.USER_H5.value)
+async def get_score_service(folder_id: str):
+    try:
+        root_path = os.path.join("data", folder_id)
+        target_path = os.path.join(root_path, FilePaths.ORIGIN_H5.value)
+        user_path = os.path.join(root_path, FilePaths.USER_H5.value)
 
-    _, _, all_frame_points1 = read_pose(target_path)
-    _, _, all_frame_points2 = read_pose(user_path)
+        _, _, all_frame_points1 = read_pose(target_path)
+        _, _, all_frame_points2 = read_pose(user_path)
 
-    score = calculate_score(all_frame_points1, all_frame_points2)
-    
-    return JSONResponse(content={"score": score}, status_code=200)
+        score = calculate_score(all_frame_points1, all_frame_points2)
+
+        return JSONResponse(content={"score": score}, status_code=200)
+    except Exception as e:
+        return JSONResponse(content={"error": str(e)}, status_code=400)

@@ -52,7 +52,7 @@ async def extract_pose_from_video(folder_id: str):
             f.create_dataset("all_frames_points", data=all_frames_points, compression="gzip")
         return JSONResponse(content={"message": "Success"}, status_code=200)
     except Exception as e:
-        return JSONResponse(content={"error": f"Failed: {str(e)}"}, status_code=400)
+        return JSONResponse(content={"error": str(e)}, status_code=400)
     
 async def extract_user_pose(folder_id: str, video):
     try:
@@ -72,4 +72,4 @@ async def extract_user_pose(folder_id: str, video):
             f.create_dataset("all_frames_points", data=all_frames_points, compression="gzip")
         return JSONResponse(content={"message": "Success"}, status_code=200)
     except Exception as e:
-        return JSONResponse(content={"error": f"Failed: {str(e)}"}, status_code=400)
+        return JSONResponse(content={"error": str(e)}, status_code=400)

@@ -20,11 +20,12 @@ def download_video_service(request):
         with YoutubeDL(ydl_opts) as ydl:
             ydl.download([request.url])
         return JSONResponse(content={"folder_id": folder_id}, status_code=201)
-    except Exception:
-        return JSONResponse(content={"error": "Failed YouTube video extract"}, status_code=400)
+    except Exception as e:
+        return JSONResponse(content={"error": str(e)}, status_code=400)
 
 def get_video_service(folder_id: str):
-    video_path = os.path.join("data", folder_id, FilePaths.ORIGIN_MP4.value)
-    if os.path.exists(video_path):
+    try:
+        video_path = os.path.join("data", folder_id, FilePaths.ORIGIN_MP4.value)
         return FileResponse(video_path, media_type="video/mp4", filename=FilePaths.ORIGIN_MP4.value)
-    return JSONResponse(content={"error": "File not found"}, status_code=400)
+    except Exception as e:
+        return JSONResponse(content={"error": str(e)}, status_code=400)
