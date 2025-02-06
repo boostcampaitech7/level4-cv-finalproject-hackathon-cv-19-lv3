@@ -6,11 +6,13 @@ from constants import FilePaths
 
 def download_video_service(request):
     try:
+        # 원본 영상에 대한 ID 생성 및 폴더 생성
         folder_id = datetime.now().strftime("%y%m%d%H%M%S")
         root_path = os.path.join("data", folder_id)
         os.makedirs(root_path, exist_ok=True)
         video_path = os.path.join(root_path, FilePaths.ORIGIN_MP4.value)
 
+        # 유튜브 영상 다운로드
         ydl_opts = {
             "outtmpl": video_path,
             "cookiesfrombrowser": ('firefox',),

@@ -1,7 +1,6 @@
 import os
 import math
 import json
-import h5py
 import numpy as np
 from fastdtw import fastdtw
 from collections import defaultdict
@@ -9,7 +8,7 @@ from fastapi.responses import JSONResponse
 from config import settings
 from constants import FilePaths, ResponseMessages
 from models.clova import CompletionExecutor
-from services.score import normalize_landmarks_to_range
+from services.score import read_pose, normalize_landmarks_to_range
 
 completion_executor = CompletionExecutor(
     host=settings.clova_host,
@@ -18,17 +17,6 @@ completion_executor = CompletionExecutor(
 )
 pose_cache = {}
 index_map_cache = {}
-
-def read_pose(h5_path):
-    try:
-        with h5py.File(h5_path, "r") as f:
-            width = f["width"][()]
-            height = f["height"][()]
-            all_frame_points = f["all_frames_points"][()]
-
-        return width, height, all_frame_points
-    except Exception as e:
-        raise ValueError(ResponseMessages.H5FILE_LOAD_FAIL.value.format(h5_path, str(e)))
 
 class FramePose:
     keypoints = [
@@ -42,7 +30,7 @@ class FramePose:
         for i, key in enumerate(self.keypoints):
             setattr(self, key, np.array([points[i][0], points[i][1]]))
 
-    def get_angle(self, key1, key2):
+    def get_angle(self, key1: str, key2: str) -> float:
         p1 = getattr(self, key1) 
         p2 = getattr(self, key2)
 
@@ -51,7 +39,7 @@ class FramePose:
 
         return angle
 
-    def get_joint_angle(self, key1, key2, key3):
+    def get_joint_angle(self, key1: str, key2: str, key3: str) -> float:
         p1 = getattr(self, key1)
         p2 = getattr(self, key2)
         p3 = getattr(self, key3)
@@ -68,7 +56,8 @@ class FramePose:
         
         return angle
 
-def get_content(pose1, pose2) -> str:
+def get_content(pose1: FramePose, pose2: FramePose) -> str:
+    """Get Clova Studio API Prompt Content."""
     angle_differences = {
         'head_difference': pose1.get_angle('right_ear', 'left_ear') - pose2.get_angle('right_ear', 'left_ear'),
         'shoulder_difference': pose1.get_angle('right_shoulder', 'left_shoulder') - pose2.get_angle('right_shoulder', 'left_shoulder'),
@@ -84,7 +73,8 @@ def get_content(pose1, pose2) -> str:
     
     return json.dumps({key: int(value) for key, value in angle_differences.items()})
 
-def get_feedback(content):
+def get_feedback(content: str) -> str:
+    """Get Clova Studio API Response."""
     preset_text = [{"role":"system","content":"{\r\n    \"ANGLE DIFFERENCES\": {\r\n        \"Explation\": \"**모범 포즈와 사용자의 포즈에서 ANGLE_FEATURES를 각각 구해 그 차이를 계산한 값.**\",\r\n        \"head difference\": [\"{'target face angle'-'user face angle'}\", \"양수값일 경우 'target face angle'보다 user의 머리가 더 오른쪽으로 기울어져 있다는 뜻이다.\"],\r\n        \"shoulder difference\": [\"{'target shoulder angle'-'user shoulder angle'}\", \"양수값일 경우 'target shoulder angle'보다 user의 어깨가 더 오른쪽으로 기울어져 있다는 뜻이다.\"],\r\n        \"left arm angle difference\": [\"{'target left arm angle'-'user left arm angle'}\", \"양수값일 경우 'target left arm angle'보다 user의 왼팔이 더 반시계 방향으로 difference만큼, 혹은 시계방향으로 (360-difference)만큼 돌아가 있다는 뜻이다.\"],\r\n        \"right arm angle difference\": [\"{'target right arm angle'-'user right arm angle'}\", \"양수값일 경우 'target right arm angle'보다 user의 오른팔이 더 반시계 방향으로 difference만큼, 혹은 시계방향으로 (360-difference)만큼 돌아가 있다는 뜻이다.\"],\r\n        \"left elbow angle difference\": [{'target left elbow angle'-'user left elbow angle'}, \"양수값일 경우 'target left elbow angle'보다 user의 왼팔이 더 굽혀져있다는 뜻이다.\"],\r\n        \"right elbow angle difference\": [{'target right elbow angle'-'user right elbow angle'}, \"양수값일 경우 'target right elbow angle'보다 user의 오른팔이 더 굽혀져있다는 뜻이다.\"],\r\n        \"left leg angle difference\": [\"{'target left leg angle'-'target right leg angle'}\", \"양수값일 경우 'target left leg angle'보다 user의 왼다리가 더 반시계 방향으로 difference만큼, 혹은 시계방향으로 (360-difference)만큼 돌아가 있다는 뜻이다.\"],\r\n        \"right leg angle difference\": [\"{'user right leg angle'-'target right leg angle'}\", \"양수값일 경우 'target right leg angle'보다 user의 오른다리가 더 반시계 방향으로 difference만큼, 혹은 시계방향으로 (360-difference)만큼 돌아가 있다는 뜻이다.\"],\r\n        \"left knee angle difference\": [\"{'target left knee angle'-'user left knee angle'}\", \"양수값의 경우 'target left knee angle'보다 user의 왼다리가 더 굽혀져있다는 뜻이다.\"],\r\n        \"right knee angle difference\": [\"{'target right knee angle'-'user right knee angle'}\", \"양수값의 경우 'target right knee angle'보다 user의 오른다리가 더 굽혀져있다는 뜻이다.\"]\r\n    },\r\n    \"ROLE\": '''\r\n        당신은 서로 다른 두 사람의 Pose Difference 정보를 기반으로 피드백을 주는 댄스 서포터 AI입니다.\r\n        입력값으로는 두 사람 포즈의 차이에 대한 설명이 총 10가지 주어집니다.\r\n        * difference의 절댓값이 30 이상일 경우에 대해서만 피드백을 주도록 합니다. difference의 절댓값이 30 이하의 경우에는 피드백을 전달하지 않도록 합니다.\r\n        * 구체적인 수치를 나타내기보다는, 단순한 문장으로 바꾸어 표현합니다.(예시 - 왼쪽 팔꿈치는 70도만큼 덜 굽혀져 있습니다 -> 왼쪽 팔꿈치를 더 펴주세요.)\r\n    '''\r\n *모든 차이값의 절대값이 30이하여서 피드백을 줄 필요가 없을 때에는 '완벽합니다!'를 출력합니다.}"},
                     {"role":"user", "content":content}]
     request_data = {
@@ -110,6 +100,7 @@ async def get_frame_feedback_service(request):
         target_path = os.path.join(root_path, FilePaths.ORIGIN_H5.value)
         user_path = os.path.join(root_path, FilePaths.USER_H5.value)
 
+        # 원본 영상 및 유저 영상 포즈 정보 읽기
         _, _, all_frame_points1 = read_pose(target_path)
         _, _, all_frame_points2 = read_pose(user_path)
         pose_cache[folder_id] = (all_frame_points1, all_frame_points2)
@@ -117,6 +108,7 @@ async def get_frame_feedback_service(request):
     all_frame_points1, all_frame_points2 = pose_cache.get(folder_id, ([], []))
 
     if folder_id not in index_map_cache:
+        # DTW를 이용한 유저 영상 프레임에 대응하는 원본 영상 프레임 추출
         index_map = defaultdict(list)
         _, pairs = fastdtw(all_frame_points1, all_frame_points2, dist=normalize_landmarks_to_range)
         for i in pairs:
@@ -127,6 +119,7 @@ async def get_frame_feedback_service(request):
     user_frame = int(request.frame)
     target_frame = index_map.get(user_frame, [0])[0]
 
+    # Clova API를 이용한 원본 영상 프레임과 유저 영상 프레임 포즈 피드백 받기
     points1 = all_frame_points1[target_frame]
     points2 = all_frame_points2[user_frame]
     if np.any(points1 == (-1, -1, -1)) or np.any(points2 == (-1, -1, -1)):
@@ -138,14 +131,16 @@ async def get_frame_feedback_service(request):
     content = get_content(pose1, pose2)
     feedback = get_feedback(content=content)
 
-    return JSONResponse(content={"feedback": feedback}, status_code=200)
+    return JSONResponse(content={"feedback": feedback, "frame": str(target_frame)}, status_code=200)
 
 async def clear_cache_and_files(folder_id: str):
+    # 포즈 정보 및 DTW 정보 캐시 정리
     if folder_id in pose_cache:
         del pose_cache[folder_id]
     if folder_id in index_map_cache:
         del index_map_cache[folder_id]
 
+    # 원본 영상 및 유저 영상 삭제
     folder_path = os.path.join("data", folder_id)
     origin_path = os.path.join(folder_path, FilePaths.ORIGIN_MP4.value)
     user_path = os.path.join(folder_path, FilePaths.USER_MP4.value)

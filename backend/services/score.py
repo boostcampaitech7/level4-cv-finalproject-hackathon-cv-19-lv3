@@ -6,7 +6,8 @@ from fastapi.responses import JSONResponse
 from scipy.spatial.distance import euclidean, cosine
 from constants import FilePaths, ResponseMessages
 
-def read_pose(h5_path):
+def read_pose(h5_path: str):
+    """Read pose landmarks from h5 file."""
     try:
         with h5py.File(h5_path, "r") as f:
             width = f["width"][()]
@@ -18,6 +19,7 @@ def read_pose(h5_path):
         raise ValueError(ResponseMessages.H5FILE_LOAD_FAIL.value.format(h5_path, str(e)))
     
 def normalize_landmarks_to_range(keypoints1: np.ndarray, keypoints2: np.ndarray, eps: float = 1e-7) -> float:
+    """Normalize pose landmarks origin video frame and user video frame."""
     min1 = np.min(keypoints1, axis=0)
     max1 = np.max(keypoints1, axis=0)
     min2 = np.min(keypoints2, axis=0)
@@ -105,6 +107,7 @@ def calculate_similarity(keypoints1: np.ndarray, keypoints2: np.ndarray):
     return avg_cosine, avg_euclidean, average_oks, average_pck
 
 def calculate_score(keypoints1, keypoints2):
+    """Calculate final score."""
     results = calculate_similarity(keypoints1, keypoints2)
     avg_cosine, avg_euclidean, average_oks, average_pck = results
 
@@ -127,9 +130,11 @@ async def get_score_service(folder_id: str):
         target_path = os.path.join(root_path, FilePaths.ORIGIN_H5.value)
         user_path = os.path.join(root_path, FilePaths.USER_H5.value)
 
+        # 원본 영상 및 유저 영상 포즈 정보 읽기
         _, _, all_frame_points1 = read_pose(target_path)
         _, _, all_frame_points2 = read_pose(user_path)
 
+        # 원본 포즈와 유저 포즈 점수 계산
         score = calculate_score(all_frame_points1, all_frame_points2)
 
         return JSONResponse(content={"score": score}, status_code=200)

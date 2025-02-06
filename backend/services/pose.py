@@ -8,7 +8,8 @@ from models.mediapipe import mp_model
 SELECTED_POINTS = [0, 7, 8, 11, 12, 13, 14, 15, 16, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32]
 pose = mp_model()
 
-def extract_pose(video_path):
+def extract_pose(video_path: str):
+    """Extract pose landmarks from video file."""
     cap = cv2.VideoCapture(video_path)
     fps = int(cap.get(cv2.CAP_PROP_FPS))
     width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
@@ -44,6 +45,7 @@ async def extract_pose_from_video(folder_id: str):
         video_path = os.path.join(root_path, video_file)
         h5_path = os.path.join(root_path, h5_file)
 
+        # 원본 영상 포즈 추출 및 h5 파일로 저장
         fps, width, height, all_frames_points = extract_pose(video_path)
         with h5py.File(h5_path, "w") as f:
             f.create_dataset("fps", data=fps)
@@ -61,9 +63,11 @@ async def extract_user_pose(folder_id: str, video):
         video_path = os.path.join(root_path, video_file)
         h5_path = os.path.join(root_path, h5_file)
 
+        # 유저 영상 저장
         with open(video_path, "wb") as buffer:
             buffer.write(await video.read())
 
+        # 유저 영상 포즈 추출 및 h5 파일로 저장
         fps, width, height, all_frames_points = extract_pose(video_path)
         with h5py.File(h5_path, "w") as f:
             f.create_dataset("fps", data=fps)
