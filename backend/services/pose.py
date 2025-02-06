@@ -4,7 +4,7 @@ import time
 import h5py
 from fastapi.responses import JSONResponse
 from config import logger
-from constants import FilePaths
+from constants import FilePaths, ResponseMessages
 from models.mediapipe import mp_model
 
 SELECTED_POINTS = [0, 7, 8, 11, 12, 13, 14, 15, 16, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32]
@@ -83,7 +83,7 @@ async def extract_user_pose(folder_id: str, video):
         end_time = time.time()
 
         logger.info(f"[{folder_id}] extract user video success: {end_time - start_time} sec")
-        return JSONResponse(content={"message": "Success"}, status_code=200)
+        return JSONResponse(content={"message": ResponseMessages.POSE_EXTRACT_POSE_SUCCESS.value}, status_code=200)
 
     except Exception as e:
         logger.error(f"[{folder_id}] extract user video fail: {str(e)}")

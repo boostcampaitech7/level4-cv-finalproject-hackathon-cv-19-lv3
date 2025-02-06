@@ -141,8 +141,9 @@ async def get_score_service(folder_id: str):
         # 원본 포즈와 유저 포즈 점수 계산
         score = calculate_score(all_frame_points1, all_frame_points2)
 
-        logger.info(f"[{folder_id}] get score success")
+        logger.info(f"[{folder_id}] get score success: {score}")
         return JSONResponse(content={"score": score}, status_code=200)
+
     except Exception as e:
         logger.error(f"[{folder_id}] get score fail: {str(e)}")
         return JSONResponse(content={"error": str(e)}, status_code=400)
