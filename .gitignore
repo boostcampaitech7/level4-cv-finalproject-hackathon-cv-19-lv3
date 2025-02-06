@@ -5,6 +5,7 @@ output_frames/
 Pose_Estimation/
 RAG/
 video/
+compare/
 
 # 특정 파일 무시
 *.pyc  # Python 컴파일된 파일
