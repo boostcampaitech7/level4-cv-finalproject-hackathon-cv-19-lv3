@@ -13,7 +13,8 @@ pose = mp_model()
 
 def hflip_video_ffmpeg(video_path: str) -> None:
     command = [
-        "ffmpeg", "-i", video_path, 
+        "ffmpeg", "-y",
+        "-i", video_path, 
         "-vf", "hflip", 
         "-c:a", "copy", video_path
     ]
