@@ -139,10 +139,11 @@ def output_sentence_from_dict(feedback_dict):
     if "perfect_msg" in feedback_dict:
         output_sentence = feedback_dict["perfect_msg"]
     else:
-        output_sentence = f"{random.choice(startings) }"
+        # output_sentence = f"{random.choice(startings) }"
+        output_sentence = ""
         for k, v in feedback_dict.items():
             output_sentence += f"{v} "
-        output_sentence += random.choice(endings)
+        # output_sentence += random.choice(endings)
     return output_sentence
 
 
