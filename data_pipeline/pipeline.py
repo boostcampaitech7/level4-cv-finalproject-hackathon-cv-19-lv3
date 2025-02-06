@@ -195,7 +195,7 @@ def generate_random_value(mean, min_val, max_val, threshold):
             return value
 
 
-def make_random_dataset(total_data_cnt, system_prompt, threshold=30, perfect_rate=0.1, ignore_low_difference=True, do_numeric_to_text=False):
+def make_random_dataset(total_data_cnt, system_prompt, max_threshold=30, perfect_rate=0.1, ignore_low_difference=True, do_numeric_to_text=False):
     df = {
         "System_Prompt": [], # 지시문
         "C_ID": [], #Conversation ID
@@ -218,10 +218,12 @@ def make_random_dataset(total_data_cnt, system_prompt, threshold=30, perfect_rat
         "right_knee_angle_difference": (-140, 140),
     }
 
-
+    min_threshold = 10
     for idx in tqdm(range(total_data_cnt)):
         # 랜덤 값 생성
+        threshold = random.randint(min_threshold, max_threshold)
         differences = {key: generate_random_value(0, *ranges[key], threshold) for key in ranges}
+        differences['threshold'] = threshold
         if np.random.rand() < perfect_rate:
             for k, v in differences.items():
                 differences[k] = int(np.random.uniform(-1, 1) * threshold)

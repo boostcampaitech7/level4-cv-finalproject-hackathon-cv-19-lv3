@@ -47,7 +47,7 @@ def parse_arguments():
         '--threshold',
         type=int,
         default=30,
-        help='얼마만큼의 각도차이가 나야 피드백 대상으로 선정되는지를 정하는 threshold값'
+        help='얼마만큼의 각도차이가 나야 피드백 대상으로 선정되는지를 정하는 threshold값. random생성 시에는 최대 threshold값으로 정해지며, 그 범위는 (10 ~ threshold)가 된다. 만약 10이하의 경우 무시당하니 주의'
     )
 
     parser.add_argument(
@@ -126,7 +126,7 @@ def main():
             random_cnt = int(random_cnt)
         except:
             random_cnt = 1000
-        total_result = make_random_dataset(random_cnt, system_prompt, threshold=threshold, perfect_rate=perfect_rate, ignore_low_difference=ignore_low_difference, do_numeric_to_text=do_numeric_to_text)
+        total_result = make_random_dataset(random_cnt, system_prompt, max_threshold=threshold, perfect_rate=perfect_rate, ignore_low_difference=ignore_low_difference, do_numeric_to_text=do_numeric_to_text)
 
     # instruction 형식이 아닌 경우 text, completion 열만 필요함
     if not instruction_dataset:

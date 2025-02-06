@@ -94,7 +94,7 @@ def generate_korean_feedback(feature_differences, threshold = 30):
             
             elif feature in ["left_elbow_angle_difference", "right_elbow_angle_difference"]:
                 side = "왼쪽" if "left" in feature else "오른쪽"
-                feedback_dict[feature.replace("_angle_difference", "")] = f"{side} 팔꿈치를 {modifier} 펴세요." if difference > 0 else f"{side} 팔꿈치를 {modifier} 구부리세요."
+                feedback_dict[feature.replace("_angle_difference", "")] = f"{side} 팔을 {modifier} 펴세요." if difference > 0 else f"{side} 팔을 {modifier} 구부리세요."
 
             elif feature in ["left_leg_angle_difference", "right_leg_angle_difference"]:
                 modifier = "전혀" if abs(difference) > threshold*2 else "약간"
@@ -772,45 +772,46 @@ def json_to_prompt_2(target_landmarks_json_path, compare_landmarks_json_path):
 
 
 if __name__ == "__main__":
-    import sys
-    sys.path.append("./")
-    from dance_scoring import detector
-    from feedback.pose_compare import extract_pose_world_landmarks
+    # import sys
+    # sys.path.append("./")
+    # from dance_scoring import detector
+    # from feedback.pose_compare import extract_pose_world_landmarks
 
-    det = detector.PoseDetector()
+    # det = detector.PoseDetector()
 
-    img_path = './images/jun_ude.jpg'
-    landmark, _, _, _ = det.get_image_landmarks(img_path)
-    result = extract_pose_world_landmarks(landmark)
+    # img_path = './images/jun_ude.jpg'
+    # landmark, _, _, _ = det.get_image_landmarks(img_path)
+    # result = extract_pose_world_landmarks(landmark)
 
-    # pose feedback
-    feedback_module = FramePose3D(result)
-    print("################ HEAD ################")
-    print("고개가 숙여진/펴진 정도: ", feedback_module.get_head_angle_1())
-    print("고개가 오른/왼쪽으로 얼마나 숙여졌는지: ", feedback_module.get_head_angle_2())
-    print("시선이 오른/왼쪽으로 얼마나 돌아갔는지: ", feedback_module.get_eye_direction())
+    # # pose feedback
+    # feedback_module = FramePose3D(result)
+    # print("################ HEAD ################")
+    # print("고개가 숙여진/펴진 정도: ", feedback_module.get_head_angle_1())
+    # print("고개가 오른/왼쪽으로 얼마나 숙여졌는지: ", feedback_module.get_head_angle_2())
+    # print("시선이 오른/왼쪽으로 얼마나 돌아갔는지: ", feedback_module.get_eye_direction())
     
-    print("################ BODY ################")
-    print("허리가 앞으로 숙여진 정도: ", feedback_module.get_waist_angle_1())
-    print("사용자 몸이 돌아간 정도: ", feedback_module.get_waist_angle_2())
+    # print("################ BODY ################")
+    # print("허리가 앞으로 숙여진 정도: ", feedback_module.get_waist_angle_1())
+    # print("사용자 몸이 돌아간 정도: ", feedback_module.get_waist_angle_2())
 
-    print("################ LEFT ARM ################")
-    print("왼팔 굽혀진 정도 : ", feedback_module.get_left_elbow_angle())
-    print("왼팔 높이: ", feedback_module.get_left_arm_height())
-    print("왼팔 방향: ", feedback_module.get_left_arm_dir())
+    # print("################ LEFT ARM ################")
+    # print("왼팔 굽혀진 정도 : ", feedback_module.get_left_elbow_angle())
+    # print("왼팔 높이: ", feedback_module.get_left_arm_height())
+    # print("왼팔 방향: ", feedback_module.get_left_arm_dir())
 
-    print("################ RIGHT ARM ################")
-    print("오른팔 굽혀진 정도 : ", feedback_module.get_right_elbow_angle())
-    print("오른팔 높이: ", feedback_module.get_right_arm_height())
-    print("오른팔 방향: ", feedback_module.get_right_arm_dir())
+    # print("################ RIGHT ARM ################")
+    # print("오른팔 굽혀진 정도 : ", feedback_module.get_right_elbow_angle())
+    # print("오른팔 높이: ", feedback_module.get_right_arm_height())
+    # print("오른팔 방향: ", feedback_module.get_right_arm_dir())
 
-    print("################ LEFT LEG ################")
-    print("왼다리 굽혀진 정도 : ", feedback_module.get_left_knee_angle())
-    print("왼다리 높이: ", feedback_module.get_left_leg_height())
-    print("왼다리 방향: ", feedback_module.get_left_leg_dir())
+    # print("################ LEFT LEG ################")
+    # print("왼다리 굽혀진 정도 : ", feedback_module.get_left_knee_angle())
+    # print("왼다리 높이: ", feedback_module.get_left_leg_height())
+    # print("왼다리 방향: ", feedback_module.get_left_leg_dir())
 
-    print("################ RIGHT LEG ################")
-    print("오른다리 굽혀진 정도 : ", feedback_module.get_right_knee_angle())
-    print("오른다리 높이: ", feedback_module.get_right_leg_height())
-    print("오른다리 방향: ", feedback_module.get_right_leg_dir())
-    print("다리가 벌어진 정도: ", feedback_module.get_leg_angle())
+    # print("################ RIGHT LEG ################")
+    # print("오른다리 굽혀진 정도 : ", feedback_module.get_right_knee_angle())
+    # print("오른다리 높이: ", feedback_module.get_right_leg_height())
+    # print("오른다리 방향: ", feedback_module.get_right_leg_dir())
+    # print("다리가 벌어진 정도: ", feedback_module.get_leg_angle())
+    print(generate_korean_feedback({'head_difference': -2, 'shoulder_difference': 4, 'left_arm_angle_difference': 19, 'right_arm_angle_difference': 30, 'left_elbow_angle_difference': 35, 'right_elbow_angle_difference': -34, 'left_leg_angle_difference': 0, 'right_leg_angle_difference': -1, 'left_knee_angle_difference': -4, 'right_knee_angle_difference': -3}))
