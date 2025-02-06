@@ -9,7 +9,7 @@ async def lifespan(app: FastAPI):
     os.makedirs("data", exist_ok=True)
     yield
     with open("app.log", mode="a") as log:
-        log.write("Application shutdown")
+        log.write("Application shutdown\n")
 
 app = FastAPI(lifespan=lifespan)
 
