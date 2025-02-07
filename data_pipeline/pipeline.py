@@ -265,6 +265,49 @@ def output_sentence_from_dict(feedback_dict):
 
     return output_sentence
 
+def output_sentence_from_dict_simple(feedback_dict):
+    startings = [
+        "동작 차이를 기반으로 피드백을 드리도록 하겠습니다.",
+        "동작 분석을 기반으로 피드백을 제공해 드리겠습니다.",
+        "개선점을 안내해 드릴게요.",
+        "정확한 동작 분석을 통해 개선할 점을 알려드리겠습니다.",
+        "댄스 동작을 비교하여 최적의 피드백을 드릴게요.",
+        "자세 차이를 바탕으로 더 나은 동작을 위한 피드백을 드리겠습니다.",
+        "댄스 퍼포먼스를 향상시킬 수 있도록 피드백을 시작하겠습니다."
+    ]
+
+    good_endings = [
+        "나머지 동작는 좋아요! 계속해서 발전해봅시다!",
+        "좋은 동작입니다! 앞으로도 꾸준히 연습해볼까요?",
+        "완벽에 가까워지고 있어요! 계속 노력해볼게요!",
+        "점점 더 좋아지고 있어요! 계속 밀고 나가봅시다!",
+        "좋은 흐름이에요! 이대로 쭉 가봅시다!",
+        "자세가 많이 발전했어요! 다음 목표를 향해 가볼까요?"
+    ]
+
+    bad_endings = [
+        "자세가 아직은 많이 좋지 않네요 더 정진해봅시다!",
+        "아직은 부족한 부분이 보이지만 꾸준히 연습하면 좋아질 거예요!",
+        "자세를 조금 더 신경 쓰면 훨씬 좋아질 거예요! 계속 연습해봐요!",
+        "연습을 조금 더 하면 동작이 훨씬 자연스러워질 거예요! 화이팅!",
+        "동작의 연결이 자연스럽게 이어질 수 있도록 신경 써보면 좋을 것 같아요!"
+]
+
+
+    if len(feedback_dict) >= 5:
+        ending = random.choice(bad_endings)
+    else:
+        ending = random.choice(good_endings)
+
+    if "perfect_msg" in feedback_dict:
+        output_sentence = feedback_dict["perfect_msg"]
+    else:
+        output_sentence = random.choice(startings) + ' '
+        for k, v in feedback_dict.items():
+            output_sentence += f"{v} "
+        output_sentence += ending
+    return output_sentence
+
 
 def make_dataset(matched_dict_list, system_prompt, start_CID=0, threshold=30, ignore_low_difference=True, do_numeric_to_text=False):
     df = {
@@ -325,16 +368,16 @@ def make_random_dataset(total_data_cnt, system_prompt, max_threshold=30, perfect
 
     # 범위 정의
     ranges = {
-        "head_difference": (-70, 70),
-        "shoulder_difference": (-100, 100),
-        "left_arm_angle_difference": (-140, 140),
-        "right_arm_angle_difference": (-140, 140),
-        "left_elbow_angle_difference": (-140, 140),
-        "right_elbow_angle_difference": (-140, 140),
-        "left_leg_angle_difference": (-90, 90),
-        "right_leg_angle_difference": (-90, 90),
-        "left_knee_angle_difference": (-140, 140),
-        "right_knee_angle_difference": (-140, 140),
+        "head difference": (-70, 70),
+        "shoulder difference": (-100, 100),
+        "left arm angle difference": (-140, 140),
+        "right arm angle difference": (-140, 140),
+        "left elbow angle difference": (-140, 140),
+        "right elbow angle difference": (-140, 140),
+        "left leg angle difference": (-120, 120),
+        "right leg angle difference": (-120, 120),
+        "left knee angle difference": (-140, 140),
+        "right knee angle difference": (-140, 140),
     }
 
     min_threshold = 10
@@ -361,7 +404,7 @@ def make_random_dataset(total_data_cnt, system_prompt, max_threshold=30, perfect
             input_sentence += ("[입력값]: " + str(differences))
 
         # output sentence를 dict로부터 작성
-        output_sentence = output_sentence_from_dict(feedbacks)
+        output_sentence = output_sentence_from_dict_simple(feedbacks)
 
         df["C_ID"].append(idx)
         df["T_ID"].append(0)
