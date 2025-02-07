@@ -223,10 +223,10 @@ def make_random_dataset(total_data_cnt, system_prompt, max_threshold=30, perfect
         # 랜덤 값 생성
         threshold = random.randint(min_threshold, max_threshold)
         differences = {key: generate_random_value(0, *ranges[key], threshold) for key in ranges}
-        differences['threshold'] = threshold
         if np.random.rand() < perfect_rate:
             for k, v in differences.items():
                 differences[k] = int(np.random.uniform(-1, 1) * threshold)
+        differences['threshold'] = threshold
 
         feedbacks = generate_korean_feedback(differences, threshold=threshold)
 
