@@ -77,38 +77,45 @@ def generate_korean_feedback(feature_differences, threshold = 30):
             modifier = "더" if abs(difference) > threshold*2 else "조금 더"
 
             if feature == "head_difference":
-                feedback_dict["head"] = f"고개를 왼쪽으로 {modifier} 기울이세요." if difference > 0 else f"고개를 오른쪽으로 {modifier} 기울이세요."
+                feedback_dict["head"] = f"머리를 {modifier} 왼쪽으로 기울여주세요." if difference > 0 else f"머리를 {modifier} 오른쪽으로 기울여주세요."
 
             elif feature == "shoulder_difference":
                 modifier = "너무" if abs(difference) > threshold*2 else "약간"
                 if difference > 0:
-                    feedback_dict["shoulder"] = f"왼쪽 어깨를 조금 내리세요."
+                    feedback_dict["shoulder"] = f"왼쪽 어깨를 조금 내려주세요."
                 else:
-                    feedback_dict["shoulder"] = f"오른쪽 어깨를 조금 내리세요."
+                    feedback_dict["shoulder"] = f"오른쪽 어깨를 조금 내려주세요."
 
             elif feature in ["left_arm_angle_difference", "right_arm_angle_difference"]:
                 modifier = "전혀" if abs(difference) > threshold*2 else "약간"
                 side = "왼쪽" if "left" in feature else "오른쪽"
                 to = "오른쪽" if difference > 0 else "왼쪽"
-                feedback_dict[feature.replace("_angle_difference", "")] = f"{side} 팔을 {to}으로 좀 더 움직여 주세요."
+                feedback_dict[feature.replace("_angle_difference", "")] = f"{side} 팔을 좀 더 {to}으로 움직여주세요."
             
             elif feature in ["left_elbow_angle_difference", "right_elbow_angle_difference"]:
                 side = "왼쪽" if "left" in feature else "오른쪽"
-                feedback_dict[feature.replace("_angle_difference", "")] = f"{side} 팔꿈치를 {modifier} 펴세요." if difference > 0 else f"{side} 팔꿈치를 {modifier} 구부리세요."
+                feedback_dict[feature.replace("_angle_difference", "")] = f"{side} 팔꿈치를 {modifier} 펴주세요." if difference > 0 else f"{side} 팔꿈치를 {modifier} 구부려주세요."
 
             elif feature in ["left_leg_angle_difference", "right_leg_angle_difference"]:
                 modifier = "전혀" if abs(difference) > threshold*2 else "약간"
                 side = "왼쪽" if "left" in feature else "오른쪽"
                 to = "오른쪽" if difference > 0 else "왼쪽"
-                feedback_dict[feature.replace("_angle_difference", "")] = f"{side} 다리를 {to}으로 좀 더 움직여 주세요."
+                feedback_dict[feature.replace("_angle_difference", "")] = f"{side} 다리를 좀 더 {to}으로 움직여주세요."
                     
             elif feature in ["left_knee_angle_difference", "right_knee_angle_difference"]:
                 side = "왼쪽" if "left" in feature else "오른쪽"
-                feedback_dict[feature.replace("_angle_difference", "")] = f"{side} 무릎을 {modifier} 펴세요." if difference > 0 else f"{side} 무릎을 {modifier} 구부리세요."
+                feedback_dict[feature.replace("_angle_difference", "")] = f"{side} 무릎을 {modifier} 펴주세요." if difference > 0 else f"{side} 무릎을 {modifier} 구부려주세요."
     
     # 기준값을 초과한 특징이 없으면 기본 성공 메시지 반환
     if not feedback_dict:
-        return {"perfect_msg": "동작이 완벽해요."}
+        perfect_msg = [
+            "동작 하나하나가 정말 정확하고 힘이 느껴져요!",
+            "자연스럽고 부드러운 흐름이 너무 멋져요!",
+            "디테일이 살아 있어요!",
+            "춤선이 정말 아름답고 완벽하게 살아 있네요!",
+            "스텝이 너무 정확하고 깔끔해서 감탄했어요!"
+        ]
+        return {"perfect_msg": random.choice(perfect_msg)}
     
     return feedback_dict
 
