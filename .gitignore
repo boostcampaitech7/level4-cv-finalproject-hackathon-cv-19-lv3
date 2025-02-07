@@ -23,6 +23,8 @@ CLOVA_API
 data/
 *.json
 *.txt
+# ---데이터셋 크기 용량 초과(glove) ---
+tools/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
