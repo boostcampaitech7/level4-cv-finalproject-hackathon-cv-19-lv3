@@ -97,6 +97,10 @@ def get_feedback_from_keypoints(match_info_dict):
 
 def numeric_to_text(numeric_result_json):
     for k, v in numeric_result_json.items():
+        if k == 'threshold':
+            numeric_result_json[k] = f"피드백을 주어야하는 임계치는 {v}입니다."
+            continue
+
         if v == 0:
             numeric_result_json[k] = "목표 자세와 차이가 없습니다."
         else:
@@ -156,9 +160,9 @@ def output_sentence_from_dict(feedback_dict):
         else:
             ending = random.choice(good_endings)
 
-        # 머리는 개별 설명. 머리방향 틀리면 시선방향도 틀릴 가능성 높으니 부연설명.
+        # 머리는 개별 설명
         if 'head' in feedback_dict:
-            feedback_sentences.append(feedback_dict['head'] + ' 그리고 시선 처리에도 신경써주시면 좋을 것 같아요!\n')
+            feedback_sentences.append(feedback_dict['head'] + '\n')
         
         # 왼팔에 대한 부분 묶어서 설명
         if 'shoulder' in feedback_dict and '왼쪽' in feedback_dict['shoulder']:
@@ -341,7 +345,6 @@ def make_random_dataset(total_data_cnt, system_prompt, max_threshold=30, perfect
         if np.random.rand() < perfect_rate:
             for k, v in differences.items():
                 differences[k] = int(np.random.uniform(-1, 1) * threshold)
-        differences['threshold'] = threshold
 
         feedbacks = generate_korean_feedback(differences, threshold=threshold)
 
@@ -351,9 +354,11 @@ def make_random_dataset(total_data_cnt, system_prompt, max_threshold=30, perfect
 
         # input prompt를 dict으로부터 작성
         if do_numeric_to_text:
+            differences['threshold'] = threshold
             input_sentence = str(numeric_to_text(differences))
         else:
-            input_sentence = str(differences)
+            input_sentence = f"[임계치]: {threshold}\n\n"
+            input_sentence += ("[입력값]: " + str(differences))
 
         # output sentence를 dict로부터 작성
         output_sentence = output_sentence_from_dict(feedbacks)
