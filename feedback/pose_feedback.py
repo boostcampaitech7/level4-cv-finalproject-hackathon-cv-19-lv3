@@ -28,8 +28,8 @@ body_parts_korean = {
     "right_index": "오른쪽 검지",
     "left_thumb": "왼쪽 엄지",
     "right_thumb": "오른쪽 엄지",
-    "left_hip": "왼쪽 엉덩이",
-    "right_hip": "오른쪽 엉덩이",
+    "left_hip": "왼쪽 골반",
+    "right_hip": "오른쪽 골반",
     "left_knee": "왼쪽 무릎",
     "right_knee": "오른쪽 무릎",
     "left_ankle": "왼쪽 발목",
@@ -811,6 +811,12 @@ def json_to_prompt_2(target_landmarks_json_path, compare_landmarks_json_path):
             'direction_difference': int(pose1.get_right_leg_dir() - pose2.get_right_leg_dir()) # 음수, 양수 관계없이 왼팔 방향이 맞지 않는다
         }
     }
+    if abs(result['head']['direction_difference']) > 180:
+        if result['head']['direction_difference'] > 0:
+            result['head']['direction_difference'] = min(result['head']['direction_difference'], 360-result['head']['direction_difference'])
+        else:
+            result['head']['direction_difference'] = max(result['head']['direction_difference'], -(360+result['head']['direction_difference']))
+
     return result
 
 
@@ -990,7 +996,6 @@ def json_to_prompt_3(target_landmarks_json_path, compare_landmarks_json_path):
         data2 = compare_landmarks_json_path
     
     v2_pose_diff_dict = json_to_prompt_2(target_landmarks_json_path, compare_landmarks_json_path)
-    v2_pose_diff_dict = generate_3D_feedback(v2_pose_diff_dict)
     
     pose1 = FramePoseScript(data1)
     pose2 = FramePoseScript(data2)
@@ -1054,8 +1059,7 @@ def json_to_prompt_3(target_landmarks_json_path, compare_landmarks_json_path):
         'angle_difference': angle_difference,
         'distance_difference': dist_difference,
         'relative_pos_difference': rel_pos_difference,
-        'head_feedback': v2_pose_diff_dict['head'] if 'head' in v2_pose_diff_dict else '',
-        'waist_feedback': v2_pose_diff_dict['waist'] if 'waist' in v2_pose_diff_dict else '',
+        'v2_pose_diff_dict': {k: v for k, v in v2_pose_diff_dict.items() if k in ['head', 'waist']},
         'left_hand_feedback': left_hand_info,
         'right_hand_feedback': right_hand_info
     }
@@ -1080,13 +1084,17 @@ def check_if_end_consonant(word):
         raise ValueError(f"'{word}'은(는) 한글이 아닙니다.")
 
 
-def get_korean_feedback_posescript(diffs, angle_thres=20, distance_thres=0.15, rel_thres=0.25):
+def get_korean_feedback_posescript(diffs, angle_thres=20, distance_thres=0.15, rel_thres=0.25, v2_thres=30):
     feedback = []
-    if diffs['head_feedback']:
-        feedback.append(diffs['head_feedback'])
+    print(diffs['v2_pose_diff_dict'])
+
+    # head and waist feedback
+    v2_feedback = generate_3D_feedback(diffs['v2_pose_diff_dict'], threshold=v2_thres)
+    if 'head' in v2_feedback:
+        feedback.append(v2_feedback['head'])
     
-    if diffs['waist_feedback']:
-        feedback.append(diffs['waist_feedback'])
+    if 'waist' in v2_feedback:
+        feedback.append(v2_feedback['waist'])
 
     # angle feedback 생성
     for k, v in diffs['angle_difference'].items():
@@ -1104,14 +1112,15 @@ def get_korean_feedback_posescript(diffs, angle_thres=20, distance_thres=0.15, r
         if 'hand' in k or 'elbow' in k:
             if abs(v['diff']) < distance_thres or abs(v['pose1']) > distance_thres:
                 continue
+            command = '떼주세요.' if v['diff'] > 0 else '붙이세요.'
         else:
             if abs(v) < distance_thres:
                 continue
+            command = '떼주세요.' if v > 0 else '붙이세요.'
         
         part1, part2, _ = k.split()
         common = body_parts_korean[part1.split('_')[1]]
         particle = '을' if check_if_end_consonant(common) else '를'
-        command = '떼주세요.' if v > 0 else '붙이세요.'
         feedback.append(f'두 {common}{particle} 좀 더 {command}')
     
 
