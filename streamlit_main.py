@@ -538,7 +538,7 @@ else:
                 st.json(feedback_algorithm)
             with col2:
                 st.subheader("3D 피드백")
-                st.text(feedback_3D)
+                st.json(feedback_3D)
             with col3:
                 st.subheader("posescript")
                 st.text('\n'.join(feedback_script))
