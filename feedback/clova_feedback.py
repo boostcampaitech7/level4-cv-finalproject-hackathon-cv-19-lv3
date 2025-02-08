@@ -1,7 +1,9 @@
+import sys
+sys.path.append("./")
 import requests
 import json
 from .pose_feedback import json_to_prompt
-from ..config import API_PATH, CLOVA_HOST, SYSTEM_PROMPT
+from config import API_PATH, CLOVA_HOST, SYSTEM_PROMPT
 
 
 def make_base_clova_inputs(original_json_path, user_json_path):

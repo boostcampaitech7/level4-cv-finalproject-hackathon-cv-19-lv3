@@ -162,7 +162,7 @@ TOTAL_SIGMAS = [v for v in K_I_VALUE.values()]
 
 
 #######################################################################################
-SEPARATOR = ' ' # dictionary key값에서 단어를 이을 때 어떤 걸 쓸지. '_'또는 ' '
+SEPARATOR = '_' # dictionary key값에서 단어를 이을 때 어떤 걸 쓸지. '_'또는 ' '
 
 
 
