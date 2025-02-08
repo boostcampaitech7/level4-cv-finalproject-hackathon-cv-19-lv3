@@ -15,14 +15,14 @@ from feedback.pose_feedback import json_to_prompt, generate_feedback, generate_k
 english_to_korean = {
     "head": "머리",
     "shoulder": "어깨",
-    "left_arm": "왼쪽 팔",
-    "right_arm": "오른쪽 팔",
-    "left_elbow": "왼쪽 팔목",
-    "right_elbow": "오른쪽 팔목",
-    "left_leg": "왼쪽 다리",
-    "right_leg": "오른쪽 다리",
-    "left_knee": "왼쪽 무릎",
-    "right_knee": "오른쪽 무릎"
+    "left arm": "왼쪽 팔",
+    "right arm": "오른쪽 팔",
+    "left elbow": "왼쪽 팔목",
+    "right elbow": "오른쪽 팔목",
+    "left leg": "왼쪽 다리",
+    "right leg": "오른쪽 다리",
+    "left knee": "왼쪽 무릎",
+    "right knee": "오른쪽 무릎"
 }
 
 def compare_video_pair(right_video_path, wrong_video_path, frame_interval=0.5):
@@ -147,8 +147,8 @@ def output_sentence_from_dict(feedback_dict):
         "\n동작의 연결이 자연스럽게 이어질 수 있도록 신경 써보면 좋을 것 같아요!"
     ]
 
-    if "perfect_msg" in feedback_dict:
-        output_sentence = feedback_dict["perfect_msg"]
+    if "perfect msg" in feedback_dict:
+        output_sentence = feedback_dict["perfect msg"]
     else:
         output_sentence = f"{random.choice(startings) }"
         feedback_sentences = []
@@ -168,29 +168,29 @@ def output_sentence_from_dict(feedback_dict):
         if 'shoulder' in feedback_dict and '왼쪽' in feedback_dict['shoulder']:
             s = '다음으로는 ' if feedback_sentences else ''
 
-            if 'left_arm' in feedback_dict and 'left_elbow' in feedback_dict:
+            if 'left arm' in feedback_dict and 'left elbow' in feedback_dict:
                 s += feedback_dict["shoulder"].replace('주세요.', "주시고, ")
-                s += feedback_dict['left_arm'].replace('을', '은').replace('주세요.', '주신 다음에 ')
-                s += feedback_dict['left_elbow'].replace('를', '도')
-            elif 'left_arm' in feedback_dict:
+                s += feedback_dict['left arm'].replace('을', '은').replace('주세요.', '주신 다음에 ')
+                s += feedback_dict['left elbow'].replace('를', '도')
+            elif 'left arm' in feedback_dict:
                 s += feedback_dict["shoulder"].replace('주세요.', "주시고, ")
-                s += feedback_dict['left_arm'].replace('을', '은')
-            elif 'left_elbow' in feedback_dict:
+                s += feedback_dict['left arm'].replace('을', '은')
+            elif 'left elbow' in feedback_dict:
                 s += feedback_dict["shoulder"].replace('주세요.', "주시고, ")
-                s += feedback_dict['left_elbow'].replace('를', '는')
+                s += feedback_dict['left elbow'].replace('를', '는')
             else:
                 s += feedback_dict["shoulder"]
             feedback_sentences.append(s + '\n')
 
         elif 'shoulder' not in feedback_dict:
             s = '다음으로는 ' if feedback_sentences else ''
-            if 'left_arm' in feedback_dict and 'left_elbow' in feedback_dict:
-                s += feedback_dict['left_arm'].replace('주세요.', '주신 다음에 ')
-                s += feedback_dict['left_elbow'].replace('를', '도')
-            elif 'left_arm' in feedback_dict:
-                s += feedback_dict['left_arm']
-            elif 'left_elbow' in feedback_dict:
-                s += feedback_dict['left_elbow']
+            if 'left arm' in feedback_dict and 'left elbow' in feedback_dict:
+                s += feedback_dict['left arm'].replace('주세요.', '주신 다음에 ')
+                s += feedback_dict['left elbow'].replace('를', '도')
+            elif 'left arm' in feedback_dict:
+                s += feedback_dict['left arm']
+            elif 'left elbow' in feedback_dict:
+                s += feedback_dict['left elbow']
             else:
                 s = ''
             
@@ -203,29 +203,29 @@ def output_sentence_from_dict(feedback_dict):
         if 'shoulder' in feedback_dict and '오른쪽' in feedback_dict['shoulder']:
             s = '계속해서 ' if feedback_sentences else ''
 
-            if 'right_arm' in feedback_dict and 'right_elbow' in feedback_dict:
+            if 'right arm' in feedback_dict and 'right elbow' in feedback_dict:
                 s += feedback_dict["shoulder"].replace('주세요.', "주시고, ")
-                s += feedback_dict['right_arm'].replace('을', '은').replace('주세요.', '주신 다음에 ')
-                s += feedback_dict['right_elbow'].replace('를', '도')
-            elif 'right_arm' in feedback_dict:
+                s += feedback_dict['right arm'].replace('을', '은').replace('주세요.', '주신 다음에 ')
+                s += feedback_dict['right elbow'].replace('를', '도')
+            elif 'right arm' in feedback_dict:
                 s += feedback_dict["shoulder"].replace('주세요.', "주시고, ")
-                s += feedback_dict['right_arm'].replace('을', '은')
-            elif 'right_elbow' in feedback_dict:
+                s += feedback_dict['right arm'].replace('을', '은')
+            elif 'right elbow' in feedback_dict:
                 s += feedback_dict["shoulder"].replace('주세요.', "주시고, ")
-                s += feedback_dict['right_elbow'].replace('를', '는')
+                s += feedback_dict['right elbow'].replace('를', '는')
             else:
                 s += feedback_dict["shoulder"]
             feedback_sentences.append(s + '\n')
 
         elif 'shoulder' not in feedback_dict:
             s = '계속해서 ' if feedback_sentences else ''
-            if 'right_arm' in feedback_dict and 'right_elbow' in feedback_dict:
-                s += feedback_dict['right_arm'].replace('주세요.', '주신 다음에 ')
-                s += feedback_dict['right_elbow'].replace('를', '도')
-            elif 'right_arm' in feedback_dict:
-                s += feedback_dict['right_arm']
-            elif 'right_elbow' in feedback_dict:
-                s += feedback_dict['right_elbow']
+            if 'right arm' in feedback_dict and 'right elbow' in feedback_dict:
+                s += feedback_dict['right arm'].replace('주세요.', '주신 다음에 ')
+                s += feedback_dict['right elbow'].replace('를', '도')
+            elif 'right arm' in feedback_dict:
+                s += feedback_dict['right arm']
+            elif 'right elbow' in feedback_dict:
+                s += feedback_dict['right elbow']
             else:
                 s = ''
             
@@ -235,29 +235,29 @@ def output_sentence_from_dict(feedback_dict):
             pass
         
         # 왼발에 대한 부분 묶어서 설명
-        if 'left_leg' in feedback_dict or 'left_knee' in feedback_dict:
+        if 'left leg' in feedback_dict or 'left knee' in feedback_dict:
             s = '그리고 ' if feedback_sentences else ''
-            if 'left_leg' in feedback_dict and 'left_knee' in feedback_dict:
-                s += feedback_dict['left_leg'].replace('주세요.', '주시고, ')
-                s += feedback_dict['left_knee'].replace('를', '는')
-            elif 'left_leg' in feedback_dict:
-                s += feedback_dict['left_leg']
-            elif 'left_knee' in feedback_dict:
-                s += feedback_dict['left_knee']
+            if 'left leg' in feedback_dict and 'left knee' in feedback_dict:
+                s += feedback_dict['left leg'].replace('주세요.', '주시고, ')
+                s += feedback_dict['left knee'].replace('를', '는')
+            elif 'left leg' in feedback_dict:
+                s += feedback_dict['left leg']
+            elif 'left knee' in feedback_dict:
+                s += feedback_dict['left knee']
 
             feedback_sentences.append(s + '\n')
 
         # 오른발에 대한 부분 묶어서 설명
-        if 'right_leg' in feedback_dict or 'right_knee' in feedback_dict:
+        if 'right leg' in feedback_dict or 'right knee' in feedback_dict:
             s = '마지막으로 ' if feedback_sentences else ''
 
-            if 'right_leg' in feedback_dict and 'right_knee' in feedback_dict:
-                s += feedback_dict['right_leg'].replace('주세요.', '주시고, ')
-                s += feedback_dict['right_knee'].replace('를', '도')
-            elif 'right_leg' in feedback_dict:
-                s += feedback_dict['right_leg']
-            elif 'right_knee' in feedback_dict:
-                s += feedback_dict['right_knee']
+            if 'right leg' in feedback_dict and 'right knee' in feedback_dict:
+                s += feedback_dict['right leg'].replace('주세요.', '주시고, ')
+                s += feedback_dict['right knee'].replace('를', '도')
+            elif 'right leg' in feedback_dict:
+                s += feedback_dict['right leg']
+            elif 'right knee' in feedback_dict:
+                s += feedback_dict['right knee']
 
             feedback_sentences.append(s + '\n')
         output_sentence += ''.join(feedback_sentences)
@@ -291,7 +291,7 @@ def output_sentence_from_dict_simple(feedback_dict):
         "자세를 조금 더 신경 쓰면 훨씬 좋아질 거예요! 계속 연습해봐요!",
         "연습을 조금 더 하면 동작이 훨씬 자연스러워질 거예요! 화이팅!",
         "동작의 연결이 자연스럽게 이어질 수 있도록 신경 써보면 좋을 것 같아요!"
-]
+    ]
 
 
     if len(feedback_dict) >= 5:
@@ -299,8 +299,8 @@ def output_sentence_from_dict_simple(feedback_dict):
     else:
         ending = random.choice(good_endings)
 
-    if "perfect_msg" in feedback_dict:
-        output_sentence = feedback_dict["perfect_msg"]
+    if "perfect msg" in feedback_dict:
+        output_sentence = feedback_dict["perfect msg"]
     else:
         output_sentence = random.choice(startings) + ' '
         for k, v in feedback_dict.items():
