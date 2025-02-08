@@ -12,6 +12,15 @@
         android:layout_height="match_parent" />
 
     <VideoView
+        android:id="@+id/countdownVideo"
+        android:layout_width="117dp"
+        android:layout_height="208dp"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentRight="true"
+        android:layout_marginTop="20dp"
+        android:layout_marginRight="20dp"/>
+
+    <VideoView
         android:id="@+id/videoOverlay"
         android:layout_width="117dp"
         android:layout_height="208dp"

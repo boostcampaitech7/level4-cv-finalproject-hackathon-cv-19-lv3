@@ -5,9 +5,11 @@ import android.net.Uri
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.os.Handler
+import android.provider.MediaStore.Video
 import android.util.Log
 import android.widget.ImageView
 import android.widget.Toast
+import android.widget.VideoView
 import com.arthenica.ffmpegkit.FFmpegKit
 import com.arthenica.ffmpegkit.ReturnCode
 import com.bumptech.glide.Glide
@@ -18,7 +20,8 @@ import java.io.File
 
 class ProcessActivity : AppCompatActivity() {
 
-    private lateinit var loading: ImageView
+//    private lateinit var loading: ImageView
+    private lateinit var videoView: VideoView
     private var videoFilePath: String? = null
     private var originalVideo: String? = null
     private var flippedVideoPath: String? = null
@@ -31,6 +34,7 @@ class ProcessActivity : AppCompatActivity() {
         setContentView(R.layout.activity_process)
 
         videoFilePath = intent.getStringExtra("videoFilePath")
+        Log.d("videoFilePath", "$videoFilePath")
         originalVideo = intent.getStringExtra("originalVideo")
         folderId = intent.getStringExtra("folderId")
 
@@ -48,12 +52,21 @@ class ProcessActivity : AppCompatActivity() {
         supportFragmentManager.beginTransaction()
             .replace(R.id.bottomFragmentContainer, BottomFragment())
             .commit()
+//
+//        loading = findViewById(R.id.gif_loading)
+//        Glide.with(this)
+//            .asGif()
+//            .load(R.drawable.loading)
+//            .into(loading)
 
-        loading = findViewById(R.id.gif_loading)
-        Glide.with(this)
-            .asGif()
-            .load(R.drawable.loading)
-            .into(loading)
+        videoView = findViewById(R.id.clovaDubbingVideo)
+
+        val videoUri = Uri.parse("android.resource://${packageName}/${R.raw.loading_video}")
+        videoView.setVideoURI(videoUri)
+        videoView.setOnPreparedListener { mediaPlayer ->
+            mediaPlayer.isLooping = true
+            videoView.start()
+        }
     }
 
     private fun flipVideoHorizontally(inputPath: String) {

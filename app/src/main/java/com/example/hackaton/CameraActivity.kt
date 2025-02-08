@@ -31,6 +31,7 @@ class CameraActivity : AppCompatActivity(), SurfaceHolder.Callback {
 
     private lateinit var btnRecord: FloatingActionButton
     private lateinit var surfaceView: SurfaceView
+    private lateinit var countdownVideo: VideoView
     private lateinit var videoOverlay: VideoView
     private var camera: Camera? = null
     private var mediaRecorder: MediaRecorder? = null
@@ -73,6 +74,7 @@ class CameraActivity : AppCompatActivity(), SurfaceHolder.Callback {
         btnRecord = findViewById(R.id.record_btn)
         surfaceView = findViewById(R.id.surfaceView)
         videoOverlay = findViewById(R.id.videoOverlay)
+        countdownVideo = findViewById(R.id.countdownVideo)
 
         // SurfaceHolder 초기화
         surfaceHolder = surfaceView.holder
@@ -83,7 +85,7 @@ class CameraActivity : AppCompatActivity(), SurfaceHolder.Callback {
             if (recording) {
                 stopRecording()
             } else {
-                startRecording()
+                showCountdown()
             }
         }
 
@@ -115,6 +117,24 @@ class CameraActivity : AppCompatActivity(), SurfaceHolder.Callback {
         }.start()
     }
 
+    private fun showCountdown() {
+        val videoUri = Uri.parse("android.resource://${packageName}/${R.raw.countdown1}")
+
+        countdownVideo.setVideoURI(videoUri)
+        countdownVideo.setOnPreparedListener { mediaPlayer ->
+            mediaPlayer.isLooping = false
+        }
+
+        // 동영상 재생 완료 시 녹화 중지
+        countdownVideo.setOnCompletionListener {
+            // 동영상 오버레이 숨김 처리
+            countdownVideo.visibility = View.INVISIBLE
+            startRecording()
+        }
+
+        countdownVideo.visibility = View.VISIBLE // 비디오 오버레이를 표시
+        countdownVideo.start()
+    }
 
     private fun setupVideoOverlay() {
         val videoUri = Uri.parse("file://$youtubeVideoPath")

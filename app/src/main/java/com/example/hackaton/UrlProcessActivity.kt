@@ -150,8 +150,8 @@ class UrlProcessActivity : AppCompatActivity() {
 
             Log.d(TAG, "Video saved at: ${videoFile.absolutePath}")
 
-            // 다음 CameraActivity로 이동
-            val intent = Intent(this, CameraActivity::class.java).apply {
+            // 다음 UrlCheckActivity로 이동
+            val intent = Intent(this, UrlCheckActivity::class.java).apply {
                 putExtra("originalVideoPath", videoFile.absolutePath)
                 putExtra("folderId", folderId)
             }
