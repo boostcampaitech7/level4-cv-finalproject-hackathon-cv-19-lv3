@@ -64,7 +64,7 @@ class PoseDetector:
         else:
             warnings.warn("there is no pose_landmarks in the image!!")
             return None, None, None, None
-        return detection_result.pose_landmarks.landmark, detection_result.segmentation_mask, annotated_image, boxsize
+        return detection_result.pose_world_landmarks.landmark, detection_result.segmentation_mask, annotated_image, boxsize
     
 
     def get_video_landmarks(self, video_path, do_resize=True, resize_shape=None):

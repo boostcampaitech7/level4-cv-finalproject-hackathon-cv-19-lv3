@@ -13,7 +13,7 @@ from dance_scoring.util import draw_landmarks_on_image, get_closest_frame
 from dance_scoring.similarity_with_frames import get_normalized_keypoints, calculate_similarity_with_visualization, make_euclidean_similarity, make_cosine_similarity
 from dance_scoring.similarity_with_frames import get_center_pair_frames
 from feedback.pose_compare import extract_pose_landmarks, extract_pose_world_landmarks
-from feedback.pose_feedback import json_to_prompt, generate_korean_feedback, generate_3D_feedback, json_to_prompt_2
+from feedback.pose_feedback import json_to_prompt, generate_korean_feedback, generate_3D_feedback, json_to_prompt_2, json_to_prompt_3, get_korean_feedback_posescript
 from feedback.clova_feedback import base_feedback_model
 import config
 
@@ -334,6 +334,7 @@ elif page_option=="Video Compare":
 else:
     threshold = st.sidebar.slider('feedback threshold: ', 0, 60, value=30) # 피드백을 줄 임계치 설정
     pck_thres = st.sidebar.number_input('pck_threshold', min_value=0.0, max_value=1.0, value=0.1, step=0.05)
+    feedback_normalize = st.sidebar.slider('feedback_normalize: ', False, True, value=True)
 
     # 비디오 파일 업로드
     video_1 = st.file_uploader("video_1", type=["mp4", "mov", "avi", "mkv"])
@@ -370,6 +371,19 @@ else:
         # feedback에 사용하기 위한 world landmarks 추출
         pose_world_landmarker_results_1 = post_process_world_pose_landmarks(pose_landmarker_results_1)
         pose_world_landmarker_results_2 = post_process_world_pose_landmarks(pose_landmarker_results_2)
+
+
+        if feedback_normalize:
+        # 시각화 및 피드백을 위한 정규화
+            normalized_all_landmarks1 = scoring.normalize_landmarks_to_range_by_mean(
+                np.array([scoring.refine_landmarks(l, config.TOTAL_KEYPOINTS) for l in pose_world_landmarker_results_2]), np.array([scoring.refine_landmarks(l, config.TOTAL_KEYPOINTS) for l in pose_world_landmarker_results_1])
+            )
+            for i, pose_landmarker_result in enumerate(pose_world_landmarker_results_1):
+                for j, landmarks in enumerate(pose_landmarker_result):
+                    landmarks.x = normalized_all_landmarks1[i, j, 0]
+                    landmarks.y = normalized_all_landmarks1[i, j, 1]
+                    landmarks.z = normalized_all_landmarks1[i, j, 2]
+
 
         # None값을 없애기위한 후처리
         pose_landmarker_results_1 = post_process_pose_landmarks(pose_landmarker_results_1)
@@ -430,15 +444,19 @@ else:
         )
 
 
+        # 시각화 및 피드백을 위한 정규화
+        for i, pose_landmarker_result in enumerate(pose_landmarker_results_1):
+            for j, landmarks in enumerate(pose_landmarker_result):
+                landmarks.x = normalized_all_landmarks1[i, j, 0]
+                landmarks.y = normalized_all_landmarks1[i, j, 1]
+                landmarks.z = normalized_all_landmarks1[i, j, 2]
+
+
         random_matched_list = []
         for idx2, frame in enumerate(original_video_frames_2):
             idx1 = get_center_pair_frames(pairs, idx2)
             random_matched_list.append(idx1)
-            
-            for i, landmarks in enumerate(pose_landmarker_results_1[idx1]):
-                landmarks.x = normalized_all_landmarks1[idx1, i, 0]
-                landmarks.y = normalized_all_landmarks1[idx1, i, 1]
-                landmarks.z = normalized_all_landmarks1[idx1, i, 2]
+
             # original_video_frames_2[idx2] = draw_landmarks_on_image(
             #     frame, pose_landmarker_results_1[idx1],
             #     landmarks_c=(234,63,247), connection_c=(117,249,77), thickness=2, circle_r=2
@@ -497,11 +515,14 @@ else:
             target_pose_landmarks_json = extract_pose_world_landmarks(target_landmark)
             result_json = json_to_prompt(target_pose_landmarks_json, user_pose_landmarks_json)
             json_3D = json_to_prompt_2(target_pose_landmarks_json, user_pose_landmarks_json)
+            json_pose_script = json_to_prompt_3(target_pose_landmarks_json, user_pose_landmarks_json)
+
             feedback_3D = generate_3D_feedback(json_3D, threshold=20)
+            feedback_script = get_korean_feedback_posescript(json_pose_script)
 
             print(str(result_json))
             feedback_algorithm = generate_korean_feedback(result_json, threshold=threshold)
-            feedback_clova = base_feedback_model(str(result_json))
+            # feedback_clova = base_feedback_model(str(result_json))
 
             col1, col2 = st.columns(2)
             with col1:
@@ -510,9 +531,14 @@ else:
             with col2:
                 st.subheader("유저 프레임")
                 st.image(original_video_frames_2[user_idx])
-            st.subheader("알고리즘 기반 피드백")
-            st.json(feedback_algorithm)
-            st.subheader("클로바 기반 피드백")
-            st.text(feedback_clova)
-            st.subheader("3D 피드백")
-            st.text(feedback_3D)
+            
+            col1, col2, col3 = st.columns(3)
+            with col1:
+                st.subheader("알고리즘 기반 피드백")
+                st.json(feedback_algorithm)
+            with col2:
+                st.subheader("3D 피드백")
+                st.text(feedback_3D)
+            with col3:
+                st.subheader("posescript")
+                st.text('\n'.join(feedback_script))

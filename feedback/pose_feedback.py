@@ -833,15 +833,35 @@ class FramePoseScript:
                 landmarks_data['right_arm']['16']['y'],
                 landmarks_data['right_arm']['16']['z']
             ]),
-            "left_hand": np.array([
+            "left_pinky": np.array([
                 landmarks_data['left_arm']['17']['x'],
                 landmarks_data['left_arm']['17']['y'],
                 landmarks_data['left_arm']['17']['z']
             ]),
-            "right_hand": np.array([
+            "right_pinky": np.array([
                 landmarks_data['right_arm']['18']['x'],
                 landmarks_data['right_arm']['18']['y'],
                 landmarks_data['right_arm']['18']['z']
+            ]),
+            "left_index": np.array([
+                landmarks_data['left_arm']['19']['x'],
+                landmarks_data['left_arm']['19']['y'],
+                landmarks_data['left_arm']['19']['z']
+            ]),
+            "right_index": np.array([
+                landmarks_data['right_arm']['20']['x'],
+                landmarks_data['right_arm']['20']['y'],
+                landmarks_data['right_arm']['20']['z']
+            ]),
+            "left_thumb": np.array([
+                landmarks_data['left_arm']['21']['x'],
+                landmarks_data['left_arm']['21']['y'],
+                landmarks_data['left_arm']['21']['z']
+            ]),
+            "right_thumb": np.array([
+                landmarks_data['right_arm']['22']['x'],
+                landmarks_data['right_arm']['22']['y'],
+                landmarks_data['right_arm']['22']['z']
             ]),
             "left_hip": np.array([
                 landmarks_data['left_leg']['23']['x'],
@@ -887,13 +907,15 @@ class FramePoseScript:
         self.keypoints['neck'] = (self.keypoints['left_mouth'] + self.keypoints['right_mouth']) / 2
         self.keypoints['pelvis'] = (self.keypoints['left_hip'] + self.keypoints['right_hip']) / 2
         self.keypoints['torso'] = (self.keypoints['left_shoulder'] + self.keypoints['right_shoulder'] + self.keypoints['left_hip'] + self.keypoints['right_hip']) / 4
+        self.keypoints['left_hand'] = (self.keypoints['left_pinky'] + self.keypoints['left_index'] + self.keypoints['left_thumb']) / 3
+        self.keypoints['right_hand'] = (self.keypoints['right_pinky'] + self.keypoints['right_index'] + self.keypoints['right_thumb']) / 3
 
         self.ALL_DISTANCE_PAIRS = [
-            ("left_elbow", "right_elbow"),
-            ("left_hand", "right_hand"),
-            ("left_knee", "right_knee"),
-            ("left_foot", "right_foot"),
-            ("left_hand", "left_shoulder"),
+            ("left_elbow", "right_elbow"), # 두 팔꿈치를 붙여주세요
+            ("left_hand", "right_hand"), # 두 손을 더 모아주세요
+            ("left_knee", "right_knee"), # 두 무릎을 붙여주세요
+            ("left_foot", "right_foot"), # 두 발을 더 모아주세요
+            ("left_hand", "left_shoulder"), 
             ("left_hand", "right_shoulder"),
             ("right_hand", "left_shoulder"),
             ("right_hand", "right_shoulder"),
@@ -913,21 +935,18 @@ class FramePoseScript:
             ("right_hand", "right_foot"),
         ]
 
-        self.ALL_REL_PAIRS = [
+        self.ALL_REL_PAIRS = [ 
             ("left_shoulder", "right_shoulder"),
-            ("left_elbow", "right_elbow"),
-            ("left_hand", "right_hand"),
-            ("left_knee", "right_knee"),
-            ("neck", "pelvis"),
-            ("left_foot", "right_foot"),
-            ("left_hip", "left_knee"),
-            ("right_hip", "right_knee"),
-            ("left_hand", "left_shoulder"),
-            ("right_hand", "right_shoulder"),
-            ("left_foot", "left_hip"),
-            ("right_foot", "right_hip"),
-            ("left_hand", "left_hip"),
-            ("right_hand", "right_hip"),
+            # ("left_hand", "right_hand"),
+            # ("left_foot", "right_foot"),
+            # ("left_hip", "left_knee"),
+            # ("right_hip", "right_knee"),
+            # ("left_hand", "left_shoulder"),
+            # ("right_hand", "right_shoulder"),
+            # ("left_foot", "left_hip"),
+            # ("right_foot", "right_hip"),
+            # ("left_hand", "left_hip"),
+            # ("right_hand", "right_hip"),
             ("left_hand", "torso"),
             ("right_hand", "torso"),
             ("left_foot", "torso"),
@@ -936,26 +955,23 @@ class FramePoseScript:
 
         self.REL_PAIR_FILTERING = [
             ('y', 'z'),
-            ('y', 'z'),
-            ('x', 'y', 'z'),
-            ('y', 'z'),
-            ('x', 'z'),
-            ('x', 'y', 'z'),
-            ('y'),
-            ('y'),
-            ('x', 'y'),
-            ('x', 'y'),
-            ('x', 'y'),
-            ('x', 'y'),
-            ('y'),
-            ('y'),
+            # ('x', 'y', 'z'),
+            # ('x', 'y', 'z'),
+            # ('y'),
+            # ('y'),
+            # ('x', 'y'),
+            # ('x', 'y'),
+            # ('x', 'y'),
+            # ('x', 'y'),
+            # ('y'),
+            # ('y'),
             ('z'),
             ('z'),
             ('z'),
             ('z'),
         ]
     
-    ########################################### ANGLE FEATURES
+    ########################################### ANGLE FEATURES -> 차이값을 통해 양수면 더 펴야됨, 음수면 더 굽혀야됨
     def get_left_knee_angle(self):
         # 왼다리 굽혀진 정도. 0 ~ 180
         return calculate_three_points_angle(
@@ -997,6 +1013,7 @@ class FramePoseScript:
         }
     
     ########################################### DISTANCE FEATURES
+    # -> 임계값을 사용해서 
     def compute_distance(self, point1, point2):
         """ 두 점 사이의 L2 거리(유클리드 거리) 계산 """
         return np.linalg.norm(self.keypoints[point1] - self.keypoints[point2])
@@ -1069,12 +1086,215 @@ def json_to_prompt_3(target_landmarks_json_path, compare_landmarks_json_path):
     # 상대 위치 차이
     rel_pos_1 = pose1.get_all_rel_position()
     rel_pos_2 = pose2.get_all_rel_position()
+    rel_pos_difference = {}
+    for k in rel_pos_1.keys():
+        tmp = {}
+        for axis in rel_pos_1[k].keys():
+            tmp[axis] = {
+                'diff': rel_pos_1[k][axis] - rel_pos_2[k][axis],
+                'pose1': rel_pos_1[k][axis],
+                'pose2': rel_pos_2[k][axis]
+            }
+        rel_pos_difference[k] = tmp
 
     return {
         'angle_difference': angle_difference,
-        'distant_difference': dist_difference
+        'distance_difference': dist_difference,
+        'relative_pos_difference': rel_pos_difference
     }
 
+body_parts_korean = {
+    "nose": "코",
+    "left_eye_inner": "왼쪽 눈 안쪽",
+    "left_eye": "왼쪽 눈",
+    "left_eye_outer": "왼쪽 눈 바깥쪽",
+    "right_eye_inner": "오른쪽 눈 안쪽",
+    "right_eye": "오른쪽 눈",
+    "right_eye_outer": "오른쪽 눈 바깥쪽",
+    "left_ear": "왼쪽 귀",
+    "right_ear": "오른쪽 귀",
+    "mouth_left": "왼쪽 입",
+    "mouth_right": "오른쪽 입",
+    "left_shoulder": "왼쪽 어깨",
+    "right_shoulder": "오른쪽 어깨",
+    "left_elbow": "왼쪽 팔꿈치",
+    "right_elbow": "오른쪽 팔꿈치",
+    "left_wrist": "왼쪽 손목",
+    "right_wrist": "오른쪽 손목",
+    "left_pinky": "왼쪽 새끼손가락",
+    "right_pinky": "오른쪽 새끼손가락",
+    "left_index": "왼쪽 검지",
+    "right_index": "오른쪽 검지",
+    "left_thumb": "왼쪽 엄지",
+    "right_thumb": "오른쪽 엄지",
+    "left_hip": "왼쪽 엉덩이",
+    "right_hip": "오른쪽 엉덩이",
+    "left_knee": "왼쪽 무릎",
+    "right_knee": "오른쪽 무릎",
+    "left_ankle": "왼쪽 발목",
+    "right_ankle": "오른쪽 발목",
+    "left_heel": "왼쪽 발뒤꿈치",
+    "right_heel": "오른쪽 발뒤꿈치",
+    "left_foot_index": "왼쪽 발가락",
+    "right_foot_index": "오른쪽 발가락",
+    # 방향을 고려하지 않은 일반적인 번역 추가
+    "eye": "눈",
+    "ear": "귀",
+    "mouth": "입",
+    "shoulder": "어깨",
+    "elbow": "팔꿈치",
+    "wrist": "손목",
+    "pinky": "새끼손가락",
+    "index": "검지",
+    "thumb": "엄지",
+    "hip": "엉덩이",
+    "knee": "무릎",
+    "ankle": "발목",
+    "heel": "발뒤꿈치",
+    "foot_index": "발가락",
+    "left_hand": "왼손",
+    "right_hand": "오른손",
+    "hand": "손",
+    "right_foot": "오른발",
+    "left_foot": "왼발",
+    "foot": "발",
+    "torso": "몸"
+}
+
+def check_if_end_consonant(word):
+    # 한글 유니코드 범위: 가(0xAC00) ~ 힣(0xD7A3)
+    if not word:
+        raise ValueError("단어가 비어있습니다!")
+    
+    last_char = word[-1]
+    if '가' <= last_char <= '힣':
+        # 한글 문자에서 종성(받침)이 있는지 확인
+        # (유니코드 코드 포인트 - 0xAC00) % 28
+        # 0이면 종성이 없음 (모음으로 끝남), 그 외는 종성이 있음 (자음으로 끝남)
+        code = ord(last_char) - 0xAC00
+        if code % 28 == 0:
+            return False
+        else:
+            return True
+    else:
+        raise ValueError(f"'{word}'은(는) 한글이 아닙니다.")
+
+
+def get_korean_feedback_posescript(diffs, angle_thres=20, distance_thres=0.15, rel_thres=0.15):
+    feedback = []
+
+    # angle feedback 생성
+    for k, v in diffs['angle_difference'].items():
+        if abs(v) < angle_thres:
+            continue
+
+        part_name = body_parts_korean['_'.join(k.split('_')[:-1])]
+        particle = '을' if check_if_end_consonant(part_name) else '를'
+        command = '펴주세요.' if v > 0 else '굽혀주세요.'
+        feedback.append(f'{part_name}{particle} 좀 더 {command}')
+
+    # distance feedback 생성
+    maximum_save = {
+        'right_max_key': '',
+        'right_max_value': distance_thres,
+        'left_max_key': '',
+        'left_max_value': distance_thres
+    }
+
+    for k, v in diffs['distance_difference'].items():
+        if abs(v) < distance_thres:
+            continue
+
+        part1, part2, _ = k.split()
+        if part1.split('_')[1] == part2.split('_')[1]:
+            common = body_parts_korean[part1.split('_')[1]]
+            particle = '을' if check_if_end_consonant(common) else '를'
+            command = '떼주세요.' if v > 0 else '붙이세요.'
+            feedback.append(f'두 {common}{particle} 좀 더 {command}')
+        else:
+            # part_name_1 = body_parts_korean[part1]
+            # part_name_2 = body_parts_korean[part2]
+            # if v > 0:
+            #     command = '떨어트리세요.'
+            #     particle_1 = '과' if check_if_end_consonant(part_name_1) else '와'
+            #     particle_2 = '을' if check_if_end_consonant(part_name_2) else '를'
+            #     feedback.append(f'{part_name_1}{particle_1} {part_name_2}{particle_2} 좀 더 {command}')
+            # else:
+            #     command = '붙이세요.'
+            #     particle_1 = '을' if check_if_end_consonant(part_name_1) else '를'
+            #     feedback.append(f'{part_name_1}{particle_1} {part_name_2}쪽으로 좀 더 {command}')
+
+            if part1.startswith('left') and abs(v) > abs(maximum_save['left_max_value']):
+                maximum_save['left_max_key'] = k
+                maximum_save['left_max_value'] = v
+            
+            if part1.startswith('right') and abs(v) > abs(maximum_save['right_max_value']):
+                maximum_save['right_max_key'] = k
+                maximum_save['right_max_value'] = v
+    
+    if maximum_save['right_max_key']:
+        part1, part2, _ = maximum_save['right_max_key'].split()
+        part_name_1 = body_parts_korean[part1]
+        part_name_2 = body_parts_korean[part2]
+
+        if maximum_save['right_max_value'] > 0:
+            command = '떨어트리세요.'
+            particle_1 = '과' if check_if_end_consonant(part_name_1) else '와'
+            particle_2 = '을' if check_if_end_consonant(part_name_2) else '를'
+            feedback.append(f'{part_name_1}{particle_1} {part_name_2}{particle_2} 좀 더 {command}')
+        else:
+            command = '붙이세요.'
+            particle_1 = '을' if check_if_end_consonant(part_name_1) else '를'
+            feedback.append(f'{part_name_1}{particle_1} {part_name_2}쪽으로 좀 더 {command}')
+    
+    if maximum_save['left_max_key']:
+        part1, part2, _ = maximum_save['left_max_key'].split()
+        part_name_1 = body_parts_korean[part1]
+        part_name_2 = body_parts_korean[part2]
+
+        if maximum_save['left_max_value'] > 0:
+            command = '떨어트리세요.'
+            particle_1 = '과' if check_if_end_consonant(part_name_1) else '와'
+            particle_2 = '을' if check_if_end_consonant(part_name_2) else '를'
+            feedback.append(f'{part_name_1}{particle_1} {part_name_2}{particle_2} 좀 더 {command}')
+        else:
+            command = '붙이세요.'
+            particle_1 = '을' if check_if_end_consonant(part_name_1) else '를'
+            feedback.append(f'{part_name_1}{particle_1} {part_name_2}쪽으로 좀 더 {command}')
+    
+
+    # 상대 위치 피드백 생성
+    target_features = []
+    for k, v in diffs['relative_pos_difference'].items():
+        part1, part2, _ = k.split()
+        part1 = body_parts_korean[part1]
+        part2 = body_parts_korean[part2]
+
+        if 'shoulder' in k:
+            y_diff = v['y']['diff']
+            z_diff = v['z']['diff']
+
+            if abs(y_diff) > rel_thres:
+                if y_diff > 0:
+                    feedback.append("오른쪽 어깨를 더 내려주세요.")
+                else:
+                    feedback.append("왼쪽 어깨를 더 내려주세요.")
+            
+            if abs(z_diff) > rel_thres:
+                if z_diff < 0:
+                    feedback.append("왼쪽 어깨가 더 앞으로 나와야합니다.")
+                else:
+                    feedback.append("오른쪽 어깨가 더 앞으로 나와야합니다.")
+        else:
+            z_diff = v['z']['diff']
+            if z_diff <= rel_thres: continue
+
+            if z_diff > 0:
+                feedback.append(f"{part1}이 좀 더 몸의 앞쪽에 있어야합니다.")
+            else:
+                feedback.append(f"{part1}이 좀 더 몸의 뒤쪽에 있어야합니다.")
+
+    return feedback
 
 
 
@@ -1086,22 +1306,39 @@ if __name__ == "__main__":
 
     import sys
     sys.path.append("./")
-    from dance_scoring import detector
+    from dance_scoring import detector, scoring
+    import config
     from feedback.pose_compare import extract_pose_world_landmarks
 
 
+    # 랜드마크 추출
     det = detector.PoseDetector()
-    landmark, _, _, _ = det.get_image_landmarks(img_path_1)
-    result_1 = extract_pose_world_landmarks(landmark)
+    landmark_1, _, _, _ = det.get_image_landmarks(img_path_1)
+    landmark_2, _, _, _ = det.get_image_landmarks(img_path_2)
+    
 
-    landmark, _, _, _ = det.get_image_landmarks(img_path_2)
-    result_2 = extract_pose_world_landmarks(landmark)
+    # 정규화하기
+    pose_landmarks_np_1 = scoring.refine_landmarks(landmark_1)
+    pose_landmarks_np_2 = scoring.refine_landmarks(landmark_2)
+    normalized_pose_landmarks_np_2 = scoring.normalize_landmarks_to_range(
+        scoring.refine_landmarks(landmark_1, target_keys=config.TOTAL_KEYPOINTS), 
+        scoring.refine_landmarks(landmark_2, target_keys=config.TOTAL_KEYPOINTS)
+    )
+    for i, landmarks in enumerate(landmark_2):
+        landmarks.x = normalized_pose_landmarks_np_2[i, 0]
+        landmarks.y = normalized_pose_landmarks_np_2[i, 1]
+        landmarks.z = normalized_pose_landmarks_np_2[i, 2]
 
+
+    # difference를 기반으로 결과 뽑기
+    result_1 = extract_pose_world_landmarks(landmark_1)
+    result_2 = extract_pose_world_landmarks(landmark_2)
     differences = json_to_prompt_3(result_1, result_2)
-    print(differences)
-
-
-
+    feedback_lst = get_korean_feedback_posescript(
+        differences, angle_thres=25, distance_thres=0.15
+    )
+    for feedback in feedback_lst:
+        print(feedback)
 
 
 # if __name__ == "__main__":
@@ -1147,4 +1384,3 @@ if __name__ == "__main__":
 #     print("오른다리 높이: ", feedback_module.get_right_leg_height())
 #     print("오른다리 방향: ", feedback_module.get_right_leg_dir())
 #     print("다리가 벌어진 정도: ", feedback_module.get_leg_angle())
-#     print(generate_korean_feedback({'head_difference': -2, 'shoulder_difference': 4, 'left_arm_angle_difference': 19, 'right_arm_angle_difference': 30, 'left_elbow_angle_difference': 35, 'right_elbow_angle_difference': -34, 'left_leg_angle_difference': 0, 'right_leg_angle_difference': -1, 'left_knee_angle_difference': -4, 'right_knee_angle_difference': -3}))
