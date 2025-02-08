@@ -1,4 +1,6 @@
 import cv2
+import sys
+sys.path.append("./")
 import mediapipe as mp
 import numpy as np
 import matplotlib.pyplot as plt
@@ -6,7 +8,7 @@ from collections import namedtuple
 import warnings
 from tqdm import tqdm
 from .util import draw_landmarks_on_image
-from ..config import KEYPOINT_MAPPING, NORMALIZED_LANDMARK_KEYS
+from config import KEYPOINT_MAPPING, NORMALIZED_LANDMARK_KEYS
 
 
 class PoseDetector:

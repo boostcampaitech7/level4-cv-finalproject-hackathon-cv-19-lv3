@@ -398,7 +398,7 @@ def make_random_dataset(total_data_cnt, system_prompt, max_threshold=30, perfect
 
         # input prompt를 dict으로부터 작성
         differences = {
-            key.replace(" ", config.SEPARATOR): value for key, value in differences
+            key.replace(" ", config.SEPARATOR): value for key, value in differences.items()
         }
         if do_numeric_to_text:
             differences['threshold'] = threshold
