@@ -7,7 +7,7 @@ import json
 import cv2
 import numpy as np
 from copy import deepcopy
-from dance_scoring import detector, util, keypoint_map, scoring
+from dance_scoring import detector, util, scoring
 from dance_scoring.detector import post_process_pose_landmarks, post_process_world_pose_landmarks
 from dance_scoring.util import draw_landmarks_on_image, get_closest_frame
 from dance_scoring.similarity_with_frames import get_normalized_keypoints, calculate_similarity_with_visualization, make_euclidean_similarity, make_cosine_similarity
@@ -15,6 +15,7 @@ from dance_scoring.similarity_with_frames import get_center_pair_frames
 from feedback.pose_compare import extract_pose_landmarks, extract_pose_world_landmarks
 from feedback.pose_feedback import json_to_prompt, generate_korean_feedback
 from feedback.clova_feedback import base_feedback_model
+import config
 
 
 # main title
@@ -213,8 +214,8 @@ elif page_option == 'Image Compare':
 
         normalized_pose_landmarks_2 = deepcopy(pose_landmarks_2)
         normalized_pose_landmarks_np_2 = scoring.normalize_landmarks_to_range(
-            scoring.refine_landmarks(pose_landmarks_1, target_keys=keypoint_map.TOTAL_KEYPOINTS), 
-            scoring.refine_landmarks(pose_landmarks_2, target_keys=keypoint_map.TOTAL_KEYPOINTS)
+            scoring.refine_landmarks(pose_landmarks_1, target_keys=config.TOTAL_KEYPOINTS), 
+            scoring.refine_landmarks(pose_landmarks_2, target_keys=config.TOTAL_KEYPOINTS)
         )
 
         for i, landmarks in enumerate(normalized_pose_landmarks_2):
@@ -302,7 +303,7 @@ elif page_option=="Video Compare":
         for i, (frame_num_1, frame_num_2) in enumerate(matched_frame_list):
             match_dict = matched[i]
 
-            matched_key_list = [keypoint_map.REVERSE_KEYPOINT_MAPPING[k] for k in match_dict.keys() if match_dict[k]]
+            matched_key_list = [config.REVERSE_KEYPOINT_MAPPING[k] for k in match_dict.keys() if match_dict[k]]
             frame_1_landmarks = pose_landmarker_results_1[frame_num_1]
             frame_2_landmarks = pose_landmarker_results_2[frame_num_2]
             if frame_1_landmarks is None or frame_2_landmarks is None:
@@ -425,7 +426,7 @@ else:
 
         # min max normalize for all frames
         normalized_all_landmarks1 = scoring.normalize_landmarks_to_range_by_mean(
-            np.array([scoring.refine_landmarks(l, keypoint_map.TOTAL_KEYPOINTS) for l in pose_landmarker_results_2]), np.array([scoring.refine_landmarks(l, keypoint_map.TOTAL_KEYPOINTS) for l in pose_landmarker_results_1])
+            np.array([scoring.refine_landmarks(l, config.TOTAL_KEYPOINTS) for l in pose_landmarker_results_2]), np.array([scoring.refine_landmarks(l, config.TOTAL_KEYPOINTS) for l in pose_landmarker_results_1])
         )
 
 

@@ -147,35 +147,19 @@ K_I_VALUE = {
     'left_foot_index': 0.072,
     'right_foot_index': 0.072
 }
+# select for oks calculation
+TOTAL_KEYPOINTS = [i for i in KEYPOINT_MAPPING.keys()]
 NORMALIZED_LANDMARK_KEYS = ['x', 'y', 'z', 'visibility', 'presense']
 
 
-# select for oks calculation
-TOTAL_KEYPOINTS = [i for i in KEYPOINT_MAPPING.keys()]
-# SELECTED_KEYPOINTS = [0, 7, 8, 11, 12, 13, 14, 15, 16, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32] # 해당 부분을 제외하고는 절대 바꾸면 안됩니다
-SELECTED_KEYPOINTS = TOTAL_KEYPOINTS
+
+
+#######################################################################################
+SELECTED_KEYPOINTS = TOTAL_KEYPOINTS # 사용할 키포인트 지정
 SELECTED_KEYPOINTS_MAPPING = {KEYPOINT_MAPPING[SELECTED_KEYPOINTS[i]]: i for i in range(len(SELECTED_KEYPOINTS))}
 SELECTED_SIGMAS = [K_I_VALUE[k] for k in SELECTED_KEYPOINTS_MAPPING.keys()]
 TOTAL_SIGMAS = [v for v in K_I_VALUE.values()]
 
-CONNECTIONS = [
-    (0,1), (0,2), # Nose to Ears
-    (3,5), (4,6), # Shoulders to Elbows
-    (5,7), (6,8), # Elbows to Wrists
-    (9,11), (10,12), # Hips to Knees
-    (11,13), (12,14), # Knees to Ankles
-    (3, 4), (4, 10), (10, 9), (9, 3) # body
-]
 
-# for cosine similarity
-VECTOR_LIST = [
-    (1, 2),
-    (3, 5),
-    (4, 6),
-    (5, 7),
-    (6, 8),
-    (9, 11),
-    (10, 12),
-    (11, 13),
-    (12, 14)
-]
+#######################################################################################
+SEPARATOR = ' ' # dictionary key값에서 단어를 이을 때 어떤 걸 쓸지. '_'또는 ' '

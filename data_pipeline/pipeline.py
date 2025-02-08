@@ -10,6 +10,7 @@ from dance_scoring.detector import PoseDetector, post_process_pose_landmarks
 from dance_scoring.similarity_with_frames import *
 from feedback.pose_compare import extract_pose_landmarks
 from feedback.pose_feedback import json_to_prompt, generate_feedback, generate_korean_feedback
+import config
 
 
 english_to_korean = {
@@ -396,6 +397,9 @@ def make_random_dataset(total_data_cnt, system_prompt, max_threshold=30, perfect
             delete_low_difference(differences, threshold)
 
         # input prompt를 dict으로부터 작성
+        differences = {
+            key.replace(" ", config.SEPARATOR): value for key, value in differences
+        }
         if do_numeric_to_text:
             differences['threshold'] = threshold
             input_sentence = str(numeric_to_text(differences))
