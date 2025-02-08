@@ -207,10 +207,10 @@ class frame_pose:
         return  calculate_two_points_angle(self.right_shoulder, self.left_shoulder)
 
     def get_left_arm_angle(self):
-        return calculate_two_points_angle(self.left_shoulder, self.left_elbow)
+        return calculate_two_points_angle(self.left_shoulder, self.left_wrist)
 
     def get_right_arm_angle(self):
-        return calculate_two_points_angle(self.right_shoulder, self.right_elbow)
+        return calculate_two_points_angle(self.right_shoulder, self.right_wrist)
 
     def get_left_elbow_angle(self):
         return calculate_three_points_angle(self.left_shoulder, self.left_elbow, self.left_wrist)
@@ -764,47 +764,387 @@ def json_to_prompt_2(target_landmarks_json_path, compare_landmarks_json_path):
     return result
 
 
-if __name__ == "__main__":
-    # import sys
-    # sys.path.append("./")
-    # from dance_scoring import detector
-    # from feedback.pose_compare import extract_pose_world_landmarks
+######################################################################################## POSE SCRIPT 시도해보기
+class FramePoseScript:
+    def __init__(self, landmarks_data):
+        self.keypoints = {
+            "nose": np.array([
+                landmarks_data['head']['0']['x'],
+                landmarks_data['head']['0']['y'],
+                landmarks_data['head']['0']['z']
+            ]),
+            "left_eye": np.array([
+                landmarks_data['head']['2']['x'],
+                landmarks_data['head']['2']['y'],
+                landmarks_data['head']['2']['z']
+            ]),
+            "right_eye": np.array([
+                landmarks_data['head']['5']['x'],
+                landmarks_data['head']['5']['y'],
+                landmarks_data['head']['5']['z']
+            ]),
+            "left_ear": np.array([
+                landmarks_data['head']['7']['x'],
+                landmarks_data['head']['7']['y'],
+                landmarks_data['head']['7']['z']
+            ]),
+            "right_ear": np.array([
+                landmarks_data['head']['8']['x'],
+                landmarks_data['head']['8']['y'],
+                landmarks_data['head']['8']['z']
+            ]),
+            "left_mouth": np.array([
+                landmarks_data['head']['9']['x'],
+                landmarks_data['head']['9']['y'],
+                landmarks_data['head']['9']['z']
+            ]),
+            "right_mouth": np.array([
+                landmarks_data['head']['10']['x'],
+                landmarks_data['head']['10']['y'],
+                landmarks_data['head']['10']['z']
+            ]),
+            "left_shoulder": np.array([
+                landmarks_data['left_arm']['11']['x'],
+                landmarks_data['left_arm']['11']['y'],
+                landmarks_data['left_arm']['11']['z']
+            ]),
+            "right_shoulder": np.array([
+                landmarks_data['right_arm']['12']['x'],
+                landmarks_data['right_arm']['12']['y'],
+                landmarks_data['right_arm']['12']['z']
+            ]),
+            "left_elbow": np.array([
+                landmarks_data['left_arm']['13']['x'],
+                landmarks_data['left_arm']['13']['y'],
+                landmarks_data['left_arm']['13']['z']
+            ]),
+            "right_elbow": np.array([
+                landmarks_data['right_arm']['14']['x'],
+                landmarks_data['right_arm']['14']['y'],
+                landmarks_data['right_arm']['14']['z']
+            ]),
+            "left_wrist": np.array([
+                landmarks_data['left_arm']['15']['x'],
+                landmarks_data['left_arm']['15']['y'],
+                landmarks_data['left_arm']['15']['z']
+            ]),
+            "right_wrist": np.array([
+                landmarks_data['right_arm']['16']['x'],
+                landmarks_data['right_arm']['16']['y'],
+                landmarks_data['right_arm']['16']['z']
+            ]),
+            "left_hand": np.array([
+                landmarks_data['left_arm']['17']['x'],
+                landmarks_data['left_arm']['17']['y'],
+                landmarks_data['left_arm']['17']['z']
+            ]),
+            "right_hand": np.array([
+                landmarks_data['right_arm']['18']['x'],
+                landmarks_data['right_arm']['18']['y'],
+                landmarks_data['right_arm']['18']['z']
+            ]),
+            "left_hip": np.array([
+                landmarks_data['left_leg']['23']['x'],
+                landmarks_data['left_leg']['23']['y'],
+                landmarks_data['left_leg']['23']['z']
+            ]),
+            "right_hip": np.array([
+                landmarks_data['right_leg']['24']['x'],
+                landmarks_data['right_leg']['24']['y'],
+                landmarks_data['right_leg']['24']['z']
+            ]),
+            "left_knee": np.array([
+                landmarks_data['left_leg']['25']['x'],
+                landmarks_data['left_leg']['25']['y'],
+                landmarks_data['left_leg']['25']['z']
+            ]),
+            "right_knee": np.array([
+                landmarks_data['right_leg']['26']['x'],
+                landmarks_data['right_leg']['26']['y'],
+                landmarks_data['right_leg']['26']['z']
+            ]),
+            "left_ankle": np.array([
+                landmarks_data['left_leg']['27']['x'],
+                landmarks_data['left_leg']['27']['y'],
+                landmarks_data['left_leg']['27']['z']
+            ]),
+            "right_ankle": np.array([
+                landmarks_data['right_leg']['28']['x'],
+                landmarks_data['right_leg']['28']['y'],
+                landmarks_data['right_leg']['28']['z']
+            ]),
+            "left_foot": np.array([
+                landmarks_data['left_foot']['31']['x'],
+                landmarks_data['left_foot']['31']['y'],
+                landmarks_data['left_foot']['31']['z']
+            ]),
+            "right_foot": np.array([
+                landmarks_data['right_foot']['32']['x'],
+                landmarks_data['right_foot']['32']['y'],
+                landmarks_data['right_foot']['32']['z']
+            ])
+        }
+        self.keypoints['neck'] = (self.keypoints['left_mouth'] + self.keypoints['right_mouth']) / 2
+        self.keypoints['pelvis'] = (self.keypoints['left_hip'] + self.keypoints['right_hip']) / 2
+        self.keypoints['torso'] = (self.keypoints['left_shoulder'] + self.keypoints['right_shoulder'] + self.keypoints['left_hip'] + self.keypoints['right_hip']) / 4
 
-    # det = detector.PoseDetector()
+        self.ALL_DISTANCE_PAIRS = [
+            ("left_elbow", "right_elbow"),
+            ("left_hand", "right_hand"),
+            ("left_knee", "right_knee"),
+            ("left_foot", "right_foot"),
+            ("left_hand", "left_shoulder"),
+            ("left_hand", "right_shoulder"),
+            ("right_hand", "left_shoulder"),
+            ("right_hand", "right_shoulder"),
+            ("left_hand", "right_elbow"),
+            ("right_hand", "left_elbow"),
+            ("left_hand", "left_knee"),
+            ("left_hand", "right_knee"),
+            ("right_hand", "left_knee"),
+            ("right_hand", "right_knee"),
+            ("left_hand", "left_ankle"),
+            ("left_hand", "right_ankle"),
+            ("right_hand", "left_ankle"),
+            ("right_hand", "right_ankle"),
+            ("left_hand", "left_foot"),
+            ("left_hand", "right_foot"),
+            ("right_hand", "left_foot"),
+            ("right_hand", "right_foot"),
+        ]
 
-    # img_path = './images/jun_ude.jpg'
-    # landmark, _, _, _ = det.get_image_landmarks(img_path)
-    # result = extract_pose_world_landmarks(landmark)
+        self.ALL_REL_PAIRS = [
+            ("left_shoulder", "right_shoulder"),
+            ("left_elbow", "right_elbow"),
+            ("left_hand", "right_hand"),
+            ("left_knee", "right_knee"),
+            ("neck", "pelvis"),
+            ("left_foot", "right_foot"),
+            ("left_hip", "left_knee"),
+            ("right_hip", "right_knee"),
+            ("left_hand", "left_shoulder"),
+            ("right_hand", "right_shoulder"),
+            ("left_foot", "left_hip"),
+            ("right_foot", "right_hip"),
+            ("left_hand", "left_hip"),
+            ("right_hand", "right_hip"),
+            ("left_hand", "torso"),
+            ("right_hand", "torso"),
+            ("left_foot", "torso"),
+            ("right_foot", "torso"),
+        ]
 
-    # # pose feedback
-    # feedback_module = FramePose3D(result)
-    # print("################ HEAD ################")
-    # print("고개가 숙여진/펴진 정도: ", feedback_module.get_head_angle_1())
-    # print("고개가 오른/왼쪽으로 얼마나 숙여졌는지: ", feedback_module.get_head_angle_2())
-    # print("시선이 오른/왼쪽으로 얼마나 돌아갔는지: ", feedback_module.get_eye_direction())
+        self.REL_PAIR_FILTERING = [
+            ('y', 'z'),
+            ('y', 'z'),
+            ('x', 'y', 'z'),
+            ('y', 'z'),
+            ('x', 'z'),
+            ('x', 'y', 'z'),
+            ('y'),
+            ('y'),
+            ('x', 'y'),
+            ('x', 'y'),
+            ('x', 'y'),
+            ('x', 'y'),
+            ('y'),
+            ('y'),
+            ('z'),
+            ('z'),
+            ('z'),
+            ('z'),
+        ]
     
-    # print("################ BODY ################")
-    # print("허리가 앞으로 숙여진 정도: ", feedback_module.get_waist_angle_1())
-    # print("사용자 몸이 돌아간 정도: ", feedback_module.get_waist_angle_2())
+    ########################################### ANGLE FEATURES
+    def get_left_knee_angle(self):
+        # 왼다리 굽혀진 정도. 0 ~ 180
+        return calculate_three_points_angle(
+            self.keypoints["left_hip"], 
+            self.keypoints["left_knee"], 
+            self.keypoints["left_ankle"]
+        )
 
-    # print("################ LEFT ARM ################")
-    # print("왼팔 굽혀진 정도 : ", feedback_module.get_left_elbow_angle())
-    # print("왼팔 높이: ", feedback_module.get_left_arm_height())
-    # print("왼팔 방향: ", feedback_module.get_left_arm_dir())
+    def get_right_knee_angle(self):
+        # 오른다리 굽혀진 정도. 0 ~ 180
+        return calculate_three_points_angle(
+            self.keypoints["right_hip"], 
+            self.keypoints["right_knee"], 
+            self.keypoints["right_ankle"]
+        )
 
-    # print("################ RIGHT ARM ################")
-    # print("오른팔 굽혀진 정도 : ", feedback_module.get_right_elbow_angle())
-    # print("오른팔 높이: ", feedback_module.get_right_arm_height())
-    # print("오른팔 방향: ", feedback_module.get_right_arm_dir())
+    def get_left_elbow_angle(self):
+        # 왼팔 굽혀진 정도. 0 ~ 180
+        return calculate_three_points_angle(
+            self.keypoints["left_shoulder"], 
+            self.keypoints["left_elbow"], 
+            self.keypoints["left_wrist"]
+        )
 
-    # print("################ LEFT LEG ################")
-    # print("왼다리 굽혀진 정도 : ", feedback_module.get_left_knee_angle())
-    # print("왼다리 높이: ", feedback_module.get_left_leg_height())
-    # print("왼다리 방향: ", feedback_module.get_left_leg_dir())
+    def get_right_elbow_angle(self):
+        # 오른팔 굽혀진 정도. 0 ~ 180
+        return calculate_three_points_angle(
+            self.keypoints["right_shoulder"], 
+            self.keypoints["right_elbow"], 
+            self.keypoints["right_wrist"]
+        )
+    
+    def get_all_angle_features(self):
+        return {
+            "left_knee_angle": self.get_left_knee_angle(),
+            "right_knee_angle": self.get_right_knee_angle(),
+            "left_elbow_angle": self.get_left_elbow_angle(),
+            "right_elbow_angle": self.get_right_elbow_angle()
+        }
+    
+    ########################################### DISTANCE FEATURES
+    def compute_distance(self, point1, point2):
+        """ 두 점 사이의 L2 거리(유클리드 거리) 계산 """
+        return np.linalg.norm(self.keypoints[point1] - self.keypoints[point2])
 
-    # print("################ RIGHT LEG ################")
-    # print("오른다리 굽혀진 정도 : ", feedback_module.get_right_knee_angle())
-    # print("오른다리 높이: ", feedback_module.get_right_leg_height())
-    # print("오른다리 방향: ", feedback_module.get_right_leg_dir())
-    # print("다리가 벌어진 정도: ", feedback_module.get_leg_angle())
-    print(generate_korean_feedback({'head_difference': -2, 'shoulder_difference': 4, 'left_arm_angle_difference': 19, 'right_arm_angle_difference': 30, 'left_elbow_angle_difference': 35, 'right_elbow_angle_difference': -34, 'left_leg_angle_difference': 0, 'right_leg_angle_difference': -1, 'left_knee_angle_difference': -4, 'right_knee_angle_difference': -3}))
+    def get_all_distance_features(self):
+        return {
+            f"{f} {t} distance": self.compute_distance(f, t) for (f, t) in self.ALL_DISTANCE_PAIRS
+        }
+    
+    ########################################### RELATIVE POSITIONS
+    def compute_rel_position(self, point1, point2, idx):
+        """
+        Compute the relative position of point1 with respect to point2 along X, Y, and Z axes.
+        
+        Args:
+            point1 (str): Key name of the first point in self.keypoints.
+            point2 (str): Key name of the second point in self.keypoints.
+
+        Returns:
+            dict: A dictionary with relative positions along X, Y, and Z axes.
+        """
+        p1 = self.keypoints[point1]
+        p2 = self.keypoints[point2]
+
+        # X-axis comparison
+        diff_x = p1[0] - p2[0]
+        # Y-axis comparison
+        diff_y = p1[1] - p2[1]
+        # Z-axis comparison
+        diff_z = p1[2] - p2[2]
+        return {
+            k: v  for k, v in {'x': diff_x, 'y': diff_y, 'z': diff_z}.items() if k in self.REL_PAIR_FILTERING[idx]
+        }
+    
+    def get_all_rel_position(self):
+        return {
+            f"{f} {t} rel": self.compute_rel_position(f, t, idx) for idx, (f, t) in enumerate(self.ALL_REL_PAIRS)
+        }
+
+def json_to_prompt_3(target_landmarks_json_path, compare_landmarks_json_path):
+    if isinstance(target_landmarks_json_path, str):
+        with open(target_landmarks_json_path, 'r') as f:
+            data1 = json.load(f)
+    else:
+        data1 = target_landmarks_json_path
+    
+    if isinstance(compare_landmarks_json_path, str):
+        with open(compare_landmarks_json_path, 'r') as f:
+            data2 = json.load(f)
+    else:
+        data2 = compare_landmarks_json_path
+
+    pose1 = FramePoseScript(data1)
+    pose2 = FramePoseScript(data2)
+
+    # 각도 관련 차이
+    angle_features_1 = pose1.get_all_angle_features()
+    angle_features_2 = pose2.get_all_angle_features()
+    angle_difference = {
+        k: angle_features_1[k] - angle_features_2[k] for k in angle_features_1.keys()
+    }
+
+    # 거리 관련 차이
+    dist_features_1 = pose1.get_all_distance_features()
+    dist_features_2 = pose2.get_all_distance_features()
+    dist_difference = {
+        k: dist_features_1[k] - dist_features_2[k] for k in dist_features_1.keys()
+    }
+
+    # 상대 위치 차이
+    rel_pos_1 = pose1.get_all_rel_position()
+    rel_pos_2 = pose2.get_all_rel_position()
+
+    return {
+        'angle_difference': angle_difference,
+        'distant_difference': dist_difference
+    }
+
+
+
+
+
+if __name__ == "__main__":
+    img_path_1 = './images/jun_ude.jpg'
+    img_path_2 = './images/sy_shell.jpg'
+
+
+    import sys
+    sys.path.append("./")
+    from dance_scoring import detector
+    from feedback.pose_compare import extract_pose_world_landmarks
+
+
+    det = detector.PoseDetector()
+    landmark, _, _, _ = det.get_image_landmarks(img_path_1)
+    result_1 = extract_pose_world_landmarks(landmark)
+
+    landmark, _, _, _ = det.get_image_landmarks(img_path_2)
+    result_2 = extract_pose_world_landmarks(landmark)
+
+    differences = json_to_prompt_3(result_1, result_2)
+    print(differences)
+
+
+
+
+
+# if __name__ == "__main__":
+#     import sys
+#     sys.path.append("./")
+#     from dance_scoring import detector
+#     from feedback.pose_compare import extract_pose_world_landmarks
+
+#     det = detector.PoseDetector()
+
+#     img_path = './images/jun_ude.jpg'
+#     landmark, _, _, _ = det.get_image_landmarks(img_path)
+#     result = extract_pose_world_landmarks(landmark)
+
+#     # pose feedback
+#     feedback_module = FramePose3D(result)
+#     print("################ HEAD ################")
+#     print("고개가 숙여진/펴진 정도: ", feedback_module.get_head_angle_1())
+#     print("고개가 오른/왼쪽으로 얼마나 숙여졌는지: ", feedback_module.get_head_angle_2())
+#     print("시선이 오른/왼쪽으로 얼마나 돌아갔는지: ", feedback_module.get_eye_direction())
+    
+#     print("################ BODY ################")
+#     print("허리가 앞으로 숙여진 정도: ", feedback_module.get_waist_angle_1())
+#     print("사용자 몸이 돌아간 정도: ", feedback_module.get_waist_angle_2())
+
+#     print("################ LEFT ARM ################")
+#     print("왼팔 굽혀진 정도 : ", feedback_module.get_left_elbow_angle())
+#     print("왼팔 높이: ", feedback_module.get_left_arm_height())
+#     print("왼팔 방향: ", feedback_module.get_left_arm_dir())
+
+#     print("################ RIGHT ARM ################")
+#     print("오른팔 굽혀진 정도 : ", feedback_module.get_right_elbow_angle())
+#     print("오른팔 높이: ", feedback_module.get_right_arm_height())
+#     print("오른팔 방향: ", feedback_module.get_right_arm_dir())
+
+#     print("################ LEFT LEG ################")
+#     print("왼다리 굽혀진 정도 : ", feedback_module.get_left_knee_angle())
+#     print("왼다리 높이: ", feedback_module.get_left_leg_height())
+#     print("왼다리 방향: ", feedback_module.get_left_leg_dir())
+
+#     print("################ RIGHT LEG ################")
+#     print("오른다리 굽혀진 정도 : ", feedback_module.get_right_knee_angle())
+#     print("오른다리 높이: ", feedback_module.get_right_leg_height())
+#     print("오른다리 방향: ", feedback_module.get_right_leg_dir())
+#     print("다리가 벌어진 정도: ", feedback_module.get_leg_angle())
+#     print(generate_korean_feedback({'head_difference': -2, 'shoulder_difference': 4, 'left_arm_angle_difference': 19, 'right_arm_angle_difference': 30, 'left_elbow_angle_difference': 35, 'right_elbow_angle_difference': -34, 'left_leg_angle_difference': 0, 'right_leg_angle_difference': -1, 'left_knee_angle_difference': -4, 'right_knee_angle_difference': -3}))

@@ -13,7 +13,7 @@ from dance_scoring.util import draw_landmarks_on_image, get_closest_frame
 from dance_scoring.similarity_with_frames import get_normalized_keypoints, calculate_similarity_with_visualization, make_euclidean_similarity, make_cosine_similarity
 from dance_scoring.similarity_with_frames import get_center_pair_frames
 from feedback.pose_compare import extract_pose_landmarks, extract_pose_world_landmarks
-from feedback.pose_feedback import json_to_prompt, generate_korean_feedback
+from feedback.pose_feedback import json_to_prompt, generate_korean_feedback, generate_3D_feedback, json_to_prompt_2
 from feedback.clova_feedback import base_feedback_model
 import config
 
@@ -439,14 +439,14 @@ else:
                 landmarks.x = normalized_all_landmarks1[idx1, i, 0]
                 landmarks.y = normalized_all_landmarks1[idx1, i, 1]
                 landmarks.z = normalized_all_landmarks1[idx1, i, 2]
-            original_video_frames_2[idx2] = draw_landmarks_on_image(
-                frame, pose_landmarker_results_1[idx1],
-                landmarks_c=(234,63,247), connection_c=(117,249,77), thickness=2, circle_r=2
-            )
-            original_video_frames_2[idx2] = draw_landmarks_on_image(
-                original_video_frames_2[idx2], pose_landmarker_results_2[idx2],
-                landmarks_c=(50, 192, 30), connection_c=(200, 50, 200), thickness=2, circle_r=2
-            )
+            # original_video_frames_2[idx2] = draw_landmarks_on_image(
+            #     frame, pose_landmarker_results_1[idx1],
+            #     landmarks_c=(234,63,247), connection_c=(117,249,77), thickness=2, circle_r=2
+            # )
+            # original_video_frames_2[idx2] = draw_landmarks_on_image(
+            #     original_video_frames_2[idx2], pose_landmarker_results_2[idx2],
+            #     landmarks_c=(50, 192, 30), connection_c=(200, 50, 200), thickness=2, circle_r=2
+            # )
 
         del normalized_all_landmarks1
         
@@ -496,15 +496,23 @@ else:
             user_pose_landmarks_json = extract_pose_world_landmarks(user_landmark)
             target_pose_landmarks_json = extract_pose_world_landmarks(target_landmark)
             result_json = json_to_prompt(target_pose_landmarks_json, user_pose_landmarks_json)
+            json_3D = json_to_prompt_2(target_pose_landmarks_json, user_pose_landmarks_json)
+            feedback_3D = generate_3D_feedback(json_3D, threshold=20)
+
             print(str(result_json))
             feedback_algorithm = generate_korean_feedback(result_json, threshold=threshold)
             feedback_clova = base_feedback_model(str(result_json))
 
             col1, col2 = st.columns(2)
             with col1:
-                st.subheader("알고리즘 기반 피드백")
-                st.json(feedback_algorithm)
-                st.subheader("클로바 기반 피드백")
-                st.text(feedback_clova)
+                st.subheader("목표 프레임")
+                st.image(original_video_frames_1[target_idx])
             with col2:
+                st.subheader("유저 프레임")
                 st.image(original_video_frames_2[user_idx])
+            st.subheader("알고리즘 기반 피드백")
+            st.json(feedback_algorithm)
+            st.subheader("클로바 기반 피드백")
+            st.text(feedback_clova)
+            st.subheader("3D 피드백")
+            st.text(feedback_3D)

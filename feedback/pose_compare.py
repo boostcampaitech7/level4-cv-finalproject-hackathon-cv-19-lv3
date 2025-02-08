@@ -180,6 +180,11 @@ def extract_pose_world_landmarks(result):
                     "x": pose_landmarks[15].x,
                     "y": pose_landmarks[15].y,
                     "z": pose_landmarks[15].z,
+                },
+                "17": {
+                    "x": pose_landmarks[17].x,
+                    "y": pose_landmarks[17].y,
+                    "z": pose_landmarks[17].z,
                 }
             },
             "right_arm": {
@@ -197,6 +202,11 @@ def extract_pose_world_landmarks(result):
                     "x": pose_landmarks[16].x,
                     "y": pose_landmarks[16].y,
                     "z": pose_landmarks[16].z,
+                },
+                "18": {
+                    "x": pose_landmarks[18].x,
+                    "y": pose_landmarks[18].y,
+                    "z": pose_landmarks[18].z,
                 }
             },
             "left_leg": {
