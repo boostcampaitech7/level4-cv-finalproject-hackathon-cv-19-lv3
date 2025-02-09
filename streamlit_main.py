@@ -541,4 +541,4 @@ else:
                 st.json(feedback_3D)
             with col3:
                 st.subheader("posescript")
-                st.text('\n'.join(feedback_script))
+                st.text(' '.join(feedback_script))

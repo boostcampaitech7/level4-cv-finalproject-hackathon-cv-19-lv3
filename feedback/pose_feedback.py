@@ -68,8 +68,27 @@ body_parts_korean = {
     "leg": "다리",
     "left_leg": "왼쪽 다리",
     "right_leg": "오른쪽 다리",
-    "belly": "배"
+    "belly": "배",
+    "head": "머리"
 }
+
+def check_if_end_consonant(word):
+    # 한글 유니코드 범위: 가(0xAC00) ~ 힣(0xD7A3)
+    if not word:
+        raise ValueError("단어가 비어있습니다!")
+    
+    last_char = word[-1]
+    if '가' <= last_char <= '힣':
+        # 한글 문자에서 종성(받침)이 있는지 확인
+        # (유니코드 코드 포인트 - 0xAC00) % 28
+        # 0이면 종성이 없음 (모음으로 끝남), 그 외는 종성이 있음 (자음으로 끝남)
+        code = ord(last_char) - 0xAC00
+        if code % 28 == 0:
+            return False
+        else:
+            return True
+    else:
+        raise ValueError(f"'{word}'은(는) 한글이 아닙니다.")
 
 def generate_korean_feedback(feature_differences, threshold = 30):
     """
@@ -281,6 +300,7 @@ def json_to_prompt(target_landmarks_json_path, compare_landmarks_json_path):
 
 ###################### NEW x, y, z, dataset test ########################################################################################################################################################################
 def calculate_two_vector_angle(v1, v2, normal, eps=1e-7):
+    # 두 벡터 사이의 각도를 계산하며, v1과 v2의 상대적인 위치에 따라 부호를 결정합니다.
     dot_product = np.dot(v1, v2)
 
     magnitude1 = np.linalg.norm(v1)
@@ -299,12 +319,14 @@ def calculate_two_vector_angle(v1, v2, normal, eps=1e-7):
     return angle
 
 def calculate_two_points_angle_reverse(point1, point2):
+    # 어느축을 기준으로 각도를 측정할지 반대로한 two_points 각도 측정 함수
     vector = point2 - point1
     angle = math.degrees(math.atan2(vector[0], vector[1]))
 
     return angle
 
 def calculate_three_points_angle_with_sign(point1, point2, point3, normal, eps=1e-7):
+    # 3점 사이 각도를 측정할 때 위치관계를 기반으로 부호를 결정하는 함수
     vector1 = point1 - point2
     vector2 = point3 - point2
     
@@ -326,66 +348,6 @@ def calculate_three_points_angle_with_sign(point1, point2, point3, normal, eps=1
     return angle
 
 
-def visualize_angle(p1, p2, p3):
-    # 벡터 정의
-    v1 = np.array(p1) - np.array(p2)
-    v2 = np.array(p3) - np.array(p2)
-    
-    # 단위 벡터 계산
-    v1_u = v1 / np.linalg.norm(v1)
-    v2_u = v2 / np.linalg.norm(v2)
-    
-    # 각도 계산 (라디안)
-    angle_rad = np.arccos(np.clip(np.dot(v1_u, v2_u), -1.0, 1.0))
-    angle_deg = np.degrees(angle_rad)
-    
-    # 플로팅
-    fig, ax = plt.subplots()
-    ax.set_aspect('equal')
-    ax.grid(True, linestyle='--')
-    
-    # 점 그리기
-    ax.scatter(*p1, color='red', label='P1')
-    ax.scatter(*p2, color='blue', label='P2 (Center)')
-    ax.scatter(*p3, color='green', label='P3')
-    
-    # 벡터 그리기
-    ax.quiver(*p2, v1[0], v1[1], angles='xy', scale_units='xy', scale=1, color='red')
-    ax.quiver(*p2, v2[0], v2[1], angles='xy', scale_units='xy', scale=1, color='green')
-    
-    # 각도 표시
-    ax.text(p2[0], p2[1], f'{angle_deg:.2f}°', fontsize=12, ha='right', color='black')
-    
-    ax.legend()
-    plt.show()
-    
-    return angle_deg
-
-def visualize_vector(v1, v2):
-    # 단위 벡터 계산
-    v1_u = v1 / np.linalg.norm(v1)
-    v2_u = v2 / np.linalg.norm(v2)
-    
-    # 각도 계산 (라디안)
-    angle_rad = np.arccos(np.clip(np.dot(v1_u, v2_u), -1.0, 1.0))
-    angle_deg = np.degrees(angle_rad)
-    
-    # 플로팅
-    fig, ax = plt.subplots()
-    ax.set_aspect('equal')
-    ax.grid(True, linestyle='--')
-    
-    # 원점 및 벡터 그리기
-    origin = np.array([0, 0])
-    ax.quiver(*origin, v1[0], v1[1], angles='xy', scale_units='xy', scale=1, color='red', label='V1')
-    ax.quiver(*origin, v2[0], v2[1], angles='xy', scale_units='xy', scale=1, color='green', label='V2')
-    
-    ax.legend()
-    plt.show()
-    
-    return angle_deg
-
-
 def project_onto_plane(v1, v2):
     """
     v1을 법선 벡터로 하는 평면에 v2를 정사영하는 함수
@@ -404,9 +366,9 @@ def generate_3D_feedback(result, threshold=30):
     # 피드백 문구 템플릿
     templates = {
         'head': {
-            'lower_angle_difference': ('고개를 좀 더 숙이세요.', '고개를 좀 더 들어 올리세요.'),
-            'tilt_angle_difference': ('고개를 좀 더 오른쪽으로 꺾으세요.', '고개를 좀 더 왼쪽으로 꺾으세요.'),
-            'direction_difference': ('시선을 더 오른쪽으로 돌리세요.', '시선을 더 왼쪽으로 돌리세요.')
+            'lower_angle_difference': ('머리를 좀 더 숙이세요.', '머리를 좀 더 들어 올리세요.'),
+            'tilt_angle_difference': ('머리를 좀 더 오른쪽으로 꺾으세요.', '머리를 좀 더 왼쪽으로 꺾으세요.'),
+            'direction_difference': ('머리를 더 오른쪽으로 돌리세요.', '머리를 더 왼쪽으로 돌리세요.')
         },
         'waist': {
             'bend_angle_difference': ('허리를 더 굽히세요.', '허리를 더 펴세요.'),
@@ -415,24 +377,25 @@ def generate_3D_feedback(result, threshold=30):
         'left_arm': {
             'bend_angle_difference': ('왼팔을 더 굽히세요.', '왼팔을 더 펴세요.'),
             'height_difference': ('왼팔을 더 내려주세요.', '왼팔을 더 올려주세요.'),
-            'direction_difference': ('왼팔 방향을 조정하세요.', '왼팔 방향을 조정하세요.')
+            'direction_difference': ('왼팔 위치를 조정하세요.', '왼팔 위치를 조정하세요.')
         },
         'right_arm': {
             'bend_angle_difference': ('오른팔을 더 굽히세요.', '오른팔을 더 펴세요.'),
             'height_difference': ('오른팔을 더 내려주세요.', '오른팔을 더 올려주세요.'),
-            'direction_difference': ('오른팔 방향을 조정하세요.', '오른팔 방향을 조정하세요.')
+            'direction_difference': ('오른팔 위치를 조정하세요.', '오른팔 위치를 조정하세요.')
         },
         'left_leg': {
             'bend_angle_difference': ('왼쪽 무릎을 더 굽히세요.', '왼쪽 무릎을 더 펴세요.'),
-            'height_difference': ('왼다리를 더 낮추세요.', '왼다리를 더 올리세요.'),
-            'direction_difference': ('왼다리 방향을 조정하세요.', '왼다리 방향을 조정하세요.')
+            'height_difference': ('왼쪽 다리를 더 낮추세요.', '왼쪽 다리를 더 올리세요.'),
+            'direction_difference': ('왼쪽 다리 방향을 조정하세요.', '왼쪽 다리 방향을 조정하세요.')
         },
         'right_leg': {
             'bend_angle_difference': ('오른쪽 무릎을 더 굽히세요.', '오른쪽 무릎을 더 펴세요.'),
-            'height_difference': ('오른다리를 더 낮추세요.', '오른다리를 더 올리세요.'),
-            'direction_difference': ('오른다리 방향을 조정하세요.', '오른다리 방향을 조정하세요.')
+            'height_difference': ('오른쪽 다리를 더 낮추세요.', '오른쪽 다리를 더 올리세요.'),
+            'direction_difference': ('오른쪽 다리 방향을 조정하세요.', '오른쪽 다리 방향을 조정하세요.')
         }
     }
+    
     
     for body_part, differences in result.items():
         messages = []
@@ -783,8 +746,8 @@ def json_to_prompt_2(target_landmarks_json_path, compare_landmarks_json_path):
     result = {
         'head':{
             'lower_angle_difference': int(pose1.get_head_angle_1() - pose2.get_head_angle_1()), # 음수인 경우 고개를 좀 더 숙여라, 양수인 경우 고개를 좀 더 들어라
-            'tilt_angle_difference': int(pose1.get_head_angle_2() - pose2.get_head_angle_2()), # 음수인 경우 고개를 좀 더 오른쪽으로 꺾어라, 양수인 경우 고개를 좀 더 왼쪽으로 꺾어라
-            'direction_difference': int(pose1.get_eye_direction() - pose2.get_eye_direction()) # 음수인 경우 좀 더 오른쪽을 바라봐라, 양수인 경우 좀 더 왼쪽을 바라봐라
+            # 'tilt_angle_difference': int(pose1.get_head_angle_2() - pose2.get_head_angle_2()), # 음수인 경우 고개를 좀 더 오른쪽으로 꺾어라, 양수인 경우 고개를 좀 더 왼쪽으로 꺾어라
+            # 'direction_difference': int(pose1.get_eye_direction() - pose2.get_eye_direction()) # 음수인 경우 좀 더 오른쪽을 바라봐라, 양수인 경우 좀 더 왼쪽을 바라봐라
         },
         'waist':{
             'bend_angle_difference': int(pose1.get_waist_angle_1() - pose2.get_waist_angle_1()), # 음수면 허리를 더 굽혀라, 양수면 허리를 더 펴라
@@ -811,11 +774,11 @@ def json_to_prompt_2(target_landmarks_json_path, compare_landmarks_json_path):
             'direction_difference': int(pose1.get_right_leg_dir() - pose2.get_right_leg_dir()) # 음수, 양수 관계없이 왼팔 방향이 맞지 않는다
         }
     }
-    if abs(result['head']['direction_difference']) > 180:
-        if result['head']['direction_difference'] > 0:
-            result['head']['direction_difference'] = min(result['head']['direction_difference'], 360-result['head']['direction_difference'])
-        else:
-            result['head']['direction_difference'] = max(result['head']['direction_difference'], -(360+result['head']['direction_difference']))
+    # if abs(result['head']['direction_difference']) > 180:
+    #     if result['head']['direction_difference'] > 0:
+    #         result['head']['direction_difference'] = min(result['head']['direction_difference'], 360-result['head']['direction_difference'])
+    #     else:
+    #         result['head']['direction_difference'] = max(result['head']['direction_difference'], -(360+result['head']['direction_difference']))
 
     return result
 
@@ -849,17 +812,17 @@ class FramePoseScript(FramePose3D):
         # 상대위치를 사용할 쌍 정의
         self.ALL_REL_PAIRS = [ 
             ("left_shoulder", "right_shoulder"),
-            ("left_hand", "torso"),
-            ("right_hand", "torso"),
-            ("left_foot", "torso"),
-            ("right_foot", "torso"),
+            # ("left_hand", "torso"),
+            # ("right_hand", "torso"),
+            # ("left_foot", "torso"),
+            # ("right_foot", "torso"),
         ]
         self.REL_PAIR_FILTERING = [
             ('y', 'z'),
-            ('z'),
-            ('z'),
-            ('z'),
-            ('z'),
+            # ('z'),
+            # ('z'),
+            # ('z'),
+            # ('z'),
         ]
 
         # 특정 키포인트의 대략적인 위치를 구하기 위한 노드 정의(어깨 근처, 발목근처 등등)
@@ -1042,63 +1005,53 @@ def json_to_prompt_3(target_landmarks_json_path, compare_landmarks_json_path):
     ### 왼손의 포지션 결정
     target_min_keypoint, target_dist = pose1.get_closest_keypoint('left_hand')
     user_min_keypoint, user_dist = pose2.get_closest_keypoint('left_hand')
+    user_dist = pose2.compute_distance('left_hand', target_min_keypoint)
     left_hand_info = {
         'target_keypoint': target_min_keypoint,
-        'user_keypoint': user_min_keypoint
+        'user_keypoint': user_min_keypoint,
+        'pose1': target_dist,
+        'pose2': user_dist,
+        'diff': target_dist-user_dist
     }
 
     ### 오른손의 포지션 결정
     target_min_keypoint, target_dist = pose1.get_closest_keypoint('right_hand')
     user_min_keypoint, user_dist = pose2.get_closest_keypoint('right_hand')
+    user_dist = pose2.compute_distance('right_hand', target_min_keypoint)
     right_hand_info = {
         'target_keypoint': target_min_keypoint,
-        'user_keypoint': user_min_keypoint
+        'user_keypoint': user_min_keypoint,
+        'pose1': target_dist,
+        'pose2': user_dist,
+        'diff': target_dist-user_dist
     }
 
     return {
         'angle_difference': angle_difference,
         'distance_difference': dist_difference,
         'relative_pos_difference': rel_pos_difference,
-        'v2_pose_diff_dict': {k: v for k, v in v2_pose_diff_dict.items() if k in ['head', 'waist']},
+        'v2_pose_diff_dict': v2_pose_diff_dict,
         'left_hand_feedback': left_hand_info,
         'right_hand_feedback': right_hand_info
     }
 
 
-def check_if_end_consonant(word):
-    # 한글 유니코드 범위: 가(0xAC00) ~ 힣(0xD7A3)
-    if not word:
-        raise ValueError("단어가 비어있습니다!")
-    
-    last_char = word[-1]
-    if '가' <= last_char <= '힣':
-        # 한글 문자에서 종성(받침)이 있는지 확인
-        # (유니코드 코드 포인트 - 0xAC00) % 28
-        # 0이면 종성이 없음 (모음으로 끝남), 그 외는 종성이 있음 (자음으로 끝남)
-        code = ord(last_char) - 0xAC00
-        if code % 28 == 0:
-            return False
-        else:
-            return True
-    else:
-        raise ValueError(f"'{word}'은(는) 한글이 아닙니다.")
-
-
-def get_korean_feedback_posescript(diffs, angle_thres=20, distance_thres=0.15, rel_thres=0.25, v2_thres=30):
+def get_korean_feedback_posescript(diffs, angle_thres=30, bend_thres=15, distance_thres=0.2, rel_thres=0.2):
     feedback = []
-    print(diffs['v2_pose_diff_dict'])
-
+    print(diffs)
+    #################################### 기존 3D feedback에서 필요한 정보만 취사선택
     # head and waist feedback
-    v2_feedback = generate_3D_feedback(diffs['v2_pose_diff_dict'], threshold=v2_thres)
+    v2_feedback = generate_3D_feedback(diffs['v2_pose_diff_dict'], threshold=angle_thres)
     if 'head' in v2_feedback:
         feedback.append(v2_feedback['head'])
     
     if 'waist' in v2_feedback:
         feedback.append(v2_feedback['waist'])
 
+
     # angle feedback 생성
     for k, v in diffs['angle_difference'].items():
-        if abs(v) < angle_thres:
+        if abs(v) < bend_thres:
             continue
 
         part_name = body_parts_korean['_'.join(k.split('_')[:-1])]
@@ -1110,7 +1063,7 @@ def get_korean_feedback_posescript(diffs, angle_thres=20, distance_thres=0.15, r
     # distance feedback 생성
     for k, v in diffs['distance_difference'].items():
         if 'hand' in k or 'elbow' in k:
-            if abs(v['diff']) < distance_thres or abs(v['pose1']) > distance_thres:
+            if abs(v['diff']) < distance_thres or abs(v['pose1']) < distance_thres:
                 continue
             command = '떼주세요.' if v['diff'] > 0 else '붙이세요.'
         else:
@@ -1155,16 +1108,29 @@ def get_korean_feedback_posescript(diffs, angle_thres=20, distance_thres=0.15, r
                 feedback.append(f"{part1}이 좀 더 몸의 뒤쪽에 있어야합니다.")
     
     # 손 위치 피드백 생성
+    left_arm_direction_diff = diffs['v2_pose_diff_dict']['left_arm']['direction_difference']
+    right_arm_direction_diff = diffs['v2_pose_diff_dict']['right_arm']['direction_difference']
+    
     left_hand_info = diffs['left_hand_feedback']
-    if left_hand_info['target_keypoint'] != left_hand_info['user_keypoint']:
+    if abs(left_hand_info['diff']) > distance_thres and left_hand_info['diff'] < 0:
         feedback.append(f"왼손을 좀 더 {body_parts_korean[left_hand_info['target_keypoint']]} 쪽으로 움직여주세요.")
+    elif abs(left_arm_direction_diff) > angle_thres:
+        feedback.append("왼팔 방향이 틀리니 조정해주세요.")
     
     right_hand_info = diffs['right_hand_feedback']
-    if right_hand_info['target_keypoint'] != right_hand_info['user_keypoint']:
+    if abs(right_hand_info['diff']) > distance_thres and right_hand_info['diff'] < 0:
         feedback.append(f"오른손을 좀 더 {body_parts_korean[right_hand_info['target_keypoint']]} 쪽으로 움직여주세요.")
+    elif abs(right_arm_direction_diff) > angle_thres:
+        feedback.append("오른팔 방향이 틀리니 조정해주세요.")
 
     return feedback
 
+def aggregate_feedback(feedback):
+    new_feedback = []
+    body_parts_korean_name_list = body_parts_korean.values()
+
+    if '두 무릎을 좀 더 붙이세요.' in feedback and '두 발을 좀 더 붙이세요.' in feedback:
+        new_feedback.append('두 발을 좀 더 붙이세요.')
 
 
 
@@ -1204,8 +1170,7 @@ if __name__ == "__main__":
     result_2 = extract_pose_world_landmarks(landmark_2)
     differences = json_to_prompt_3(result_1, result_2)
     feedback_lst = get_korean_feedback_posescript(
-        differences, angle_thres=25, distance_thres=0.15
-    )
+        differences)
     for feedback in feedback_lst:
         print(feedback)
 
