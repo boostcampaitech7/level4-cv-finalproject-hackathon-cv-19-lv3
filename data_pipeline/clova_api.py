@@ -125,4 +125,4 @@ def train_check(taskId, api_path='./CLOVA_API', is_test=True):
     print(response_text)
 
 if __name__=="__main__":
-    train_request("dance_coach_instruction_thr_2", trainingDatasetFilePath='test_dataset_13_instruction_clova_fixed.csv')
+    train_request("dance_coach_3D_noinstruction", trainingDatasetFilePath='test_3D_dataset_1.csv')

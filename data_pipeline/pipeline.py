@@ -9,7 +9,8 @@ from scipy.stats import norm
 from dance_scoring.detector import PoseDetector, post_process_pose_landmarks
 from dance_scoring.similarity_with_frames import *
 from feedback.pose_compare import extract_pose_landmarks
-from feedback.pose_feedback import json_to_prompt, generate_feedback, generate_korean_feedback
+from feedback.pose_feedback import json_to_prompt, generate_korean_feedback
+from feedback import pose_feedback_final
 import config
 
 
@@ -417,5 +418,170 @@ def make_random_dataset(total_data_cnt, system_prompt, max_threshold=30, perfect
         df["Completion"].append(output_sentence)
     
 
+    df = pd.DataFrame(df)
+    return df
+
+def generate_random_3D_values(ranges):
+    random_values = {}
+    
+    for part, attributes in ranges.items():
+        random_values[part] = {}
+        for attr, bounds in attributes.items():
+            if isinstance(bounds, dict):  # Handle closest_point_difference
+                pose1 = np.random.normal(np.mean(bounds['pose1']), (bounds['pose1'][1] - bounds['pose1'][0]) / 4)
+                pose2 = np.random.normal(np.mean(bounds['pose2']), (bounds['pose2'][1] - bounds['pose2'][0]) / 4)
+                random_values[part][attr] = {
+                    'pose1': pose1,
+                    'pose2': pose2,
+                    'diff': pose1 - pose2
+                }
+            else:
+                mean = np.mean(bounds)
+                std_dev = (bounds[1] - bounds[0]) / 4  # Spread around the mean
+                random_values[part][attr] = np.random.normal(mean, std_dev)
+    
+    return random_values
+
+def generate_int_in_bounds(bound):
+    min_val, max_val = bound
+    mean = (min_val + max_val) / 2
+    std_dev = (max_val - min_val) / 4  # 범위의 1/4을 표준편차로 설정
+    
+    value = int(np.clip(np.random.normal(mean, std_dev), min_val, max_val))
+    return value
+
+def generate_float_in_bounds(bound):
+    min_val, max_val = bound
+    mean = (min_val + max_val) / 2
+    std_dev = (max_val - min_val) / 4  # 범위의 1/4을 표준편차로 설정
+    
+    value = np.clip(np.random.normal(mean, std_dev), min_val, max_val)
+    return value
+
+
+
+def make_random_3D_dataset(total_data_cnt, system_prompt, angle_thres=20, dist_thres=0.12, height_thres=20, perfect_rate=0.1):
+    df = {
+        "System_Prompt": [], # 지시문
+        "C_ID": [], #Conversation ID
+        "T_ID": [], # Turn ID
+        "Text": [], # 사용자가 말할 것으로 기대되는 모든 발화 내용
+        "Completion": [] # CLOVA Studio가 답해야할 것으로 기대되는 모든 발화 내용
+    }
+    LEFT_POSITION_KEYPOINTS = [
+        'left_shoulder', 'right_shoulder',
+        'left_waist', 'right_waist',
+        'left_hip', 'right_hip',
+        'right_elbow',
+        'left_knee', 'right_knee',
+        'left_foot', 'right_foot',
+        'belly', 'breast'
+    ]
+
+    RIGHT_POSITION_KEYPOINTS = [
+        'left_shoulder', 'right_shoulder',
+        'left_waist', 'right_waist',
+        'left_hip', 'right_hip',
+        'left_elbow',
+        'left_knee', 'right_knee',
+        'left_foot', 'right_foot',
+        'belly', 'breast'
+    ]
+
+    # 범위 정의
+    ranges = {
+        'head':{
+            'lower_angle_difference': (-60, 60),
+            'direction_difference': (-140, 140)
+        },
+        'body':{
+            'bend_angle_difference': (-140, 140),
+            'direction_difference': (-140, 140)
+        },
+        'left_arm':{
+            'bend_angle_difference': (-140, 140),
+            'arm_height_difference': (-140, 140),
+            'hand_height_difference': (-140, 140),
+            'direction_difference': (-140, 140),
+            'closest_point_difference': {
+                'pose1': (-0.2, 0.2),
+                'pose2': (-0.5, 0.5),
+                'diff': ['pose1', 'pose2']
+            }
+        },
+        'right_arm':{
+            'bend_angle_difference': (-140, 140),
+            'arm_height_difference': (-140, 140),
+            'hand_height_difference': (-140, 140),
+            'direction_difference': (-140, 140),
+            'closest_point_difference': {
+                'pose1': (-0.2, 0.2),
+                'pose2': (-0.5, 0.5),
+                'diff': ['pose1', 'pose2']
+            }
+        },
+        'left_leg':{
+            'bend_angle_difference': (-140, 140), # 음수면 왼팔을 더 굽혀라, 양수면 왼팔을 더 펴라
+            'height_difference': (-140, 140), # 음수면 왼팔을 더 내려라, 양수면 왼팔을 더 올려라
+            'direction_difference': (-140, 140) # 음수, 양수 관계없이 왼팔 방향이 맞지 않는다
+        },
+        'right_leg':{
+            'bend_angle_difference': (-140, 140), # 음수면 왼팔을 더 굽혀라, 양수면 왼팔을 더 펴라
+            'height_difference': (-140, 140), # 음수면 왼팔을 더 내려라, 양수면 왼팔을 더 올려라
+            'direction_difference': (-140, 140) # 음수, 양수 관계없이 왼팔 방향이 맞지 않는다
+        },
+        'leg':{
+            'knee_distance_difference': (-0.4, 0.4), # 음수면 무릎을 더 붙여라, 양수면 무릎을 너무 붙이지 마라
+            'foot_distance_difference': (-0.6, 0.6)
+        }
+    }
+
+    for idx in tqdm(range(total_data_cnt)):
+        differences = generate_random_3D_values(ranges)
+        differences['left_arm']['closest_point_difference']['target_keypoint'] = random.choice(LEFT_POSITION_KEYPOINTS)
+        differences['left_arm']['closest_point_difference']['user_keypoint'] = random.choice(LEFT_POSITION_KEYPOINTS)
+        differences['right_arm']['closest_point_difference']['target_keypoint'] = random.choice(RIGHT_POSITION_KEYPOINTS)
+        differences['right_arm']['closest_point_difference']['user_keypoint'] = random.choice(RIGHT_POSITION_KEYPOINTS)
+
+        if np.random.rand() < perfect_rate:
+            for part in differences:
+                for k, v in differences[part].items():
+                    if ('angle' in k or 'direction' in k):
+                        differences[part][k] = generate_int_in_bounds((-angle_thres, angle_thres))
+                    elif ('height' in k):
+                        differences[part][k] = generate_int_in_bounds((-height_thres, height_thres))
+                    elif ('distance' in k):
+                        differences[part][k] = generate_float_in_bounds((-dist_thres, dist_thres))
+                    else:
+                        differences[part][k]['diff'] = generate_float_in_bounds((-dist_thres, dist_thres))
+                        differences[part][k]['pose2'] = differences[part][k]['pose1'] - differences[part][k]['diff']
+
+
+        feedback_json = pose_feedback_final.get_korean_3D_feedback(differences, angle_thres=angle_thres, dist_thres=dist_thres, height_thres=height_thres)
+        agg_feedback = pose_feedback_final.aggregate_feedback(feedback_json)
+        output_sentence = pose_feedback_final.get_connected_sentence_from_dict(agg_feedback)
+
+        for part in differences:
+            for k, v in differences[part].items():
+                if isinstance(v, dict):
+                    for feature in v:
+                        if isinstance(v[feature], str):
+                            continue
+
+                        differences[part][k][feature] = f'{differences[part][k][feature]:.4f}'
+                        differences[part][k][feature] = float(differences[part][k][feature])
+                else:
+                    if isinstance(ranges[part][k][0], int):
+                        differences[part][k] = int(differences[part][k])
+                    else:
+                        differences[part][k] = f'{differences[part][k]:.4f}'
+                        differences[part][k] = float(differences[part][k])
+
+        df["C_ID"].append(idx)
+        df["T_ID"].append(0)
+        df["System_Prompt"].append(system_prompt)
+        df["Text"].append(str(differences))
+        df["Completion"].append(output_sentence)
+    
     df = pd.DataFrame(df)
     return df

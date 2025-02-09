@@ -634,25 +634,25 @@ def get_difference_dict(target_landmarks_json_path, compare_landmarks_json_path)
             'bend_angle_difference': int(pose1.get_left_elbow_angle() - pose2.get_left_elbow_angle()), # 음수면 왼팔을 더 굽혀라, 양수면 왼팔을 더 펴라
             'arm_height_difference': int(180 * (pose1.get_left_arm_height() - pose2.get_left_arm_height())), # 음수면 왼팔을 더 내려라, 양수면 왼팔을 더 올려라
             'hand_height_difference': int(180 * (pose1.get_left_hand_height() - pose2.get_left_hand_height())), # 음수면 왼손을 더 내려라, 양수면 왼손을 더 올려라
-            'direction_difference': int(pose1.get_left_arm_dir() - pose2.get_left_arm_dir()), # 음수, 양수 관계없이 왼팔 방향이 맞지 않는다
+            'direction_difference': change_angle_expression(int(pose1.get_left_arm_dir() - pose2.get_left_arm_dir())), # 음수, 양수 관계없이 왼팔 방향이 맞지 않는다
             'closest_point_difference': left_hand_info
         },
         'right_arm':{
             'bend_angle_difference': int(pose1.get_right_elbow_angle() - pose2.get_right_elbow_angle()), # 음수면 왼팔을 더 굽혀라, 양수면 왼팔을 더 펴라
             'arm_height_difference': int(180 * (pose1.get_right_arm_height() - pose2.get_right_arm_height())), # 음수면 왼팔을 더 내려라, 양수면 왼팔을 더 올려라
             'hand_height_difference': int(180 * (pose1.get_right_hand_height() - pose2.get_right_hand_height())), # 음수면 오른팔을 더 내려라, 양수면 오른팔을 더 올려라
-            'direction_difference': int(pose1.get_right_arm_dir() - pose2.get_right_arm_dir()), # 음수, 양수 관계없이 왼팔 방향이 맞지 않는다
+            'direction_difference': change_angle_expression(int(pose1.get_right_arm_dir() - pose2.get_right_arm_dir())), # 음수, 양수 관계없이 왼팔 방향이 맞지 않는다
             'closest_point_difference': right_hand_info
         },
         'left_leg':{
             'bend_angle_difference': int(pose1.get_left_knee_angle() - pose2.get_left_knee_angle()), # 음수면 왼팔을 더 굽혀라, 양수면 왼팔을 더 펴라
             'height_difference': int(180 * (pose1.get_left_leg_height() - pose2.get_left_leg_height())), # 음수면 왼팔을 더 내려라, 양수면 왼팔을 더 올려라
-            'direction_difference': int(pose1.get_left_leg_dir() - pose2.get_left_leg_dir()) # 음수, 양수 관계없이 왼팔 방향이 맞지 않는다
+            'direction_difference': change_angle_expression(int(pose1.get_left_leg_dir() - pose2.get_left_leg_dir())) # 음수, 양수 관계없이 왼팔 방향이 맞지 않는다
         },
         'right_leg':{
             'bend_angle_difference': int(pose1.get_right_knee_angle() - pose2.get_right_knee_angle()), # 음수면 왼팔을 더 굽혀라, 양수면 왼팔을 더 펴라
             'height_difference': int(180 * (pose1.get_right_leg_height() - pose2.get_right_leg_height())), # 음수면 왼팔을 더 내려라, 양수면 왼팔을 더 올려라
-            'direction_difference': int(pose1.get_right_leg_dir() - pose2.get_right_leg_dir()) # 음수, 양수 관계없이 왼팔 방향이 맞지 않는다
+            'direction_difference': change_angle_expression(int(pose1.get_right_leg_dir() - pose2.get_right_leg_dir())) # 음수, 양수 관계없이 왼팔 방향이 맞지 않는다
         },
         'leg':{
             'knee_distance_difference': (pose1.compute_distance('left_knee', 'right_knee') - pose2.compute_distance('left_knee', 'right_knee')), # 음수면 무릎을 더 붙여라, 양수면 무릎을 너무 붙이지 마라
@@ -972,8 +972,6 @@ def get_connected_sentence_from_dict(agg_feedback):
     else:
         return feedback_string
     
-
-
 
 
 

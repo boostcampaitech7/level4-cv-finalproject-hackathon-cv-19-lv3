@@ -2,7 +2,7 @@ import os
 import pandas as pd
 import argparse
 import glob
-from pipeline import compare_video_pair, make_dataset, make_random_dataset
+from pipeline import compare_video_pair, make_dataset, make_random_dataset, make_random_3D_dataset
 from tqdm import tqdm
 
 def str_to_bool(value):
@@ -126,7 +126,8 @@ def main():
             random_cnt = int(random_cnt)
         except:
             random_cnt = 1000
-        total_result = make_random_dataset(random_cnt, system_prompt, max_threshold=threshold, perfect_rate=perfect_rate, ignore_low_difference=ignore_low_difference, do_numeric_to_text=do_numeric_to_text)
+        # total_result = make_random_dataset(random_cnt, system_prompt, max_threshold=threshold, perfect_rate=perfect_rate, ignore_low_difference=ignore_low_difference, do_numeric_to_text=do_numeric_to_text)
+        total_result = make_random_3D_dataset(random_cnt, system_prompt, angle_thres=20, dist_thres=0.12, height_thres=20, perfect_rate=perfect_rate)
 
     # instruction 형식이 아닌 경우 text, completion 열만 필요함
     if not instruction_dataset:
