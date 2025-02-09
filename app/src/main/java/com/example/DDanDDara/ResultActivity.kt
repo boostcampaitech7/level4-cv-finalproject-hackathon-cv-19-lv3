@@ -1,4 +1,4 @@
-package com.example.hackaton
+package com.example.DDanDDara
 
 import android.content.Intent
 import android.graphics.Bitmap
@@ -182,7 +182,7 @@ class ResultActivity : AppCompatActivity() {
                     updateSeekBar() // 재생 중일 경우 반복 호출
                 }
             }
-        }, 1000) // 1초 간격으로 업데이트
+        }, 500) // 0.5초 간격으로 업데이트
     }
 
     private fun feedbackRequest(frame: Int, videoPath: String) {

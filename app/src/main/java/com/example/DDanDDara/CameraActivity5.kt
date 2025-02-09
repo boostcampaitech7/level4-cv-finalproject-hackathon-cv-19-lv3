@@ -1,8 +1,7 @@
-package com.example.hackaton
+package com.example.DDanDDara
 
 import android.content.Intent
 import android.hardware.Camera
-import java.text.SimpleDateFormat
 import android.media.CamcorderProfile
 import android.media.MediaRecorder
 import android.net.Uri
@@ -18,10 +17,11 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.gun0912.tedpermission.PermissionListener
 import com.gun0912.tedpermission.normal.TedPermission
 import java.io.File
+import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-class CameraActivity1 : AppCompatActivity(), SurfaceHolder.Callback {
+class CameraActivity5 : AppCompatActivity(), SurfaceHolder.Callback {
     private lateinit var btnRecord: FloatingActionButton
     private lateinit var surfaceView: SurfaceView
     private lateinit var videoOverlay: VideoView
@@ -29,12 +29,12 @@ class CameraActivity1 : AppCompatActivity(), SurfaceHolder.Callback {
     private var mediaRecorder: MediaRecorder? = null
     private lateinit var surfaceHolder: SurfaceHolder
     private var recording = false
-    private val TAG = "CameraActivity1.kt"
+    private val TAG = "CameraActivity5.kt"
     private var videoFilePath: String? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_camera1)
+        setContentView(R.layout.activity_camera5)
 
         // 권한 요청 코드
         TedPermission.create()
@@ -48,9 +48,9 @@ class CameraActivity1 : AppCompatActivity(), SurfaceHolder.Callback {
             )
             .check()
 
-        btnRecord = findViewById(R.id.record_btn1)
-        surfaceView = findViewById(R.id.surfaceView1)
-        videoOverlay = findViewById(R.id.videoOverlay1)
+        btnRecord = findViewById(R.id.record_btn5)
+        surfaceView = findViewById(R.id.surfaceView5)
+        videoOverlay = findViewById(R.id.videoOverlay5)
 
         // SurfaceHolder 초기화
         surfaceHolder = surfaceView.holder
@@ -67,7 +67,7 @@ class CameraActivity1 : AppCompatActivity(), SurfaceHolder.Callback {
     }
 
     private fun setupVideoOverlay() {
-        val videoUri = Uri.parse("android.resource://${packageName}/${R.raw.kick_drum_base_challenge}")
+        val videoUri = Uri.parse("android.resource://${packageName}/${R.raw.imok_challenge}")
 
         videoOverlay.setVideoURI(videoUri)
         videoOverlay.setOnPreparedListener { mediaPlayer ->
@@ -105,7 +105,7 @@ class CameraActivity1 : AppCompatActivity(), SurfaceHolder.Callback {
 
         // 녹화 시작
         runOnUiThread {
-            Toast.makeText(this@CameraActivity1, "녹화가 시작되었습니다.", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this@CameraActivity5, "녹화가 시작되었습니다.", Toast.LENGTH_SHORT).show()
 
             try {
                 mediaRecorder = MediaRecorder().apply {
@@ -166,19 +166,19 @@ class CameraActivity1 : AppCompatActivity(), SurfaceHolder.Callback {
                     Log.e(TAG, "Error setting camera preview: ${e.message}")
                 }
             } else {
-                Toast.makeText(this@CameraActivity1, "전면 카메라를 찾을 수 없습니다.", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this@CameraActivity5, "전면 카메라를 찾을 수 없습니다.", Toast.LENGTH_SHORT).show()
                 return
             }
-            surfaceView = findViewById(R.id.surfaceView1)
+            surfaceView = findViewById(R.id.surfaceView5)
             surfaceHolder = surfaceView.holder
-            surfaceHolder.addCallback(this@CameraActivity1)
+            surfaceHolder.addCallback(this@CameraActivity5)
             surfaceHolder.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS)
-            Toast.makeText(this@CameraActivity1, "권한 허가", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this@CameraActivity5, "권한 허가", Toast.LENGTH_SHORT).show()
         }
 
         override fun onPermissionDenied(deniedPermissions: MutableList<String>?) {
             // 권한 거부 시
-            Toast.makeText(this@CameraActivity1, "권한 거부", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this@CameraActivity5, "권한 거부", Toast.LENGTH_SHORT).show()
         }
     }
 

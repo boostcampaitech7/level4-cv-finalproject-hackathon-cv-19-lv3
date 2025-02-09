@@ -1,15 +1,13 @@
-package com.example.hackaton
+package com.example.DDanDDara
 
 import android.content.Context
 import android.content.Intent
-import android.net.Uri
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.os.Environment
 import android.util.Log
 import android.widget.ImageView
 import android.widget.Toast
-import androidx.core.content.FileProvider
 import com.bumptech.glide.Glide
 import okhttp3.ResponseBody
 import retrofit2.Call

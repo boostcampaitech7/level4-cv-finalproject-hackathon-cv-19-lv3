@@ -1,18 +1,14 @@
-package com.example.hackaton
+package com.example.DDanDDara
 
 import android.content.Intent
 import android.net.Uri
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import android.os.Handler
-import android.provider.MediaStore.Video
 import android.util.Log
-import android.widget.ImageView
 import android.widget.Toast
 import android.widget.VideoView
 import com.arthenica.ffmpegkit.FFmpegKit
 import com.arthenica.ffmpegkit.ReturnCode
-import com.bumptech.glide.Glide
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
 import okhttp3.RequestBody

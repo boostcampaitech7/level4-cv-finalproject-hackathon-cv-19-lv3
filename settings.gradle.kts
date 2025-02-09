@@ -13,5 +13,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "Hackaton"
+rootProject.name = "DDanDDara"
 include(":app")

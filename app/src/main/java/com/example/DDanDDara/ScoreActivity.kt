@@ -1,4 +1,4 @@
-package com.example.hackaton
+package com.example.DDanDDara
 
 import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
@@ -6,13 +6,6 @@ import android.os.Bundle
 import android.widget.Button
 import android.widget.TextView
 import android.widget.Toast
-import okhttp3.MediaType.Companion.toMediaTypeOrNull
-import okhttp3.MultipartBody
-import okhttp3.RequestBody.Companion.asRequestBody
-import retrofit2.Call
-import retrofit2.Callback
-import retrofit2.Response
-import java.io.File
 
 class ScoreActivity : AppCompatActivity() {
 

@@ -1,4 +1,4 @@
-package com.example.hackaton
+package com.example.DDanDDara
 
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.ext.junit.runners.AndroidJUnit4

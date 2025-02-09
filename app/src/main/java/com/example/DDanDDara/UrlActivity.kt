@@ -1,4 +1,4 @@
-package com.example.hackaton
+package com.example.DDanDDara
 
 import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
@@ -7,9 +7,6 @@ import android.util.Log
 import android.widget.EditText
 import android.widget.ImageButton
 import android.widget.Toast
-import retrofit2.Call
-import retrofit2.Callback
-import retrofit2.Response
 
 class UrlActivity : AppCompatActivity() {
     private lateinit var apiService: ApiService

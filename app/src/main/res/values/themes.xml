@@ -1,9 +1,9 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <!-- Base application theme. -->
-    <style name="Base.Theme.Hackaton" parent="Theme.Material3.DayNight.NoActionBar">
+    <style name="Base.Theme.DDanDDara" parent="Theme.Material3.DayNight.NoActionBar">
         <!-- Customize your light theme here. -->
         <!-- <item name="colorPrimary">@color/my_light_primary</item> -->
     </style>
 
-    <style name="Theme.Hackaton" parent="Base.Theme.Hackaton" />
+    <style name="Theme.DDanDDara" parent="Base.Theme.DDanDDara" />
 </resources>

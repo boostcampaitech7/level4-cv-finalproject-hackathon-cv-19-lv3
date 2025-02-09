@@ -4,11 +4,11 @@ plugins {
 }
 
 android {
-    namespace = "com.example.hackaton"
+    namespace = "com.example.DDanDDara"
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.example.hackaton"
+        applicationId = "com.example.DDanDDara"
         minSdk = 30
         targetSdk = 34
         versionCode = 1
