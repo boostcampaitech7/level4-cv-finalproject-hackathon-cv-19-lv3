@@ -337,6 +337,7 @@ else:
     threshold = st.sidebar.slider('feedback threshold: ', 0, 60, value=30) # 피드백을 줄 임계치 설정
     pck_thres = st.sidebar.number_input('pck_threshold', min_value=0.0, max_value=1.0, value=0.1, step=0.05)
     feedback_normalize = st.sidebar.slider('feedback_normalize: ', False, True, value=True)
+    reverse = st.sidebar.slider('Reverse left and right: ', False, True, value=False)
 
     # 비디오 파일 업로드
     video_1 = st.file_uploader("video_1", type=["mp4", "mov", "avi", "mkv"])
@@ -515,7 +516,7 @@ else:
 
             user_pose_landmarks_json = extract_pose_world_landmarks(user_landmark)
             target_pose_landmarks_json = extract_pose_world_landmarks(target_landmark)
-            diffs = pose_feedback_final.get_difference_dict(target_pose_landmarks_json, user_pose_landmarks_json)
+            diffs = pose_feedback_final.get_difference_dict(target_pose_landmarks_json, user_pose_landmarks_json, reverse)
             feedback_json = pose_feedback_final.get_korean_3D_feedback(diffs)
             agg_feedback = pose_feedback_final.aggregate_feedback(feedback_json)
             

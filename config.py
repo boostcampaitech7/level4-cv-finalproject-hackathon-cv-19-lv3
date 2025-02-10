@@ -171,5 +171,5 @@ SEPARATOR = '_' # dictionary key값에서 단어를 이을 때 어떤 걸 쓸지
 #######################################################################################
 # CLOVA 관련 값들
 API_PATH = "./CLOVA_API"
-CLOVA_HOST = "https://clovastudio.stream.ntruss.com/testapp/v2/tasks/czfseos9/chat-completions"
+CLOVA_HOST = "https://clovastudio.stream.ntruss.com/serviceapp/v2/tasks/czfseos9/chat-completions"
 SYSTEM_PROMPT = "* 댄스 코치로써 주어진 입력값에 대한 적절한 피드백을 주세요."

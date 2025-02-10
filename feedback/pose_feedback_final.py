@@ -355,6 +355,12 @@ class FramePose3D:
             'belly', 'breast'
         ]
 
+    def swap_keypoints(self):
+        for k in self.keypoints:
+            if k.startswith('left'):
+                part_name = k.split('_')[-1]
+                self.keypoints[k], self.keypoints[f'right_{part_name}'] = self.keypoints[f'right_{part_name}'], self.keypoints[k]
+
 
     #################################### HEAD
     def get_head_angle(self):
@@ -552,7 +558,7 @@ class FramePose3D:
         
         return min_keypoint, min_distance
 
-def get_difference_dict(target_landmarks_json_path, compare_landmarks_json_path):
+def get_difference_dict(target_landmarks_json_path, compare_landmarks_json_path, reverse=False):
     if isinstance(target_landmarks_json_path, str):
         with open(target_landmarks_json_path, 'r') as f:
             data1 = json.load(f)
@@ -567,6 +573,10 @@ def get_difference_dict(target_landmarks_json_path, compare_landmarks_json_path)
 
     pose1 = FramePose3D(data1)
     pose2 = FramePose3D(data2)
+
+    if reverse:
+        pose1.swap_keypoints()
+        pose2.swap_keypoints()
 
 
     ### 왼손의 포지션 결정
