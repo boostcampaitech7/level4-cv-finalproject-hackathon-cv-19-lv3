@@ -458,7 +458,71 @@ def generate_float_in_bounds(bound):
     value = np.clip(np.random.normal(mean, std_dev), min_val, max_val)
     return value
 
+# 범위 정의
+ranges = {
+    'head':{
+        'lower_angle_difference': (-60, 60),
+        'direction_difference': (-140, 140)
+    },
+    'body':{
+        'bend_angle_difference': (-140, 140),
+        'direction_difference': (-140, 140)
+    },
+    'left_arm':{
+        'bend_angle_difference': (-140, 140),
+        'arm_height_difference': (-140, 140),
+        'hand_height_difference': (-140, 140),
+        'direction_difference': (-140, 140),
+        'closest_point_difference': {
+            'pose1': (-0.2, 0.2),
+            'pose2': (-0.5, 0.5),
+            'diff': ['pose1', 'pose2']
+        }
+    },
+    'right_arm':{
+        'bend_angle_difference': (-140, 140),
+        'arm_height_difference': (-140, 140),
+        'hand_height_difference': (-140, 140),
+        'direction_difference': (-140, 140),
+        'closest_point_difference': {
+            'pose1': (-0.2, 0.2),
+            'pose2': (-0.5, 0.5),
+            'diff': ['pose1', 'pose2']
+        }
+    },
+    'left_leg':{
+        'bend_angle_difference': (-140, 140), # 음수면 왼팔을 더 굽혀라, 양수면 왼팔을 더 펴라
+        'height_difference': (-140, 140), # 음수면 왼팔을 더 내려라, 양수면 왼팔을 더 올려라
+        'direction_difference': (-140, 140) # 음수, 양수 관계없이 왼팔 방향이 맞지 않는다
+    },
+    'right_leg':{
+        'bend_angle_difference': (-140, 140), # 음수면 왼팔을 더 굽혀라, 양수면 왼팔을 더 펴라
+        'height_difference': (-140, 140), # 음수면 왼팔을 더 내려라, 양수면 왼팔을 더 올려라
+        'direction_difference': (-140, 140) # 음수, 양수 관계없이 왼팔 방향이 맞지 않는다
+    },
+    'leg':{
+        'knee_distance_difference': (-0.4, 0.4), # 음수면 무릎을 더 붙여라, 양수면 무릎을 너무 붙이지 마라
+        'foot_distance_difference': (-0.6, 0.6)
+    }
+}
 
+def refine_float_dict(differences):
+    for part in differences:
+            for k, v in differences[part].items():
+                if isinstance(v, dict):
+                    for feature in v:
+                        if isinstance(v[feature], str):
+                            continue
+
+                        differences[part][k][feature] = f'{differences[part][k][feature]:.4f}'
+                        differences[part][k][feature] = float(differences[part][k][feature])
+                else:
+                    if isinstance(ranges[part][k][0], int):
+                        differences[part][k] = int(differences[part][k])
+                    else:
+                        differences[part][k] = f'{differences[part][k]:.4f}'
+                        differences[part][k] = float(differences[part][k])
+    return differences
 
 def make_random_3D_dataset(total_data_cnt, system_prompt, angle_thres=20, dist_thres=0.12, height_thres=20, perfect_rate=0.1):
     df = {
@@ -488,54 +552,6 @@ def make_random_3D_dataset(total_data_cnt, system_prompt, angle_thres=20, dist_t
         'belly', 'breast'
     ]
 
-    # 범위 정의
-    ranges = {
-        'head':{
-            'lower_angle_difference': (-60, 60),
-            'direction_difference': (-140, 140)
-        },
-        'body':{
-            'bend_angle_difference': (-140, 140),
-            'direction_difference': (-140, 140)
-        },
-        'left_arm':{
-            'bend_angle_difference': (-140, 140),
-            'arm_height_difference': (-140, 140),
-            'hand_height_difference': (-140, 140),
-            'direction_difference': (-140, 140),
-            'closest_point_difference': {
-                'pose1': (-0.2, 0.2),
-                'pose2': (-0.5, 0.5),
-                'diff': ['pose1', 'pose2']
-            }
-        },
-        'right_arm':{
-            'bend_angle_difference': (-140, 140),
-            'arm_height_difference': (-140, 140),
-            'hand_height_difference': (-140, 140),
-            'direction_difference': (-140, 140),
-            'closest_point_difference': {
-                'pose1': (-0.2, 0.2),
-                'pose2': (-0.5, 0.5),
-                'diff': ['pose1', 'pose2']
-            }
-        },
-        'left_leg':{
-            'bend_angle_difference': (-140, 140), # 음수면 왼팔을 더 굽혀라, 양수면 왼팔을 더 펴라
-            'height_difference': (-140, 140), # 음수면 왼팔을 더 내려라, 양수면 왼팔을 더 올려라
-            'direction_difference': (-140, 140) # 음수, 양수 관계없이 왼팔 방향이 맞지 않는다
-        },
-        'right_leg':{
-            'bend_angle_difference': (-140, 140), # 음수면 왼팔을 더 굽혀라, 양수면 왼팔을 더 펴라
-            'height_difference': (-140, 140), # 음수면 왼팔을 더 내려라, 양수면 왼팔을 더 올려라
-            'direction_difference': (-140, 140) # 음수, 양수 관계없이 왼팔 방향이 맞지 않는다
-        },
-        'leg':{
-            'knee_distance_difference': (-0.4, 0.4), # 음수면 무릎을 더 붙여라, 양수면 무릎을 너무 붙이지 마라
-            'foot_distance_difference': (-0.6, 0.6)
-        }
-    }
-
     for idx in tqdm(range(total_data_cnt)):
         differences = generate_random_3D_values(ranges)
         differences['left_arm']['closest_point_difference']['target_keypoint'] = random.choice(LEFT_POSITION_KEYPOINTS)
@@ -561,21 +577,7 @@ def make_random_3D_dataset(total_data_cnt, system_prompt, angle_thres=20, dist_t
         agg_feedback = pose_feedback_final.aggregate_feedback(feedback_json)
         output_sentence = pose_feedback_final.get_connected_sentence_from_dict(agg_feedback)
 
-        for part in differences:
-            for k, v in differences[part].items():
-                if isinstance(v, dict):
-                    for feature in v:
-                        if isinstance(v[feature], str):
-                            continue
-
-                        differences[part][k][feature] = f'{differences[part][k][feature]:.4f}'
-                        differences[part][k][feature] = float(differences[part][k][feature])
-                else:
-                    if isinstance(ranges[part][k][0], int):
-                        differences[part][k] = int(differences[part][k])
-                    else:
-                        differences[part][k] = f'{differences[part][k]:.4f}'
-                        differences[part][k] = float(differences[part][k])
+        differences = refine_float_dict(differences)
 
         df["C_ID"].append(idx)
         df["T_ID"].append(0)

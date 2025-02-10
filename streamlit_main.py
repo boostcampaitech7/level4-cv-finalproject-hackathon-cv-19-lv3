@@ -16,6 +16,7 @@ from feedback.pose_compare import extract_pose_landmarks, extract_pose_world_lan
 from feedback.pose_feedback import json_to_prompt, generate_korean_feedback, generate_3D_feedback, json_to_prompt_2, json_to_prompt_3, get_korean_feedback_posescript
 from feedback.clova_feedback import base_feedback_model
 from feedback import pose_feedback_final
+from data_pipeline.pipeline import refine_float_dict
 import config
 
 
@@ -529,17 +530,20 @@ else:
 
             # print(str(result_json))
             # feedback_algorithm = generate_korean_feedback(result_json, threshold=threshold)
-            # # feedback_clova = base_feedback_model(str(result_json))
+            feedback_clova = base_feedback_model(str(refine_float_dict(diffs)))
 
             col1, col2 = st.columns(2)
             with col1:
                 st.subheader("목표 프레임")
                 st.image(original_video_frames_1[target_idx])
-                st.json(diffs)
+                st.subheader("클로바 피드백.")
+                st.text(feedback_clova)
+                
             with col2:
                 st.subheader("유저 프레임")
                 st.image(original_video_frames_2[user_idx])
                 st.json(agg_feedback)
+            st.json(diffs)
             
             # col1, col2, col3 = st.columns(3)
             # with col1:
