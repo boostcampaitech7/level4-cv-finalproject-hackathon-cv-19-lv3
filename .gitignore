@@ -1,6 +1,5 @@
 # 무시할 폴더 목록
 .venv/
-function_check/
 output_frames/
 Pose_Estimation/
 RAG/
