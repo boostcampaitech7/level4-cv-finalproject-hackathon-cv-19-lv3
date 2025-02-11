@@ -2,6 +2,50 @@
 ### Naver Boostcamp AI Tech 7th Hackathon with *NAVER CLOUD*
 세상을 이롭게 하고 비즈니스 가치를 창출하는 AI 기술 활용한 사례를 개발해주세요. 
 <br/>
+
+<br/>
+
+<br/>
+
+
+# 🕺 Service
+<br/>
+
+<div align="center">
+
+## [ 숏폼 챌린지를 위한 AI 댄스 코치 서비스 : 딴- 따라 ]
+</div>
+<br/>
+
+<p align="center">
+<br/>
+<img src="https://github.com/user-attachments/assets/6231b300-27d4-46b2-af10-ebabd148cd88" align="center" width="25%"> 
+<img src="https://github.com/user-attachments/assets/4d0fb201-2b2a-403e-b844-06067c250643" align="center" width="62%"> 
+<figcaption align="center"></figcaption></p>
+
+<br/>
+
+<br/>
+
+# 🔨 Service Architecture
+![image](https://github.com/user-attachments/assets/f70c99b2-a036-438b-bc0a-856c63180907)
+
+<br/>
+
+<br/>
+
+
+<br/>
+
+# ⌛ Service Timeline
+
+![image](https://github.com/user-attachments/assets/7a64aa3e-f2fc-45a8-bd95-b32e835490b7)
+
+<br/>
+
+<br/>
+
+
 <br/>
 
 # 😄 Team Member
@@ -36,4 +80,3 @@
 <br/>
 <br/>
 
-jira_test 4
