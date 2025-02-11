@@ -20,6 +20,7 @@ import retrofit2.Callback
 import retrofit2.Response
 import java.io.File
 import java.io.FileOutputStream
+import kotlin.math.round
 
 class ResultActivity : AppCompatActivity() {
     private lateinit var videoView: VideoView
@@ -83,8 +84,13 @@ class ResultActivity : AppCompatActivity() {
             flippedVideoPath?.let { flippedPath ->
                 originalVideo?.let { originalPath ->
                     val currentPosition = videoView.currentPosition // 현재 재생 위치 (밀리초 단위)
-                    val frameIndex = (currentPosition / (1000 / 30))
-                    Log.d("currentFrameIndex", "$frameIndex")
+                    val currentSecond = (currentPosition / 1000.0)
+                    val frameIndex = maxOf(0, round(currentSecond * 30).toInt() - 1)
+
+                    Log.d("currentPosition", "$currentPosition")
+                    Log.d("currentPosition/1000", "$currentSecond")
+                    Log.d("userFrameIndex", "$frameIndex")
+
                     // 서버 피드백 요청
                     feedbackRequest(frameIndex, originalPath)
                 }
@@ -93,35 +99,6 @@ class ResultActivity : AppCompatActivity() {
 
         setupSeekBar()
     }
-
-//    private fun frameOutput(videoPath: String, frameTimeMs: Int): Int {
-//        val retriever = MediaMetadataRetriever()
-//        try {
-//            retriever.setDataSource(videoPath) // 비디오 파일 경로 설정
-//            val durationStr = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)
-//            val durationMs = durationStr?.toIntOrNull() ?: 0
-//
-//            if (frameTimeMs > durationMs) {
-//                Log.e("FrameOutput", "지정된 시간이 동영상 길이를 초과했습니다.")
-//                return -1 // 잘못된 인덱스
-//            }
-//
-//            val frameBitmap = retriever.getFrameAtTime(frameTimeMs * 1000L, MediaMetadataRetriever.OPTION_CLOSEST_SYNC)
-//
-//            if (frameBitmap != null) {
-//                saveFrameToCache(frameBitmap) // 프레임 이미지를 임시 저장 (원한다면)
-//                return frameTimeMs // 성공적으로 캡처된 프레임의 시간 반환
-//            } else {
-//                Log.e("FrameOutput", "프레임을 가져올 수 없습니다.")
-//                return -1
-//            }
-//        } catch (e: Exception) {
-//            e.printStackTrace()
-//            return -1
-//        } finally {
-//            retriever.release() // 리소스 해제
-//        }
-//    }
 
     private fun saveFrameToCache(bitmap: Bitmap): Uri {
         val cachePath = File(cacheDir, "frames")
@@ -204,11 +181,15 @@ class ResultActivity : AppCompatActivity() {
                     val targetFrame = response.body()?.get("frame")?.toIntOrNull()
                     Log.d("frame", "$targetFrame")
                     if (targetFrame != null) {
-                        val frameBitmap = extractFrameAtTime(targetFrame * 1000L * 30, videoPath)
+                        val frameTime = targetFrame * 1000000L / 30 // 마이크로초 단위
+                        val frameBitmap = extractFrameAtTime(frameTime, videoPath)
+                        Log.d("frameTime", "$frameTime")
                         Log.d("Bitmap", "$frameBitmap")
                         frameBitmap?.let { bitmap ->
                             val frameUri = saveFrameToCache(bitmap)
+                            Log.d("frameUri", "$frameUri")
                             findViewById<FrameLayout>(R.id.feedbackFrameLayout).visibility = View.VISIBLE
+                            frameImageView.setImageURI(null)
                             frameImageView.setImageURI(frameUri)
                         } ?: run {
                             Toast.makeText(
@@ -236,15 +217,18 @@ class ResultActivity : AppCompatActivity() {
         })
     }
 
-    private fun extractFrameAtTime(frameTimeMs: Long, videoPath: String): Bitmap? {
+    private fun extractFrameAtTime(frameTimeUs: Long, videoPath: String): Bitmap? {
         val retriever = MediaMetadataRetriever()
         return try {
+            Log.d("try", "try")
             retriever.setDataSource(videoPath)
-            retriever.getFrameAtTime(frameTimeMs, MediaMetadataRetriever.OPTION_CLOSEST)
+            retriever.getFrameAtTime(frameTimeUs, MediaMetadataRetriever.OPTION_CLOSEST)
         } catch (e: Exception) {
+            Log.d("catch", "catch")
             e.printStackTrace()
             null
         } finally {
+            Log.d("finally", "finally")
             retriever.release()
         }
     }

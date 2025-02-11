@@ -29,7 +29,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="딴 - 따라와 함께 춤추고 싶은 영상을 알려주세요!"
-            android:textSize="18sp"
+            android:textSize="19sp"
             android:layout_marginTop="30sp"/>
 
         <Space
@@ -67,9 +67,9 @@
                 android:layout_height="match_parent"
                 android:alpha="0.5"
                 android:ems="10"
-                android:hint="youtube.com/..."
+                android:hint="youtube, instagram, tictok 링크를 입력해주세요."
                 android:inputType="text"
-                android:textColor="#003482"
+                android:textColor="#000000"
                 android:textColorHint="#003482"
                 android:textSize="14sp" />
 
@@ -89,24 +89,28 @@
             android:layout_width="370dp"
             android:layout_height="wrap_content"
             android:text="✅ 확인해주세요!"
+            android:textSize="17sp"
             android:layout_marginTop="50sp"/>
 
         <TextView
             android:id="@+id/textView7"
             android:layout_width="340dp"
             android:layout_height="wrap_content"
+            android:textSize="15sp"
             android:text="· 60초 이내의 영상으로 골라주세요." />
 
         <TextView
             android:id="@+id/textView8"
             android:layout_width="340dp"
             android:layout_height="wrap_content"
+            android:textSize="15sp"
             android:text="· 한 사람만이 등장하는 영상으로 골라주세요. " />
 
         <TextView
             android:id="@+id/textView9"
             android:layout_width="340dp"
             android:layout_height="wrap_content"
+            android:textSize="15sp"
             android:text="· 정면으로 촬영된 영상이어야 정확한 피드백이 가능합니다." />
 
     </LinearLayout>

@@ -1,3 +1,5 @@
+@file:Suppress("PackageName")
+
 package com.example.DDanDDara
 
 import okhttp3.OkHttpClient

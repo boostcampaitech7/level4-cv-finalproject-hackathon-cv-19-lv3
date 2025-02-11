@@ -16,22 +16,33 @@
 
     <TextView
         android:id="@+id/textView12"
-        android:layout_width="250dp"
+        android:layout_width="300dp"
         android:layout_height="wrap_content"
         android:text="· 한 사람만 촬영해주세요. "
+        android:textSize="16sp"
         android:layout_marginTop="20sp" />
 
     <TextView
         android:id="@+id/textView13"
-        android:layout_width="250dp"
+        android:layout_width="300dp"
         android:layout_height="wrap_content"
+        android:textSize="16sp"
         android:text= "· 전신이 모두 나오도록 촬영해주세요. "/>
 
     <TextView
         android:id="@+id/textView14"
-        android:layout_width="250dp"
+        android:layout_width="300dp"
         android:layout_height="wrap_content"
-        android:text="· 아래 확인 버튼을 누르면 5초 뒤 촬영이 시작됩니다. " />
+        android:textSize="16sp"
+        android:text="· 확인 버튼을 누른 뒤 권한을 허용해주세요. " />
+
+    <TextView
+        android:id="@+id/textView15"
+        android:layout_width="300dp"
+        android:layout_height="wrap_content"
+        android:textSize="16sp"
+        android:text="· 촬영 버튼을 누르면 5초 뒤 자동 녹화됩니다. " />
+
 
     <Button
         android:id="@+id/confirmButton"

@@ -107,7 +107,6 @@ class UrlCheckActivity : AppCompatActivity() {
 
         val confirmButton = dialogView.findViewById<Button>(R.id.confirmButton)
         confirmButton.setOnClickListener {
-            Toast.makeText(this, "확인 버튼 클릭!", Toast.LENGTH_SHORT).show()
             val intent = Intent(this, CameraActivity::class.java).apply {
                 putExtra("originalVideoPath", youtubeVideoPath)
                 putExtra("folderId", folderId)
