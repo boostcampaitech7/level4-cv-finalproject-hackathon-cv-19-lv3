@@ -1,3 +1,19 @@
+*.iml
+../.gradle
+/frontend/local.properties
+/frontend/.idea/caches
+/frontend/.idea/libraries
+/frontend/.idea/modules.xml
+/frontend/.idea/workspace.xml
+/frontend/.idea/navEditor.xml
+/frontend/.idea/assetWizardSettings.xml
+.DS_Store
+/build
+/captures
+.externalNativeBuild
+.cxx
+local.properties
+
 # data
 clova_datasets
 

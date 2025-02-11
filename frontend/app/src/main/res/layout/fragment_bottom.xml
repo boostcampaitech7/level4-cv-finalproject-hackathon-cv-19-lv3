@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    xmlns:tools="http://schemas.android.com/tools"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:gravity="bottom|center"
+    android:orientation="vertical">
+
+    <RelativeLayout
+        android:layout_width="397dp"
+        android:layout_height="wrap_content"
+        android:gravity="center">
+
+        <ImageView
+            android:id="@+id/imageView9"
+            android:layout_width="match_parent"
+            android:layout_height="67dp"
+            app:srcCompat="@drawable/navigation" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="62dp"
+            android:gravity="center"
+            android:orientation="horizontal">
+
+            <Space
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="0.2" />
+
+            <ImageButton
+                android:id="@+id/home_btn"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:background="#00FFFFFF"
+                android:contentDescription="@string/home_button_description"
+                app:srcCompat="@drawable/home" />
+
+            <Space
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1" />
+
+            <ImageView
+                android:id="@+id/imageView10"
+                android:layout_width="163dp"
+                android:layout_height="33dp"
+                app:srcCompat="@drawable/white_logo" />
+
+            <Space
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1" />
+
+            <ImageButton
+                android:id="@+id/back_btn"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:background="#00FFFFFF"
+                android:contentDescription="@string/back_button_description"
+                app:srcCompat="@drawable/arrow_back" />
+
+            <Space
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="0.2" />
+        </LinearLayout>
+
+    </RelativeLayout>
+
+    <Space
+        android:layout_width="match_parent"
+        android:layout_height="10dp" />
+
+    <TextView
+        android:id="@+id/copyright_txt"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:gravity="bottom|center"
+        android:text="ⓒ 2025. 영원한종이박 All rights reserved."
+        android:textSize="8sp"
+        tools:layout_editor_absoluteX="133dp"
+        tools:layout_editor_absoluteY="692dp" />
+
+    <Space
+        android:layout_width="match_parent"
+        android:layout_height="10dp" />
+
+</LinearLayout>
