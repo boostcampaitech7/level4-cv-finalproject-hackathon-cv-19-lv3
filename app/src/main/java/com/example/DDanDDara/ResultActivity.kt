@@ -81,6 +81,7 @@ class ResultActivity : AppCompatActivity() {
         }
 
         feedbackButton.setOnClickListener {
+            Toast.makeText(this@ResultActivity, "피드백을 요청했습니다.", Toast.LENGTH_SHORT).show()
             flippedVideoPath?.let { flippedPath ->
                 originalVideo?.let { originalPath ->
                     val currentPosition = videoView.currentPosition // 현재 재생 위치 (밀리초 단위)
@@ -202,6 +203,7 @@ class ResultActivity : AppCompatActivity() {
                         Toast.makeText(this@ResultActivity, "올바른 프레임 값을 받지 못했습니다.", Toast.LENGTH_SHORT).show()
                     }
                     if (!feedback.isNullOrEmpty()) {
+                        Toast.makeText(this@ResultActivity, "피드백이 출력되었습니다.", Toast.LENGTH_SHORT).show()
                         feedbackTextView.text = feedback // 피드백 텍스트를 화면에 표시
                     } else {
                         Toast.makeText(this@ResultActivity, "피드백을 받을 수 없습니다.", Toast.LENGTH_SHORT).show()
