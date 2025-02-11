@@ -50,6 +50,9 @@
 
 <br/>
 
+![image](https://github.com/user-attachments/assets/43623e56-a9ed-45d1-ab26-4ba720b383fb)
+
+
 <br/>
 <h3>2. 노래에 맞춰 신나게 딴따라 해보세요! </h3>
 
