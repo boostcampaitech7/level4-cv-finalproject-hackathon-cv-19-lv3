@@ -1010,16 +1010,16 @@ if __name__ == "__main__":
     
 
     # 정규화하기
-    # pose_landmarks_np_1 = scoring.refine_landmarks(landmark_1)
-    # pose_landmarks_np_2 = scoring.refine_landmarks(landmark_2)
-    # normalized_pose_landmarks_np_2 = scoring.normalize_landmarks_to_range(
-    #     scoring.refine_landmarks(landmark_1, target_keys=config.TOTAL_KEYPOINTS), 
-    #     scoring.refine_landmarks(landmark_2, target_keys=config.TOTAL_KEYPOINTS)
-    # )
-    # for i, landmarks in enumerate(landmark_2):
-    #     landmarks.x = normalized_pose_landmarks_np_2[i, 0]
-    #     landmarks.y = normalized_pose_landmarks_np_2[i, 1]
-    #     landmarks.z = normalized_pose_landmarks_np_2[i, 2]
+    pose_landmarks_np_1 = scoring.refine_landmarks(landmark_1)
+    pose_landmarks_np_2 = scoring.refine_landmarks(landmark_2)
+    normalized_pose_landmarks_np_2 = scoring.normalize_landmarks_to_range(
+        scoring.refine_landmarks(landmark_1, target_keys=config.TOTAL_KEYPOINTS), 
+        scoring.refine_landmarks(landmark_2, target_keys=config.TOTAL_KEYPOINTS)
+    )
+    for i, landmarks in enumerate(landmark_2):
+        landmarks.x = normalized_pose_landmarks_np_2[i, 0]
+        landmarks.y = normalized_pose_landmarks_np_2[i, 1]
+        landmarks.z = normalized_pose_landmarks_np_2[i, 2]
 
 
     # difference를 기반으로 결과 뽑기
@@ -1030,6 +1030,3 @@ if __name__ == "__main__":
     agg_feedback = aggregate_feedback(feedback)
 
     print(refine_float_dict(diffs))
-    # print(feedback)
-    # print(agg_feedback)
-    # print(get_connected_sentence_from_dict(agg_feedback))
