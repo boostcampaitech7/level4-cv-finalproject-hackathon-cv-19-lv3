@@ -2,7 +2,9 @@
 /output_frames
 # 무시할 폴더 목록
 .venv/
-function_check/
+output_frames/
+Pose_Estimation/
+>>>>>>> cam_video_mediapipe
 RAG/
 video/
 compare/
