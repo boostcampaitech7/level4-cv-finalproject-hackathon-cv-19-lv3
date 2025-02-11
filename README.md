@@ -56,15 +56,36 @@
 <br/>
 <h3>2. 노래에 맞춰 신나게 딴따라 해보세요! </h3>
 
+- 우측 상단 위 원본 챌린지 영상, 노래와 함께 춤춰요.
+
+![image](https://github.com/user-attachments/assets/514ef623-3102-4e94-b8dc-2decfd0e197e)
+
+
+<br/>
 <br/>
 <br/>
 <h3>3. 딴따라가 제공한 댄스 피드백으로 자신의 안무를 다듬어 보세요!</h3>
+
+- 원하는 프레임의 내 모습에 대해 자세한 피드백을 받을 수 있습니다. 전체 영상에 대한 총 점수도요!
+
+  ![image](https://github.com/user-attachments/assets/4be6fbcc-4762-4484-88ac-9a7c235ebd56)
 
 <br/>
 <br/>
 <h3>4. 댄스가 마음에 드셨나요? 영상을 다운로드하고 챌린지를 업로드 해봐요!</h3>
 
+- 영상을 다시 찍을 수도, SNS에 게시하기 위해 갤러리에 저장할 수도 있습니다.
+  
+![image](https://github.com/user-attachments/assets/964974ab-e944-4452-9fec-9a58cf278d8f)
+
 <br/>
+<br/>
+
+<br/>
+
+
+<br/>
+
 
 
 # ⌛ 딴 - 따라 Service Timeline
