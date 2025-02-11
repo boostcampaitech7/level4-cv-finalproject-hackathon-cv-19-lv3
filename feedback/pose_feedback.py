@@ -1136,14 +1136,14 @@ def aggregate_feedback(feedback):
 
 if __name__ == "__main__":
     img_path_1 = './images/jun_ude.jpg'
-    img_path_2 = './images/sy_shell.jpg'
+    img_path_2 = './images/jun_v.jpg'
 
 
     import sys
     sys.path.append("./")
     from dance_scoring import detector, scoring
     import config
-    from feedback.pose_compare import extract_pose_world_landmarks
+    from feedback.pose_compare import extract_pose_world_landmarks, extract_pose_landmarks
 
 
     # 랜드마크 추출
@@ -1164,15 +1164,19 @@ if __name__ == "__main__":
         landmarks.y = normalized_pose_landmarks_np_2[i, 1]
         landmarks.z = normalized_pose_landmarks_np_2[i, 2]
 
-
-    # difference를 기반으로 결과 뽑기
     result_1 = extract_pose_world_landmarks(landmark_1)
     result_2 = extract_pose_world_landmarks(landmark_2)
-    differences = json_to_prompt_3(result_1, result_2)
-    feedback_lst = get_korean_feedback_posescript(
-        differences)
-    for feedback in feedback_lst:
-        print(feedback)
+    differences = print(str(json_to_prompt(result_1, result_2)))
+
+
+    # difference를 기반으로 결과 뽑기
+    # result_1 = extract_pose_world_landmarks(landmark_1)
+    # result_2 = extract_pose_world_landmarks(landmark_2)
+    # differences = json_to_prompt_3(result_1, result_2)
+    # feedback_lst = get_korean_feedback_posescript(
+    #     differences)
+    # for feedback in feedback_lst:
+    #     print(feedback)
 
 
 # if __name__ == "__main__":

@@ -491,17 +491,17 @@ ranges = {
         }
     },
     'left_leg':{
-        'bend_angle_difference': (-140, 140), # 음수면 왼팔을 더 굽혀라, 양수면 왼팔을 더 펴라
-        'height_difference': (-140, 140), # 음수면 왼팔을 더 내려라, 양수면 왼팔을 더 올려라
-        'direction_difference': (-140, 140) # 음수, 양수 관계없이 왼팔 방향이 맞지 않는다
+        'bend_angle_difference': (-140, 140),
+        'height_difference': (-140, 140),
+        'direction_difference': (-140, 140)
     },
     'right_leg':{
-        'bend_angle_difference': (-140, 140), # 음수면 왼팔을 더 굽혀라, 양수면 왼팔을 더 펴라
-        'height_difference': (-140, 140), # 음수면 왼팔을 더 내려라, 양수면 왼팔을 더 올려라
-        'direction_difference': (-140, 140) # 음수, 양수 관계없이 왼팔 방향이 맞지 않는다
+        'bend_angle_difference': (-140, 140), 
+        'height_difference': (-140, 140), 
+        'direction_difference': (-140, 140) 
     },
     'leg':{
-        'knee_distance_difference': (-0.4, 0.4), # 음수면 무릎을 더 붙여라, 양수면 무릎을 너무 붙이지 마라
+        'knee_distance_difference': (-0.4, 0.4),
         'foot_distance_difference': (-0.6, 0.6)
     }
 }

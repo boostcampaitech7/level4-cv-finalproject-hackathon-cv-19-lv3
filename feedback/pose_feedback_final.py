@@ -955,6 +955,11 @@ def get_connected_sentence_from_dict(agg_feedback):
         "스텝이 너무 정확하고 깔끔해서 감탄했어요!"
     ]
 
+    start_word = [
+        "우선, ",
+        "피드백을 드릴께요."
+    ]
+
     connect_word = [
         "계속해서 ",
         "다음으로는 ",
@@ -970,7 +975,7 @@ def get_connected_sentence_from_dict(agg_feedback):
             continue
         
         if idx == 0:
-            feedback_string += "우선, "
+            feedback_string += random.choice(start_word)
             idx += 1
         else:
             feedback_string += random.choice(connect_word)
@@ -987,12 +992,13 @@ def get_connected_sentence_from_dict(agg_feedback):
 
 if __name__ == "__main__":
     img_path_1 = './images/jun_ude.jpg'
-    img_path_2 = './images/sy_shell.jpg'
+    img_path_2 = './images/jun_v.jpg'
 
 
     import sys
     sys.path.append("./")
     from dance_scoring import detector, scoring
+    from data_pipeline.pipeline import refine_float_dict
     import config
     from feedback.pose_compare import extract_pose_world_landmarks
 
@@ -1004,16 +1010,16 @@ if __name__ == "__main__":
     
 
     # 정규화하기
-    pose_landmarks_np_1 = scoring.refine_landmarks(landmark_1)
-    pose_landmarks_np_2 = scoring.refine_landmarks(landmark_2)
-    normalized_pose_landmarks_np_2 = scoring.normalize_landmarks_to_range(
-        scoring.refine_landmarks(landmark_1, target_keys=config.TOTAL_KEYPOINTS), 
-        scoring.refine_landmarks(landmark_2, target_keys=config.TOTAL_KEYPOINTS)
-    )
-    for i, landmarks in enumerate(landmark_2):
-        landmarks.x = normalized_pose_landmarks_np_2[i, 0]
-        landmarks.y = normalized_pose_landmarks_np_2[i, 1]
-        landmarks.z = normalized_pose_landmarks_np_2[i, 2]
+    # pose_landmarks_np_1 = scoring.refine_landmarks(landmark_1)
+    # pose_landmarks_np_2 = scoring.refine_landmarks(landmark_2)
+    # normalized_pose_landmarks_np_2 = scoring.normalize_landmarks_to_range(
+    #     scoring.refine_landmarks(landmark_1, target_keys=config.TOTAL_KEYPOINTS), 
+    #     scoring.refine_landmarks(landmark_2, target_keys=config.TOTAL_KEYPOINTS)
+    # )
+    # for i, landmarks in enumerate(landmark_2):
+    #     landmarks.x = normalized_pose_landmarks_np_2[i, 0]
+    #     landmarks.y = normalized_pose_landmarks_np_2[i, 1]
+    #     landmarks.z = normalized_pose_landmarks_np_2[i, 2]
 
 
     # difference를 기반으로 결과 뽑기
@@ -1023,7 +1029,7 @@ if __name__ == "__main__":
     feedback = get_korean_3D_feedback(diffs)
     agg_feedback = aggregate_feedback(feedback)
 
-    print(diffs)
-    print(feedback)
-    print(agg_feedback)
-    print(get_connected_sentence_from_dict(agg_feedback))
+    print(refine_float_dict(diffs))
+    # print(feedback)
+    # print(agg_feedback)
+    # print(get_connected_sentence_from_dict(agg_feedback))

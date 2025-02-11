@@ -208,7 +208,7 @@ elif page_option == 'Image Compare':
         # normalize한 경우에 대한 overlap image와 점수 계산
         pose_landmarks_np_1 = scoring.refine_landmarks(pose_landmarks_1)
         pose_landmarks_np_2 = scoring.refine_landmarks(pose_landmarks_2)
-        evaluation_results = scoring.evaluate_everything(pose_landmarks_np_1, b1, pose_landmarks_np_2, b2, pck_thres=pck_thres, normalize=True, ignore_z=ignore_z)
+        evaluation_results = scoring.evaluate_everything(pose_landmarks_np_1, b1, pose_landmarks_np_2, pck_thres=pck_thres, normalize=True, ignore_z=ignore_z)
 
         overlap_img1 = cv2.cvtColor(cv2.imread(temp_filepath_1), cv2.COLOR_BGR2RGB)
         overlap_img1 = util.image_alpha_control(overlap_img1, alpha=0.4)
@@ -235,7 +235,7 @@ elif page_option == 'Image Compare':
 
 
         # normalize를 진행하지 않은 경우에 대한 overlap image와 점수 계산
-        evaluation_results_2 = scoring.evaluate_everything(pose_landmarks_np_1, b1, scoring.refine_landmarks(pose_landmarks_2), b2, pck_thres=pck_thres, normalize=False, ignore_z=ignore_z)
+        evaluation_results_2 = scoring.evaluate_everything(pose_landmarks_np_1, b1, scoring.refine_landmarks(pose_landmarks_2), pck_thres=pck_thres, normalize=False, ignore_z=ignore_z)
         overlap_img2 = cv2.cvtColor(cv2.imread(temp_filepath_1), cv2.COLOR_BGR2RGB)
         overlap_img2 = util.image_alpha_control(overlap_img2, alpha=0.4)
         overlap_img2 = util.draw_landmarks_on_image(overlap_img2, pose_landmarks_1)
@@ -522,15 +522,15 @@ else:
             
 
 
-            # result_json = json_to_prompt(target_pose_landmarks_json, user_pose_landmarks_json)
-            # json_3D = json_to_prompt_2(target_pose_landmarks_json, user_pose_landmarks_json)
-            # json_pose_script = json_to_prompt_3(target_pose_landmarks_json, user_pose_landmarks_json)
+            result_json = json_to_prompt(target_pose_landmarks_json, user_pose_landmarks_json)
+            json_3D = json_to_prompt_2(target_pose_landmarks_json, user_pose_landmarks_json)
+            json_pose_script = json_to_prompt_3(target_pose_landmarks_json, user_pose_landmarks_json)
 
-            # feedback_3D = generate_3D_feedback(json_3D, threshold=20)
-            # feedback_script = get_korean_feedback_posescript(json_pose_script)
+            feedback_3D = generate_3D_feedback(json_3D, threshold=20)
+            feedback_script = get_korean_feedback_posescript(json_pose_script)
 
-            # print(str(result_json))
-            # feedback_algorithm = generate_korean_feedback(result_json, threshold=threshold)
+            print(str(result_json))
+            feedback_algorithm = generate_korean_feedback(result_json, threshold=threshold)
             feedback_clova = base_feedback_model(str(refine_float_dict(diffs)))
 
             col1, col2 = st.columns(2)
@@ -544,15 +544,14 @@ else:
                 st.subheader("유저 프레임")
                 st.image(original_video_frames_2[user_idx])
                 st.json(agg_feedback)
-            st.json(diffs)
             
-            # col1, col2, col3 = st.columns(3)
-            # with col1:
-            #     st.subheader("알고리즘 기반 피드백")
-            #     st.json(feedback_algorithm)
-            # with col2:
-            #     st.subheader("3D 피드백")
-            #     st.json(feedback_3D)
-            # with col3:
-            #     st.subheader("posescript")
-            #     st.text(' '.join(feedback_script))
+            col1, col2, col3 = st.columns(3)
+            with col1:
+                st.subheader("알고리즘 기반 피드백")
+                st.json(feedback_algorithm)
+            with col2:
+                st.subheader("3D 피드백")
+                st.json(feedback_3D)
+            with col3:
+                st.subheader("posescript")
+                st.text(' '.join(feedback_script))
