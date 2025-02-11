@@ -6,9 +6,11 @@ import subprocess
 from fastapi.responses import JSONResponse, FileResponse
 from config import logger
 from constants import FilePaths, ResponseMessages
+from constants import SELECTED_KEYPOINTS as SELECTED_POINTS
 from models.mediapipe import mp_model
 
-SELECTED_POINTS = [0, 7, 8, 11, 12, 13, 14, 15, 16, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32]
+# SELECTED_POINTS = [0, 7, 8, 11, 12, 13, 14, 15, 16, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32]
+
 pose = mp_model()
 
 def extract_pose(video_path: str):

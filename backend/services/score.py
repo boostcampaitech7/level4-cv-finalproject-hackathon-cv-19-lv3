@@ -5,7 +5,7 @@ from fastdtw import fastdtw
 from fastapi.responses import JSONResponse
 from scipy.spatial.distance import euclidean, cosine
 from config import logger
-from constants import FilePaths, ResponseMessages
+from constants import FilePaths, ResponseMessages, SELECTED_SIGMAS
 
 def read_pose(h5_path: str):
     """Read pose landmarks from h5 file."""
@@ -32,22 +32,50 @@ def normalize_landmarks_to_range(keypoints1: np.ndarray, keypoints2: np.ndarray,
 
     return np.linalg.norm(keypoints1 - keypoints2)
 
+def normalize_landmarks_to_range_by_mean(all_landmarks_np_1, all_landmarks_np_2, eps=1e-7):
+    """
+    Normalize landmarks2 to match the coordinate range of landmarks1 using the average min and max values across frames.
+
+    Parameters:
+        all_landmarks_np_1 (numpy array): Keypoints array for the first pose (num_frames, num_selected_point, 4).
+        all_landmarks_np_2 (numpy array): Keypoints array for the second pose (num_frames, num_selected_point, 4).
+
+    Returns:
+        numpy array: Normalized landmarks2 matching the range of landmarks1.
+    """
+    # Calculate the average min and max values for landmarks1
+    min1_mean = np.mean(np.min(all_landmarks_np_1[:, :, :3], axis=1), axis=0)  # Average of per-frame (x_min, y_min, z_min)
+    max1_mean = np.mean(np.max(all_landmarks_np_1[:, :, :3], axis=1), axis=0)  # Average of per-frame (x_max, y_max, z_max)
+
+    # Calculate the average min and max values for landmarks2
+    min2_mean = np.mean(np.min(all_landmarks_np_2[:, :, :3], axis=1), axis=0)  # Average of per-frame (x_min, y_min, z_min)
+    max2_mean = np.mean(np.max(all_landmarks_np_2[:, :, :3], axis=1), axis=0)  # Average of per-frame (x_max, y_max, z_max)
+
+    # Normalize all frames of landmarks2 to match the range of landmarks1
+    normalized_landmarks2 = (all_landmarks_np_2[:, :, :3] - min2_mean) / (max2_mean - min2_mean + eps) * (max1_mean - min1_mean) + min1_mean
+
+    # Combine normalized coordinates with the original visibility values
+    normalized_landmarks2 = np.concatenate((normalized_landmarks2, all_landmarks_np_2[:, :, 3:4]), axis=2)
+
+    return normalized_landmarks2
+
 def oks(gt: np.ndarray, preds: np.ndarray) -> float:
     """Calculate Object Keypoint Similarity."""
-    SELECTED_SIGMAS = np.array([
-        0.026,  # nose
-        0.035, 0.035,  # ears
-        0.079, 0.079,  # shoulders
-        0.072, 0.072,  # elbows
-        0.062, 0.062,  # wrists
-        0.107, 0.107,  # hips
-        0.087, 0.087,  # knees
-        0.089, 0.089,  # ankles
-        0.089, 0.089,  # heels
-        0.072, 0.072   # foot indices
-    ])
+    # SELECTED_SIGMAS = np.array([
+    #     0.026,  # nose
+    #     0.035, 0.035,  # ears
+    #     0.079, 0.079,  # shoulders
+    #     0.072, 0.072,  # elbows
+    #     0.062, 0.062,  # wrists
+    #     0.107, 0.107,  # hips
+    #     0.087, 0.087,  # knees
+    #     0.089, 0.089,  # ankles
+    #     0.089, 0.089,  # heels
+    #     0.072, 0.072   # foot indices
+    # ])
+    selected_sigma = np.array(SELECTED_SIGMAS)
     distance = np.linalg.norm(gt - preds, axis=1)
-    kp_c = SELECTED_SIGMAS * 2
+    kp_c = selected_sigma * 2
 
     return np.mean(np.exp(-(distance ** 2) / (2 * (kp_c ** 2))))
 
