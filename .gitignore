@@ -199,3 +199,14 @@ cython_debug/
 
 # dtw 매칭 프레임 생성 폴더
 /output_frames
+# 무시할 폴더 목록
+.venv/
+output_frames/
+Pose_Estimation/
+>>>>>>> cam_video_mediapipe
+RAG/
+video/
+compare/
+
+# 특정 파일 무시
+*.pyc  # Python 컴파일된 파일
