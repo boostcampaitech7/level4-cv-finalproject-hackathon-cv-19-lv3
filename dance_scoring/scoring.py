@@ -1,8 +1,10 @@
+import sys
+sys.path.append("./")
 import numpy as np
 from collections import defaultdict
 from scipy.spatial.distance import euclidean
 from fastdtw import fastdtw
-from .keypoint_map import KEYPOINT_MAPPING, SELECTED_KEYPOINTS, SELECTED_SIGMAS
+from config import KEYPOINT_MAPPING, SELECTED_KEYPOINTS, SELECTED_SIGMAS
 
 
 # refine landmark result to numpy array

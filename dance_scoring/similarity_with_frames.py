@@ -1,7 +1,9 @@
 import numpy as np
+import sys
+sys.path.append("./")
 from fastdtw import fastdtw 
 from scipy.spatial.distance import euclidean, cosine
-from .keypoint_map import SELECTED_KEYPOINTS, SELECTED_SIGMAS
+from config import SELECTED_KEYPOINTS, SELECTED_SIGMAS
 
 
 # PCK 값 계산 함수

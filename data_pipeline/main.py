@@ -2,7 +2,7 @@ import os
 import pandas as pd
 import argparse
 import glob
-from pipeline import compare_video_pair, make_dataset, make_random_dataset
+from pipeline import compare_video_pair, make_dataset, make_random_dataset, make_random_3D_dataset
 from tqdm import tqdm
 
 def str_to_bool(value):
@@ -25,7 +25,7 @@ def parse_arguments():
     parser.add_argument(
         "--system_prompt_path",
         type=str,
-        default="./prompts/structured_system_prompt_short.txt",
+        default="./prompts/good_sentence_prompt.txt",
         help="system prompt로 사용할 지시문이 담겨있는 txt파일의 경로"
     )
     
@@ -47,13 +47,13 @@ def parse_arguments():
         '--threshold',
         type=int,
         default=30,
-        help='얼마만큼의 각도차이가 나야 피드백 대상으로 선정되는지를 정하는 threshold값'
+        help='얼마만큼의 각도차이가 나야 피드백 대상으로 선정되는지를 정하는 threshold값. random생성 시에는 최대 threshold값으로 정해지며, 그 범위는 (10 ~ threshold)가 된다. 만약 10이하의 경우 무시당하니 주의'
     )
 
     parser.add_argument(
         '--ignore_low_difference',
         type=str_to_bool,
-        default=True,
+        default=False,
         help="threshold보다 낮은 difference의 정보를 input에 넣을지 여부."
     )
 
@@ -62,6 +62,13 @@ def parse_arguments():
         type=str_to_bool,
         default=False,
         help="수치를 문장화시킬지 여부."
+    )
+
+    parser.add_argument(
+        '--perfect_rate',
+        type=float,
+        default=0.1,
+        help='랜덤 데이터 중 몇%가 완벽한 자세 데이터인지 결정'
     )
 
     args = parser.parse_args()
@@ -76,6 +83,7 @@ def main():
     threshold = args.threshold
     ignore_low_difference = args.ignore_low_difference
     do_numeric_to_text= args.do_numeric_to_text
+    perfect_rate = args.perfect_rate
 
     # system prompt 가져오기
     if system_prompt_path:
@@ -118,7 +126,8 @@ def main():
             random_cnt = int(random_cnt)
         except:
             random_cnt = 1000
-        total_result = make_random_dataset(random_cnt, system_prompt, threshold=threshold, ignore_low_difference=ignore_low_difference, do_numeric_to_text=do_numeric_to_text)
+        # total_result = make_random_dataset(random_cnt, system_prompt, max_threshold=threshold, perfect_rate=perfect_rate, ignore_low_difference=ignore_low_difference, do_numeric_to_text=do_numeric_to_text)
+        total_result = make_random_3D_dataset(random_cnt, system_prompt, angle_thres=20, dist_thres=0.12, height_thres=20, perfect_rate=perfect_rate)
 
     # instruction 형식이 아닌 경우 text, completion 열만 필요함
     if not instruction_dataset:

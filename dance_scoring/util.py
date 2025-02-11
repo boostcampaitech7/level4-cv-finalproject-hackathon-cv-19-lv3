@@ -1,4 +1,6 @@
 import os
+import sys
+sys.path.append("./")
 from copy import deepcopy
 import platform
 import subprocess
@@ -9,7 +11,7 @@ from mediapipe.framework.formats import landmark_pb2
 import random
 import cv2
 from pathlib import Path
-from .keypoint_map import KEYPOINT_MAPPING
+from config import KEYPOINT_MAPPING
 
 
 

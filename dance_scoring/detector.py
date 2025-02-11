@@ -1,4 +1,6 @@
 import cv2
+import sys
+sys.path.append("./")
 import mediapipe as mp
 import numpy as np
 import matplotlib.pyplot as plt
@@ -6,7 +8,7 @@ from collections import namedtuple
 import warnings
 from tqdm import tqdm
 from .util import draw_landmarks_on_image
-from .keypoint_map import KEYPOINT_MAPPING, NORMALIZED_LANDMARK_KEYS
+from config import KEYPOINT_MAPPING, NORMALIZED_LANDMARK_KEYS
 
 
 class PoseDetector:
@@ -62,7 +64,7 @@ class PoseDetector:
         else:
             warnings.warn("there is no pose_landmarks in the image!!")
             return None, None, None, None
-        return detection_result.pose_landmarks.landmark, detection_result.segmentation_mask, annotated_image, boxsize
+        return detection_result.pose_world_landmarks.landmark, detection_result.segmentation_mask, annotated_image, boxsize
     
 
     def get_video_landmarks(self, video_path, do_resize=True, resize_shape=None):
@@ -153,12 +155,27 @@ def get_skeleton_from_landmarks(
     return skeleton_image
 
 
-def post_process_pose_landmarks(pose_landmarks_results, fill_value=0.99999):
+def post_process_pose_landmarks(pose_landmarks_results, fill_value=-1):
     # pose landmark result로부터 list(landmarks)의 형태를 만듦. 만약 landmarks가 없다면 None으로 채움
     if isinstance(pose_landmarks_results[0].pose_landmarks, list):
         pose_landmarks_results_list =  [res.pose_landmarks[0] if res.pose_landmarks else None for res in pose_landmarks_results]
     else:
         pose_landmarks_results_list = [res.pose_landmarks.landmark if res.pose_landmarks else None for res in pose_landmarks_results]
+    
+    # fill None frame pose_landmarks and None keypoints
+    NormalizedLandmark = namedtuple('NormalizedLandmark', NORMALIZED_LANDMARK_KEYS)
+    none_fill_value = [NormalizedLandmark(**{k:fill_value for k in NORMALIZED_LANDMARK_KEYS}) for _ in range(len(KEYPOINT_MAPPING))]
+    for i in range(len(pose_landmarks_results_list)):
+        if pose_landmarks_results_list[i] is None:
+            pose_landmarks_results_list[i] = none_fill_value
+    return pose_landmarks_results_list
+
+def post_process_world_pose_landmarks(pose_landmarks_results, fill_value=-1):
+    # pose landmark result로부터 list(landmarks)의 형태를 만듦. 만약 landmarks가 없다면 None으로 채움
+    if isinstance(pose_landmarks_results[0].pose_landmarks, list):
+        pose_landmarks_results_list =  [res.pose_world_landmarks[0] if res.pose_world_landmarks else None for res in pose_landmarks_results]
+    else:
+        pose_landmarks_results_list = [res.pose_world_landmarks.landmark if res.pose_world_landmarks else None for res in pose_landmarks_results]
     
     # fill None frame pose_landmarks and None keypoints
     NormalizedLandmark = namedtuple('NormalizedLandmark', NORMALIZED_LANDMARK_KEYS)
