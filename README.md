@@ -127,12 +127,12 @@
         <td>T7154</td>
     </tr>
     <tr align="center">
-        <td>AI - CLOVA Prompt</td>
-        <td>Frontend, AI</td>
-        <td>AI - DTW</td>
-        <td>Backend, AI</td>
-        <td>Design, AI</td>
-        <td>AI - CLOVA tuning</td>
+        <td>CLOVA Prompt<br>8집 가수</td>
+        <td>Frontend<br>댄스 머신</td>
+        <td>AI<br>로미오</td>
+        <td>Backend<br>줄리엣</td>
+        <td>Design<br>소리스타</td>
+        <td>CLOVA tuning<br>Chill가이</td>
     </tr>
 </table>
 
