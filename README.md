@@ -131,8 +131,8 @@
         <td>Frontend<br>댄스 머신</td>
         <td>AI<br>로미오</td>
         <td>Backend<br>줄리엣</td>
-        <td>Design<br>소리스타</td>
-        <td>CLOVA tuning<br>Chill가이</td>
+        <td>CLOVA Tuning<br>소리스타</td>
+        <td>CLOVA Tuning<br>Chill가이</td>
     </tr>
 </table>
 
