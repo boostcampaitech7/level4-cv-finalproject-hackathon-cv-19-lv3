@@ -1,6 +1,12 @@
 # 📋 Hackathon Overview
-### Naver Boostcamp AI Tech 7th - Hackathon with *NAVER CLOUD*
+<br/>
+
+<div align="center">
+
+## <b> Naver Boostcamp AI Tech 7th - Hackathon with </b>&nbsp;<img src="https://github.com/user-attachments/assets/50d995c4-2a68-4d1b-bc30-c066daa69ba8" alt="이미지 설명" width="100"> 
+
 세상을 이롭게 하고 비즈니스 가치를 창출하는 AI 기술 활용한 사례를 개발해주세요. 
+</div>
 <br/>
 
 <br/>
@@ -8,7 +14,7 @@
 <br/>
 
 
-# 🕺 Service
+# 🕺 딴 - 따라 Service
 <br/>
 
 <div align="center">
@@ -86,7 +92,11 @@
 
 <br/>
 
+## [🎥 딴 - 따라 시연 영상](https://youtube.com/shorts/nN5Y-eluyfk?feature=share)
+해당 목차 클릭 시 유튜브 시연 영상으로 이동합니다.
 
+
+<br/> 
 
 # ⌛ 딴 - 따라 Service Timeline
 
