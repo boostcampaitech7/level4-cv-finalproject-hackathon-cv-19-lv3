@@ -1,0 +1,17 @@
+<<<<<<< HEAD
+mediapipe
+opencv-python
+imageio
+imageio[ffmpeg]
+fastdtw
+streamlit
+tqdm
+yt_dlp
+=======
+python==3.10
+opencv-python 
+mediapipe 
+numpy 
+fastdtw 
+scipy
+>>>>>>> cam_video_mediapipe
