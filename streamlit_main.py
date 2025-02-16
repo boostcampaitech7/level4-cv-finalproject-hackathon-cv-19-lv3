@@ -459,10 +459,10 @@ else:
             idx1 = get_center_pair_frames(pairs, idx2)
             random_matched_list.append(idx1)
 
-            # original_video_frames_2[idx2] = draw_landmarks_on_image(
-            #     frame, pose_landmarker_results_1[idx1],
-            #     landmarks_c=(234,63,247), connection_c=(117,249,77), thickness=2, circle_r=2
-            # )
+            original_video_frames_2[idx2] = draw_landmarks_on_image(
+                frame, pose_landmarker_results_1[idx1],
+                landmarks_c=(234,63,247), connection_c=(117,249,77), thickness=2, circle_r=2
+            )
             # original_video_frames_2[idx2] = draw_landmarks_on_image(
             #     original_video_frames_2[idx2], pose_landmarker_results_2[idx2],
             #     landmarks_c=(50, 192, 30), connection_c=(200, 50, 200), thickness=2, circle_r=2

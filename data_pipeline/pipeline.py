@@ -58,15 +58,6 @@ def compare_video_pair(right_video_path, wrong_video_path, frame_interval=0.5):
     
     return matched_dict_list
 
-def delete_low_difference(result_dict, threshold):
-    low_diff_keys = []
-    for k, v in result_dict.items():
-        if abs(v) < threshold:
-            low_diff_keys.append(k)
-    
-    for k in low_diff_keys:
-        del result_dict[k]
-
 
 def get_feedback_from_keypoints(match_info_dict):
     # dictionary로부터 필요한 정보 가져오기
@@ -74,15 +65,15 @@ def get_feedback_from_keypoints(match_info_dict):
     wrong_keypoint, wrong_shape = match_info_dict['wrong_keypoint'], match_info_dict['wrong_shape']
 
     # 사전정의된 알고리즘에 따라 관절 각도 정보를 dictionary로 가져옴
-    right_pose_json = extract_3D_pose_landmarks(right_keypoint, right_shape[1], right_shape[0])
-    wrong_pose_json = extract_3D_pose_landmarks(wrong_keypoint, wrong_shape[1], wrong_shape[0])
+    right_pose_json = extract_3D_pose_landmarks(right_keypoint)
+    wrong_pose_json = extract_3D_pose_landmarks(wrong_keypoint)
 
     # 각도 정보를 비교하여 수치적인 차이와 그에 해당하는 자연어 피드백을 dictionary형태로 가져옴
     differences = get_difference_dict(right_pose_json, wrong_pose_json)
     return differences
 
 
-def make_dataset(matched_dict_list, system_prompt, start_CID=0, threshold=30, ignore_low_difference=True):
+def make_dataset(matched_dict_list, system_prompt, start_CID=0, angle_thres=20, dist_thres=0.12, height_thres=20):
     df = {
         "System_Prompt": [], # 지시문
         "C_ID": [], #Conversation ID
@@ -93,12 +84,8 @@ def make_dataset(matched_dict_list, system_prompt, start_CID=0, threshold=30, ig
 
     for idx, matched_dict in enumerate(matched_dict_list):
         differences = refine_float_dict(get_feedback_from_keypoints(matched_dict))
-        feedbacks = get_korean_3D_feedback(differences)
+        feedbacks = get_korean_3D_feedback(differences, angle_thres=20, dist_thres=0.12, height_thres=20)
         feedbacks = aggregate_feedback(feedbacks)
-
-        # 낮은 값들 거르는지 여부 보고 input에서 제외
-        if ignore_low_difference:
-            delete_low_difference(differences, threshold)
 
         # output sentence를 dict로부터 작성
         output_sentence = get_connected_sentence_from_dict(feedbacks)

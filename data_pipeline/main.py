@@ -25,7 +25,7 @@ def parse_arguments():
     parser.add_argument(
         "--system_prompt_path",
         type=str,
-        default="./prompts/good_sentence_prompt.txt",
+        default="./experiments/prompts/good_sentence_prompt.txt",
         help="system prompt로 사용할 지시문이 담겨있는 txt파일의 경로"
     )
     
@@ -44,20 +44,6 @@ def parse_arguments():
     )
 
     parser.add_argument(
-        '--threshold',
-        type=int,
-        default=30,
-        help='얼마만큼의 각도차이가 나야 피드백 대상으로 선정되는지를 정하는 threshold값. random생성 시에는 최대 threshold값으로 정해지며, 그 범위는 (10 ~ threshold)가 된다. 만약 10이하의 경우 무시당하니 주의'
-    )
-
-    parser.add_argument(
-        '--ignore_low_difference',
-        type=str_to_bool,
-        default=False,
-        help="threshold보다 낮은 difference의 정보를 input에 넣을지 여부."
-    )
-
-    parser.add_argument(
         '--perfect_rate',
         type=float,
         default=0.1,
@@ -73,8 +59,6 @@ def main():
     system_prompt_path = args.system_prompt_path
     output_csv_path = args.output_csv_path
     instruction_dataset = args.instruction_dataset
-    threshold = args.threshold
-    ignore_low_difference = args.ignore_low_difference
     perfect_rate = args.perfect_rate
 
     # system prompt 가져오기
@@ -104,7 +88,7 @@ def main():
                 data_idx = 0
 
             matched_dict_list = compare_video_pair(right_mp4_path, wrong_video_path, frame_interval=0.5)
-            df = make_dataset(matched_dict_list, system_prompt, data_idx, threshold=threshold, ignore_low_difference=ignore_low_difference)
+            df = make_dataset(matched_dict_list, system_prompt, data_idx, angle_thres=20, dist_thres=0.12, height_thres=20)
             if isinstance(total_result, pd.DataFrame):
                 total_result = pd.concat([total_result, df], axis=0, ignore_index=True)
             else:

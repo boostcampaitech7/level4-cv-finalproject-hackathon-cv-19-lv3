@@ -551,7 +551,6 @@ class FramePose3D:
             if k in skip:
                 continue
             new_distance = self.compute_distance(point, k, [0, 1])
-            print(k, new_distance)
             if new_distance < min_distance:
                 min_distance = new_distance
                 min_keypoint = k
@@ -956,7 +955,6 @@ def get_connected_sentence_from_dict(agg_feedback):
 
     start_word = [
         "우선, ",
-        "피드백을 드릴께요."
     ]
 
     connect_word = [
