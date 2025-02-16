@@ -1000,7 +1000,7 @@ if __name__ == "__main__":
     from dance_scoring import detector, scoring
     from data_pipeline.pipeline import refine_float_dict
     import config
-    from feedback.pose_compare import extract_pose_world_landmarks
+    from dance_feedback.pose_compare import extract_pose_world_landmarks
 
 
     # 랜드마크 추출

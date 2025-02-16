@@ -12,10 +12,10 @@ from dance_scoring.detector import post_process_pose_landmarks, post_process_wor
 from dance_scoring.util import draw_landmarks_on_image, get_closest_frame
 from dance_scoring.similarity_with_frames import get_normalized_keypoints, calculate_similarity_with_visualization, make_euclidean_similarity, make_cosine_similarity
 from dance_scoring.similarity_with_frames import get_center_pair_frames
-from feedback.pose_compare import extract_pose_landmarks, extract_pose_world_landmarks
-from feedback.pose_feedback import json_to_prompt, generate_korean_feedback, generate_3D_feedback, json_to_prompt_2, json_to_prompt_3, get_korean_feedback_posescript
-from feedback.clova_feedback import base_feedback_model
-from feedback import pose_feedback_final
+from dance_feedback.pose_compare import extract_pose_landmarks, extract_pose_world_landmarks
+from dance_feedback.pose_feedback import json_to_prompt, generate_korean_feedback, generate_3D_feedback, json_to_prompt_2, json_to_prompt_3, get_korean_feedback_posescript
+from dance_feedback.clova_feedback import base_feedback_model
+from dance_feedback import pose_feedback_final
 from data_pipeline.pipeline import refine_float_dict
 import config
 

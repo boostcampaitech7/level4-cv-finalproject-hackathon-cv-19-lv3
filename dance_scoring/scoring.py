@@ -2,7 +2,7 @@ import sys
 sys.path.append("./")
 import numpy as np
 from collections import defaultdict
-from scipy.spatial.distance import euclidean
+from scipy.spatial.distance import euclidean, cosine
 from fastdtw import fastdtw
 from config import KEYPOINT_MAPPING, SELECTED_KEYPOINTS, SELECTED_SIGMAS
 
@@ -248,3 +248,87 @@ def get_score_from_frames(all_landmarks1, all_landmarks2, score_target='PCK', pc
         total_results[k] = np.mean(total_results[k])
     
     return total_results, low_score_frames
+
+
+def normalize_landmarks_to_range_dist(keypoints1: np.ndarray, keypoints2: np.ndarray, eps: float = 1e-7) -> float:
+    """Normalize pose landmarks origin video frame and user video frame."""
+    min1 = np.min(keypoints1, axis=0)
+    max1 = np.max(keypoints1, axis=0)
+    min2 = np.min(keypoints2, axis=0)
+    max2 = np.max(keypoints2, axis=0)
+
+    keypoints1 = keypoints1
+    keypoints2 = (keypoints2 - min2) / (max2 - min2 + eps) * (max1 - min1) + min1
+
+    return np.linalg.norm(keypoints1 - keypoints2)
+
+
+def calculate_similarity(keypoints1: np.ndarray, keypoints2: np.ndarray):
+    """Calculate similarity between two sequences of keypoints."""
+    _, pairs = fastdtw(keypoints1, keypoints2, dist=normalize_landmarks_to_range_dist)
+
+    cosine_similarities = []
+    euclidean_similarities = []
+    weighted_distances = []
+    oks_scores = []
+    pck_scores = []
+
+    for idx1, idx2 in pairs:
+        kp1 = keypoints1[idx1]
+        kp2 = keypoints2[idx2]
+
+        if len(kp1) == 0 or len(kp2) == 0:
+            cosine_similarities.append(0)
+            euclidean_similarities.append(0)
+            weighted_distances.append(0)
+            oks_scores.append(0)
+            pck_scores.append(0)
+            continue
+
+        frame_cosine_similarities = []
+        frame_euclidean_similarities = []
+        frame_weighted_distances = []
+
+        for p1, p2 in zip(kp1, kp2):
+            cosine_similarity = min(1, 1 - cosine(p1, p2))
+            frame_cosine_similarities.append(cosine_similarity)
+
+            euclidean_similarity = max(0, 1 - euclidean(p1, p2))
+            frame_euclidean_similarities.append(euclidean_similarity)
+            frame_weighted_distances.append(euclidean_similarity)
+
+        cosine_similarities.append(np.mean(frame_cosine_similarities))
+        euclidean_similarities.append(np.mean(frame_euclidean_similarities))
+        weighted_distances.append(np.mean(frame_weighted_distances))
+
+        oks_score = oks(kp1, kp2)
+        oks_scores.append(oks_score)
+
+        pck_score, _ = pck(kp1, kp2)
+        pck_scores.append(pck_score)
+
+    avg_cosine = np.mean(cosine_similarities)
+    avg_euclidean = np.mean(euclidean_similarities)
+    
+    average_oks = np.mean(oks_scores)
+    average_pck = np.mean(pck_scores)
+
+    return avg_cosine, avg_euclidean, average_oks, average_pck
+
+def calculate_score(keypoints1, keypoints2):
+    """Calculate final score."""
+    results = calculate_similarity(keypoints1, keypoints2)
+    avg_cosine, avg_euclidean, average_oks, average_pck = results
+
+    if avg_cosine > 0.9 and avg_euclidean > 0.9:
+        final_score = max(avg_cosine, avg_euclidean)
+    elif avg_cosine > 0.9 and avg_euclidean > 0.8:
+        final_score = (avg_cosine + avg_euclidean) / 2
+    elif avg_cosine > 0.8 and avg_euclidean > 0.8:
+        final_score = avg_cosine * 0.7 + avg_euclidean * 0.1 + average_oks * 0.1 + average_pck * 0.1
+    elif average_oks < 0.2 and average_pck < 0.1:
+        final_score = min(average_oks, average_pck)
+    else:
+        final_score = avg_cosine * 0.3 + avg_euclidean * 0.3 + average_oks * 0.2 + average_pck * 0.2
+
+    return int(final_score * 100)

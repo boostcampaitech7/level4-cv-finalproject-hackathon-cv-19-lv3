@@ -1143,7 +1143,7 @@ if __name__ == "__main__":
     sys.path.append("./")
     from dance_scoring import detector, scoring
     import config
-    from feedback.pose_compare import extract_pose_world_landmarks, extract_pose_landmarks
+    from dance_feedback.pose_compare import extract_pose_world_landmarks, extract_pose_landmarks
 
 
     # 랜드마크 추출

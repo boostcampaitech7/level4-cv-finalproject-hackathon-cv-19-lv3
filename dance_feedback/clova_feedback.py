@@ -2,17 +2,7 @@ import sys
 sys.path.append("./")
 import requests
 import json
-from .pose_feedback import json_to_prompt
 from config import API_PATH, CLOVA_HOST, SYSTEM_PROMPT
-
-
-def make_base_clova_inputs(original_json_path, user_json_path):
-    '''
-    각 json파일을 input으로 넣어주면 clova에 넣을 형식으로 변환해서 return
-    각 json은 pose_compare.extract_pose_landmarks로 정제되어 저장된 값이어야함
-    '''
-    result_json = json_to_prompt(original_json_path, user_json_path)
-    return str(result_json)
 
 class CompletionExecutor:
     def __init__(self, host, api_key, request_id):

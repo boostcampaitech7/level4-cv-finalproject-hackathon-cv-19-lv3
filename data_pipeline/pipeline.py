@@ -8,9 +8,9 @@ from scipy.stats import norm
 
 from dance_scoring.detector import PoseDetector, post_process_pose_landmarks
 from dance_scoring.similarity_with_frames import *
-from feedback.pose_compare import extract_pose_landmarks
-from feedback.pose_feedback import json_to_prompt, generate_korean_feedback
-from feedback import pose_feedback_final
+from dance_feedback.pose_compare import extract_pose_landmarks
+from dance_feedback.pose_feedback import json_to_prompt, generate_korean_feedback
+from dance_feedback import pose_feedback_final
 import config
 
 
