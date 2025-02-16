@@ -2,13 +2,12 @@ import os
 import math
 import time
 import json
-from copy import deepcopy
 import numpy as np
 from fastdtw import fastdtw
 from collections import defaultdict
 from fastapi.responses import JSONResponse
 from config import settings, logger
-from constants import FilePaths, ResponseMessages, KEYPOINT_MAPPING, SELECTED_KEYPOINTS_MAPPING, feature_types
+from constants import FilePaths, ResponseMessages, KEYPOINT_MAPPING, feature_types
 from models.clova import CompletionExecutor
 from services.score import read_pose, normalize_landmarks_to_range, normalize_landmarks_to_range_by_mean
 
@@ -19,62 +18,6 @@ completion_executor = CompletionExecutor(
 )
 pose_cache = {}
 index_map_cache = {}
-
-class FramePose:
-    # keypoints = [
-    #     'nose', 'left_ear', 'right_ear', 'left_shoulder', 'right_shoulder',
-    #     'left_elbow', 'right_elbow', 'left_wrist', 'right_wrist',
-    #     'left_hip', 'right_hip', 'left_knee', 'right_knee',
-    #     'left_ankle', 'right_ankle'
-    # ]
-    keypoints = list(SELECTED_KEYPOINTS_MAPPING.values())
-
-    def __init__(self, points):
-        for i, key in enumerate(self.keypoints):
-            setattr(self, key, np.array([points[i][0], points[i][1]]))
-
-    def get_angle(self, key1: str, key2: str) -> float:
-        p1 = getattr(self, key1) 
-        p2 = getattr(self, key2)
-
-        vector = p2 - p1
-        angle = math.degrees(math.atan2(vector[1], vector[0]))
-
-        return angle
-
-    def get_joint_angle(self, key1: str, key2: str, key3: str) -> float:
-        p1 = getattr(self, key1)
-        p2 = getattr(self, key2)
-        p3 = getattr(self, key3)
-
-        vector1 = p1 - p2
-        vector2 = p3 - p2
-        dot_product = np.dot(vector1, vector2)
-
-        magnitude1 = np.linalg.norm(vector1)
-        magnitude2 = np.linalg.norm(vector2)
-        cos_angle = dot_product / (magnitude1 * magnitude2)
-        cos_angle = min(1.0, max(-1.0, cos_angle))
-        angle = math.degrees(math.acos(cos_angle))
-
-        return angle
-
-def get_content(pose1: FramePose, pose2: FramePose) -> str:
-    """Get Clova Studio API Prompt Content."""
-    angle_differences = {
-        'head_difference': int(pose1.get_angle('right_ear', 'left_ear') - pose2.get_angle('right_ear', 'left_ear')),
-        'shoulder_difference': int(pose1.get_angle('right_shoulder', 'left_shoulder') - pose2.get_angle('right_shoulder', 'left_shoulder')),
-        'left_arm_angle_difference': int(abs(pose1.get_angle('left_shoulder', 'left_elbow') - pose2.get_angle('left_shoulder', 'left_elbow'))),
-        'right_arm_angle_difference': int(abs(pose1.get_angle('right_shoulder', 'right_elbow') - pose2.get_angle('right_shoulder', 'right_elbow'))),
-        'left_elbow_angle_difference': int(pose1.get_joint_angle('left_shoulder', 'left_elbow', 'left_wrist') - pose2.get_joint_angle('left_shoulder', 'left_elbow', 'left_wrist')),
-        'right_elbow_angle_difference': int(pose1.get_joint_angle('right_shoulder', 'right_elbow', 'right_wrist') - pose2.get_joint_angle('right_shoulder', 'right_elbow', 'right_wrist')),
-        'left_leg_angle_difference': int(abs(pose1.get_angle('left_hip', 'left_knee') - pose2.get_angle('left_hip', 'left_knee'))),
-        'right_leg_angle_difference': int(abs(pose1.get_angle('right_hip', 'right_knee') - pose2.get_angle('right_hip', 'right_knee'))),
-        'left_knee_angle_difference': int(pose1.get_joint_angle('left_hip', 'left_knee', 'left_ankle') - pose2.get_joint_angle('left_hip', 'left_knee', 'left_ankle')),
-        'right_knee_angle_difference': int(pose1.get_joint_angle('right_hip', 'right_knee', 'right_ankle') - pose2.get_joint_angle('right_hip', 'right_knee', 'right_ankle')),
-    }
-
-    return json.dumps({key: int(value) for key, value in angle_differences.items()})
 
 def get_feedback(content: str) -> str:
     """Get Clova Studio API Response."""
@@ -119,7 +62,6 @@ def check_if_end_consonant(word):
 def change_angle_expression(angle):
     return (angle if abs(angle) < 180 else (360 - abs(angle)) * (-1 if angle < 0 else 1))
 
-
 def calculate_two_points_angle(point1, point2):
     vector = point2 - point1
     angle = math.degrees(math.atan2(vector[1], vector[0]))
@@ -142,7 +84,7 @@ def calculate_three_points_angle(point1, point2, point3, eps=1e-7):
     return angle
 
 def calculate_two_vector_angle(v1, v2, normal, eps=1e-7):
-    # 두 벡터 사이의 각도를 계산하며, v1과 v2의 상대적인 위치에 따라 부호를 결정합니다.
+    # 두 벡터 사이의 각도를 계산하며, v1과 v2의 상대적인 위치에 따라 부호를 결정
     dot_product = np.dot(v1, v2)
 
     magnitude1 = np.linalg.norm(v1)
@@ -153,7 +95,7 @@ def calculate_two_vector_angle(v1, v2, normal, eps=1e-7):
     cos_angle = min(1.0-eps, max(-1.0+eps, cos_angle))
     angle = math.degrees(math.acos(cos_angle))
 
-     # 부호 결정을 위한 외적
+    # 부호 결정을 위한 외적
     cross_product = np.cross(v1, v2)
     if np.dot(cross_product, normal) < 0:
         angle = -angle
@@ -211,7 +153,6 @@ class FramePose3D:
                 landmarks_data[i][0], landmarks_data[i][1], landmarks_data[i][2]
             ]) for i, k in enumerate(self.all_keypoints)
         }
-        # 기존 키포인트로부터 새로운 좌표 정의
         # neck
         self.keypoints['neck'] = (self.keypoints['mouth_left'] + self.keypoints['mouth_right']) / 2
         # hip center
@@ -228,7 +169,6 @@ class FramePose3D:
         self.keypoints['right_waist'] = (self.keypoints['right_hip'] * 0.6 + self.keypoints['right_shoulder'] * 0.4) / 2
         self.keypoints['right_foot'] = self.keypoints['right_foot_index']
         self.keypoints['left_foot'] = self.keypoints['left_foot_index']
-
 
         # 몸이 움직임에 따라 좌표축 역할을 해줄 2개의 벡터 정의
         x_direction = (self.keypoints['left_shoulder'] - self.keypoints['right_shoulder'])
@@ -258,8 +198,6 @@ class FramePose3D:
                 part_name = name_list[-1] if len(name_list) == 2 else '_'.join(name_list[1:])
                 self.keypoints[k], self.keypoints[f'right_{part_name}'] = self.keypoints[f'right_{part_name}'], self.keypoints[k]
 
-
-    #################################### HEAD
     def get_head_angle(self):
         '''
         귀 중점, 어깨중점, 허리 중점의 3point
@@ -279,7 +217,6 @@ class FramePose3D:
         '''
         return calculate_two_points_angle(self.keypoints['right_ear'][[0, 2]], self.keypoints['left_ear'][[0, 2]])
 
-    #################################### BODY
     def get_waist_angle(self):
         '''
         어깨중점, 엉덩이중점, 무릎 중점의 3 point
@@ -298,9 +235,11 @@ class FramePose3D:
         '''
         return calculate_two_points_angle(self.keypoints['right_waist'][[0, 2]], self.keypoints['left_waist'][[0, 2]])
 
-    #################################### LEFT ARM
     def get_left_elbow_angle(self):
-        # 왼팔 굽혀진 정도. 0 ~ 180
+        '''
+        - 팔꿈치가 얼마나 굽어져 있는지
+        - 어께, 팔꿈치, 손목 0 ~ 180
+        '''
         return calculate_three_points_angle(self.keypoints['left_shoulder'], self.keypoints['left_elbow'], self.keypoints['left_wrist'])
 
     def get_left_arm_height(self):
@@ -335,9 +274,11 @@ class FramePose3D:
         '''
         return calculate_two_points_angle(self.keypoints['left_shoulder'][[0, 1]], self.keypoints['left_wrist'][[0, 1]])
 
-    #################################### RIGHT ARM
     def get_right_elbow_angle(self):
-        # 오른팔 굽혀진 정도. 0 ~ 180
+        '''
+        - 팔꿈치가 얼마나 굽어져 있는지
+        - 어께, 팔꿈치, 손목 0 ~ 180
+        '''
         return calculate_three_points_angle(self.keypoints['right_shoulder'], self.keypoints['right_elbow'], self.keypoints['right_wrist'])
 
     def get_right_arm_height(self):
@@ -373,9 +314,11 @@ class FramePose3D:
         '''
         return calculate_two_points_angle(self.keypoints['right_shoulder'][[0, 2]], self.keypoints['right_wrist'][[0, 2]])
 
-    #################################### LEFT LEG
     def get_left_knee_angle(self):
-        # 왼다리 굽혀진 정도. 0 ~ 180
+        '''
+        - 무릎이 얼마나 굽어져 있는지지
+        - 엉덩이, 무릎, 발목 0 ~ 180
+        '''
         return calculate_three_points_angle(self.keypoints['left_hip'], self.keypoints['left_knee'], self.keypoints['left_ankle'])
 
     def get_left_leg_height(self):
@@ -398,9 +341,11 @@ class FramePose3D:
         '''
         return calculate_two_points_angle(self.keypoints['left_hip'][[0, 1]], self.keypoints['left_knee'][[0, 1]])
 
-    #################################### RIGHT LEG
     def get_right_knee_angle(self):
-        # 오른다리 굽혀진 정도. 0 ~ 180
+        '''
+        - 무릎이 얼마나 굽어져 있는지지
+        - 엉덩이, 무릎, 발목 0 ~ 180
+        '''
         return calculate_three_points_angle(self.keypoints['right_hip'], self.keypoints['right_knee'], self.keypoints['right_ankle'])
 
     def get_right_leg_height(self):
@@ -423,9 +368,6 @@ class FramePose3D:
         '''
         return calculate_two_points_angle(self.keypoints['right_hip'][[0, 1]], self.keypoints['right_knee'][[0, 1]])
 
-
-
-    ################################################## EXTRA
     def compute_distance(self, point1, point2, idx=[0,1,2]):
         """ 두 점 사이의 L2 거리(유클리드 거리) 계산 """
         return np.linalg.norm(self.keypoints[point1][idx] - self.keypoints[point2][idx])
@@ -572,7 +514,7 @@ async def get_frame_feedback_service(request):
         user_frame = int(request.frame)
         target_frame = index_map.get(user_frame, [0])[0]
 
-        # feedback 받기전에 정규화 한번..
+        # 정규화
         normalized_all_frame_points2 = normalize_landmarks_to_range_by_mean(all_frame_points1, all_frame_points2)
         
         # Clova API를 이용한 원본 영상 프레임과 유저 영상 프레임 포즈 피드백 받기

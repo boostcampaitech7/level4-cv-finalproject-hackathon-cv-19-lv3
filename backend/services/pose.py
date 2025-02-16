@@ -2,14 +2,11 @@ import os
 import cv2
 import time
 import h5py
-import subprocess
-from fastapi.responses import JSONResponse, FileResponse
+from fastapi.responses import JSONResponse
 from config import logger
 from constants import FilePaths, ResponseMessages
-from constants import SELECTED_KEYPOINTS as SELECTED_POINTS
+from constants import SELECTED_KEYPOINTS
 from models.mediapipe import mp_model
-
-# SELECTED_POINTS = [0, 7, 8, 11, 12, 13, 14, 15, 16, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32]
 
 pose = mp_model()
 
@@ -31,10 +28,10 @@ def extract_pose(video_path: str):
             points = [
                 (round(lm.x, 4), round(lm.y, 4), round(lm.z, 4))
                 for i, lm in enumerate(result.pose_world_landmarks.landmark)
-                if i in SELECTED_POINTS
+                if i in SELECTED_KEYPOINTS
             ]
         else:
-            points = [(-1, -1, -1)] * len(SELECTED_POINTS)
+            points = [(-1, -1, -1)] * len(SELECTED_KEYPOINTS)
         all_frames_points.append(points)
     cap.release()
 
@@ -71,7 +68,7 @@ async def extract_user_pose(folder_id: str, video):
         video_path = os.path.join(root_path, video_file)
         h5_path = os.path.join(root_path, h5_file)
 
-        # 유저 영상 저장 및 좌우 반전
+        # 유저 영상 저장
         with open(video_path, "wb") as buffer:
             buffer.write(await video.read())
 

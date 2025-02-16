@@ -18,7 +18,7 @@ def read_pose(h5_path: str):
         return width, height, all_frame_points
 
     except Exception as e:
-        raise ValueError(ResponseMessages.H5FILE_LOAD_FAIL.value.format(h5_path, str(e)))
+        raise ValueError(ResponseMessages.H5FILE_LOAD_FAIL.value.format(file=h5_path, error=str(e)))
     
 def normalize_landmarks_to_range(keypoints1: np.ndarray, keypoints2: np.ndarray, eps: float = 1e-7) -> float:
     """Normalize pose landmarks origin video frame and user video frame."""
@@ -61,18 +61,6 @@ def normalize_landmarks_to_range_by_mean(all_landmarks_np_1, all_landmarks_np_2,
 
 def oks(gt: np.ndarray, preds: np.ndarray) -> float:
     """Calculate Object Keypoint Similarity."""
-    # SELECTED_SIGMAS = np.array([
-    #     0.026,  # nose
-    #     0.035, 0.035,  # ears
-    #     0.079, 0.079,  # shoulders
-    #     0.072, 0.072,  # elbows
-    #     0.062, 0.062,  # wrists
-    #     0.107, 0.107,  # hips
-    #     0.087, 0.087,  # knees
-    #     0.089, 0.089,  # ankles
-    #     0.089, 0.089,  # heels
-    #     0.072, 0.072   # foot indices
-    # ])
     selected_sigma = np.array(SELECTED_SIGMAS)
     distance = np.linalg.norm(gt - preds, axis=1)
     kp_c = selected_sigma * 2
