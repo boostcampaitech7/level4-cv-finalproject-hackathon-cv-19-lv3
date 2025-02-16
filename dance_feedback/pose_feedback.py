@@ -919,6 +919,33 @@ def aggregate_feedback(feedback):
 
 
 def get_connected_sentence_from_dict(agg_feedback):
+    startings = [
+        "동작 차이를 기반으로 피드백을 드리도록 하겠습니다.",
+        "동작 분석을 기반으로 피드백을 제공해 드리겠습니다.",
+        "개선점을 안내해 드릴게요.",
+        "정확한 동작 분석을 통해 개선할 점을 알려드리겠습니다.",
+        "댄스 동작을 비교하여 최적의 피드백을 드릴게요.",
+        "자세 차이를 바탕으로 더 나은 동작을 위한 피드백을 드리겠습니다.",
+        "댄스 퍼포먼스를 향상시킬 수 있도록 피드백을 시작하겠습니다."
+    ]
+
+    good_endings = [
+        "나머지 동작는 좋아요! 계속해서 발전해봅시다!",
+        "좋은 동작입니다! 앞으로도 꾸준히 연습해볼까요?",
+        "완벽에 가까워지고 있어요! 계속 노력해볼게요!",
+        "점점 더 좋아지고 있어요! 계속 밀고 나가봅시다!",
+        "좋은 흐름이에요! 이대로 쭉 가봅시다!",
+        "자세가 많이 발전했어요! 다음 목표를 향해 가볼까요?"
+    ]
+
+    bad_endings = [
+        "자세가 아직은 많이 좋지 않네요 더 정진해봅시다!",
+        "아직은 부족한 부분이 보이지만 꾸준히 연습하면 좋아질 거예요!",
+        "자세를 조금 더 신경 쓰면 훨씬 좋아질 거예요! 계속 연습해봐요!",
+        "연습을 조금 더 하면 동작이 훨씬 자연스러워질 거예요! 화이팅!",
+        "동작의 연결이 자연스럽게 이어질 수 있도록 신경 써보면 좋을 것 같아요!"
+    ]
+
     perfect_msg = [
         "동작 하나하나가 정말 정확하고 힘이 느껴져요!",
         "자연스럽고 부드러운 흐름이 너무 멋져요!",
@@ -940,6 +967,12 @@ def get_connected_sentence_from_dict(agg_feedback):
         "그 다음엔, ",
     ]
 
+    if len(agg_feedback) >= 5:
+        ending = random.choice(bad_endings)
+    else:
+        ending = random.choice(good_endings)
+
+
     feedback_string = ''
     idx = 0
     for k, feedback in agg_feedback.items():
@@ -957,6 +990,7 @@ def get_connected_sentence_from_dict(agg_feedback):
     if not feedback_string:
         return random.choice(perfect_msg)
     else:
+        feedback_string = random.choice(startings) + "\n\n" + feedback_string + ending
         return feedback_string
     
 

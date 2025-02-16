@@ -58,13 +58,6 @@ def parse_arguments():
     )
 
     parser.add_argument(
-        '--do_numeric_to_text',
-        type=str_to_bool,
-        default=False,
-        help="수치를 문장화시킬지 여부."
-    )
-
-    parser.add_argument(
         '--perfect_rate',
         type=float,
         default=0.1,
@@ -82,7 +75,6 @@ def main():
     instruction_dataset = args.instruction_dataset
     threshold = args.threshold
     ignore_low_difference = args.ignore_low_difference
-    do_numeric_to_text= args.do_numeric_to_text
     perfect_rate = args.perfect_rate
 
     # system prompt 가져오기
@@ -112,7 +104,7 @@ def main():
                 data_idx = 0
 
             matched_dict_list = compare_video_pair(right_mp4_path, wrong_video_path, frame_interval=0.5)
-            df = make_dataset(matched_dict_list, system_prompt, data_idx, threshold=threshold, ignore_low_difference=ignore_low_difference, do_numeric_to_text=do_numeric_to_text)
+            df = make_dataset(matched_dict_list, system_prompt, data_idx, threshold=threshold, ignore_low_difference=ignore_low_difference)
             if isinstance(total_result, pd.DataFrame):
                 total_result = pd.concat([total_result, df], axis=0, ignore_index=True)
             else:
@@ -126,7 +118,6 @@ def main():
             random_cnt = int(random_cnt)
         except:
             random_cnt = 1000
-        # total_result = make_random_dataset(random_cnt, system_prompt, max_threshold=threshold, perfect_rate=perfect_rate, ignore_low_difference=ignore_low_difference, do_numeric_to_text=do_numeric_to_text)
         total_result = make_random_3D_dataset(random_cnt, system_prompt, angle_thres=20, dist_thres=0.12, height_thres=20, perfect_rate=perfect_rate)
 
     # instruction 형식이 아닌 경우 text, completion 열만 필요함
