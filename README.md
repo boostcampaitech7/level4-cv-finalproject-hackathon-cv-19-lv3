@@ -137,28 +137,18 @@
         <td>T7154</td>
     </tr>
     <tr align="center">
-        <td>Correctional Text Generation Test using CLOVA Studio & GPT4o (Prompt Engineering)<br>
-            Pose VLM Research (PoseFix)
-</td>
-        <td>Android Studio Frontend<br>
-            UX Improvement
-</td>
-        <td>Pose Model Experiment<br>
-            Keypoint Matching & Scoring<br>
-            VLM Experiment<br>
-            Clova Dubbing
-</td>
-        <td>FastAPI Backend<br>
-            Android Studio api prototype<br>
-            Pose Model Experiment
-</td>
-        <td>Design Figma UI<br>
-            Design service mascot<br>
-            CLOVA Studio Tuning w/Jauns
-</td>
-        <td>Create Streamlit Demo Page<br>
-            CLOVA Studio Tuning<br>
-            Normalization body shape
+        <td>CLOVA Prompt<br>
+            8집 가수</td>
+        <td>Frontend<br>
+            댄스 머신</td>
+        <td>AI<br>
+            로미오</td>
+        <td>Backend<br>
+            줄리엣</td>
+        <td>CLOVA Tuning<br>
+            소리스타</td>
+        <td>CLOVA Tuning<br>
+            Chill가이</td>
 </td>
     </tr>
 </table>
