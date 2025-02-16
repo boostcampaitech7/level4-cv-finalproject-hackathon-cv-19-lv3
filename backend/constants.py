@@ -8,10 +8,9 @@ class FilePaths(Enum):
 
 class ResponseMessages(Enum):
     FEEDBACK_POSE_FAIL = "포즈가 감지되지 않아 피드백을 드릴 수 없습니다 (┬┬﹏┬┬)"
-    H5FILE_LOAD_FAIL = "Failed to read pose data from {}: {}"
-    FEEDBACK_CLEAR_SUCCESS = "Cache cleared for folder_id: {}"
+    H5FILE_LOAD_FAIL = "Failed to read pose data from {file}: {error}"
+    FEEDBACK_CLEAR_SUCCESS = "Cache cleared for folder_id: {folder_id}"
     POSE_EXTRACT_POSE_SUCCESS = "Success video pose extract"
-
 
 NUM_CLASSES = 33
 KEYPOINT_MAPPING = {
@@ -50,43 +49,7 @@ KEYPOINT_MAPPING = {
     32: "right_foot_index"
 }
 
-REVERSE_KEYPOINT_MAPPING = {
-    "nose": 0,
-    "left_eye_inner": 1,
-    "left_eye": 2,
-    "left_eye_outer": 3,
-    "right_eye_inner": 4,
-    "right_eye": 5,
-    "right_eye_outer": 6,
-    "left_ear": 7,
-    "right_ear": 8,
-    "mouth_left": 9,
-    "mouth_right": 10,
-    "left_shoulder": 11,
-    "right_shoulder": 12,
-    "left_elbow": 13,
-    "right_elbow": 14,
-    "left_wrist": 15,
-    "right_wrist": 16,
-    "left_pinky": 17,
-    "right_pinky": 18,
-    "left_index": 19,
-    "right_index": 20,
-    "left_thumb": 21,
-    "right_thumb": 22,
-    "left_hip": 23,
-    "right_hip": 24,
-    "left_knee": 25,
-    "right_knee": 26,
-    "left_ankle": 27,
-    "right_ankle": 28,
-    "left_heel": 29,
-    "right_heel": 30,
-    "left_foot_index": 31,
-    "right_foot_index": 32
-}
-
-WEIGHTS = {
+KEYPOINTS_WEIGHTS = {
     "nose": 0.05,
     "left_eye_inner": 0.02,
     "left_eye": 0.02,
@@ -158,17 +121,13 @@ K_I_VALUE = {
     'right_foot_index': 0.072
 }
 # select for oks calculation
-TOTAL_KEYPOINTS = [i for i in KEYPOINT_MAPPING.keys()]
+TOTAL_KEYPOINTS = list(KEYPOINT_MAPPING.keys())
+REVERSE_KEYPOINT_MAPPING = {v: k for k, v in KEYPOINT_MAPPING.items()}
 NORMALIZED_LANDMARK_KEYS = ['x', 'y', 'z', 'visibility', 'presense']
-
-
-#######################################################################################
-SELECTED_KEYPOINTS = TOTAL_KEYPOINTS # 사용할 키포인트 지정
+SELECTED_KEYPOINTS = TOTAL_KEYPOINTS
 SELECTED_KEYPOINTS_MAPPING = {KEYPOINT_MAPPING[SELECTED_KEYPOINTS[i]]: i for i in range(len(SELECTED_KEYPOINTS))}
 SELECTED_SIGMAS = [K_I_VALUE[k] for k in SELECTED_KEYPOINTS_MAPPING.keys()]
 TOTAL_SIGMAS = [v for v in K_I_VALUE.values()]
-
-
 
 body_parts_korean = {
     "nose": "코",
@@ -238,7 +197,6 @@ body_parts_korean = {
     "head": "머리",
     "breast": "가슴"
 }
-
 
 feature_types = {
     'head': {

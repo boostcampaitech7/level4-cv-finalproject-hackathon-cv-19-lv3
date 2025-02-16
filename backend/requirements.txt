@@ -1,0 +1,10 @@
+fastapi==0.115.8
+mediapipe==0.10.20
+opencv-python==4.11.0.86
+python-multipart==0.0.20
+uvicorn==0.34.0
+yt-dlp==2025.1.26
+h5py==3.12.1
+fastdtw==0.3.4
+pydantic_settings==2.7.1
+requests==2.32.3

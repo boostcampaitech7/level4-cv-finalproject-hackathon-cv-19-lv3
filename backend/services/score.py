@@ -18,7 +18,7 @@ def read_pose(h5_path: str):
         return width, height, all_frame_points
 
     except Exception as e:
-        raise ValueError(ResponseMessages.H5FILE_LOAD_FAIL.value.format(h5_path, str(e)))
+        raise ValueError(ResponseMessages.H5FILE_LOAD_FAIL.value.format(file=h5_path, error=str(e)))
     
 def normalize_landmarks_to_range(keypoints1: np.ndarray, keypoints2: np.ndarray, eps: float = 1e-7) -> float:
     """Normalize pose landmarks origin video frame and user video frame."""
