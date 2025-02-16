@@ -22,7 +22,6 @@ CLOVA_API
 # data
 data/
 *.json
-*.txt
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
