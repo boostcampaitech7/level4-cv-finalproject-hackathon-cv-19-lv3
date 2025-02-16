@@ -96,7 +96,35 @@
 해당 목차 클릭 시 유튜브 시연 영상으로 이동합니다.
 
 
+# 🔧 딴 - 따라 Service Stack
+### ✔️Environment
+<img src="https://img.shields.io/badge/github-181717?style=for-the-badge&logo=github&logoColor=white"> <img src="https://img.shields.io/badge/git-F05032?style=for-the-badge&logo=git&logoColor=white"> <img src="https://img.shields.io/badge/Android Studio-3DDC84?style=for-the-badge&logo=Android Studio&logoColor=white"> <img src="https://img.shields.io/badge/Visual Studio Code-007ACC?style=for-the-badge&logo=Visual Studio Code&logoColor=white">
+
+
+  
+### ✔️Development
+<img src="https://img.shields.io/badge/python-3776AB?style=for-the-badge&logo=python&logoColor=white"> <img src="https://img.shields.io/badge/Kotlin-7F52FF?style=for-the-badge&logo=Kotlin&logoColor=white"> <img src="https://img.shields.io/badge/fastapi-009688?style=for-the-badge&logo=FastAPI&logoColor=white">
+
+### ✔️AI
+<img src="https://img.shields.io/badge/mediapipe-0097A7?style=for-the-badge&logo=mediapipe&logoColor=white"> <img src="https://img.shields.io/badge/hyper%20clova%20x-8e52fe?style=for-the-badge&logo=naver&logoColor=white">  <img src="https://img.shields.io/badge/clova%20studio-03C75A?style=for-the-badge&logo=naver&logoColor=white"> <img src="https://img.shields.io/badge/clova%20dubbing-03C75A?style=for-the-badge&logo=naver&logoColor=white"> 
+
+
+
+### ✔️Communication
+<img src="https://img.shields.io/badge/slack-4A154B?style=for-the-badge&logo=slack&logoColor=white"> <img src="https://img.shields.io/badge/zoom-0B5CFF?style=for-the-badge&logo=zoom&logoColor=white"> 
+<img src="https://img.shields.io/badge/jira-0052CC?style=for-the-badge&logo=jira&logoColor=white"> 
+<img src="https://img.shields.io/badge/confluence-172B4D?style=for-the-badge&logo=confluence&logoColor=white"> 
+<img src="https://img.shields.io/badge/google%20drive-4285F4?style=for-the-badge&logo=Google drive&logoColor=white"> 
 <br/> 
+
+<br/>
+
+<br/>
+<br/>
+
+<br/>
+
+
 
 # ⌛ 딴 - 따라 Service Timeline
 
