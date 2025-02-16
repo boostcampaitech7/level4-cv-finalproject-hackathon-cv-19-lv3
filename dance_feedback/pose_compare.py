@@ -118,7 +118,7 @@ def extract_pose_landmarks(result, image_width, image_height):
     
     return landmarks
 
-def extract_pose_world_landmarks(result):
+def extract_3D_pose_landmarks(result):
     landmarks = {}
     
     # 각 포즈의 첫 번째 검출 결과만 사용

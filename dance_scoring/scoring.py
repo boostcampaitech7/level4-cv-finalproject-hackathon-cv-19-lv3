@@ -207,7 +207,6 @@ def get_score_from_frames(all_landmarks1, all_landmarks2, score_target='PCK', pc
     total_results = defaultdict(list)
     low_score_frames = []
     bs1 = np.array([1, 0, 0])
-    bs2 = np.array([1, 0, 0])
 
     if use_dtw:
         all_landmarks_np_1 = np.array([refine_landmarks(l) for l in all_landmarks1])

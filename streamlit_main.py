@@ -12,10 +12,9 @@ from dance_scoring.detector import post_process_pose_landmarks, post_process_wor
 from dance_scoring.util import draw_landmarks_on_image, get_closest_frame
 from dance_scoring.similarity_with_frames import get_normalized_keypoints, calculate_similarity_with_visualization, make_euclidean_similarity, make_cosine_similarity
 from dance_scoring.similarity_with_frames import get_center_pair_frames
-from dance_feedback.pose_compare import extract_pose_landmarks, extract_pose_world_landmarks
-from dance_feedback.pose_feedback import json_to_prompt, generate_korean_feedback, generate_3D_feedback, json_to_prompt_2, json_to_prompt_3, get_korean_feedback_posescript
+from dance_feedback.pose_compare import extract_3D_pose_landmarks
 from dance_feedback.clova_feedback import base_feedback_model
-from dance_feedback import pose_feedback_final
+from dance_feedback import pose_feedback
 from data_pipeline.pipeline import refine_float_dict
 import config
 
@@ -514,23 +513,11 @@ else:
             st.write(f"선택된 시간: {target_time}초")
             st.write(f"해당 프레임: {target_frame}")
 
-            user_pose_landmarks_json = extract_pose_world_landmarks(user_landmark)
-            target_pose_landmarks_json = extract_pose_world_landmarks(target_landmark)
-            diffs = pose_feedback_final.get_difference_dict(target_pose_landmarks_json, user_pose_landmarks_json, reverse)
-            feedback_json = pose_feedback_final.get_korean_3D_feedback(diffs)
-            agg_feedback = pose_feedback_final.aggregate_feedback(feedback_json)
-            
-
-
-            result_json = json_to_prompt(target_pose_landmarks_json, user_pose_landmarks_json)
-            json_3D = json_to_prompt_2(target_pose_landmarks_json, user_pose_landmarks_json)
-            json_pose_script = json_to_prompt_3(target_pose_landmarks_json, user_pose_landmarks_json)
-
-            feedback_3D = generate_3D_feedback(json_3D, threshold=20)
-            feedback_script = get_korean_feedback_posescript(json_pose_script)
-
-            print(str(result_json))
-            feedback_algorithm = generate_korean_feedback(result_json, threshold=threshold)
+            user_pose_landmarks_json = extract_3D_pose_landmarks(user_landmark)
+            target_pose_landmarks_json = extract_3D_pose_landmarks(target_landmark)
+            diffs = pose_feedback.get_difference_dict(target_pose_landmarks_json, user_pose_landmarks_json, reverse)
+            feedback_json = pose_feedback.get_korean_3D_feedback(diffs)
+            agg_feedback = pose_feedback.aggregate_feedback(feedback_json)
             feedback_clova = base_feedback_model(str(refine_float_dict(diffs)))
 
             col1, col2 = st.columns(2)
@@ -544,14 +531,3 @@ else:
                 st.subheader("유저 프레임")
                 st.image(original_video_frames_2[user_idx])
                 st.json(agg_feedback)
-            
-            col1, col2, col3 = st.columns(3)
-            with col1:
-                st.subheader("알고리즘 기반 피드백")
-                st.json(feedback_algorithm)
-            with col2:
-                st.subheader("3D 피드백")
-                st.json(feedback_3D)
-            with col3:
-                st.subheader("posescript")
-                st.text(' '.join(feedback_script))

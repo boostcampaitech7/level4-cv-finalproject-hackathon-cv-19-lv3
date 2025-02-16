@@ -2,7 +2,7 @@ import os
 import pandas as pd
 import argparse
 import glob
-from pipeline import compare_video_pair, make_dataset, make_random_dataset, make_random_3D_dataset
+from pipeline import compare_video_pair, make_dataset, make_random_3D_dataset
 from tqdm import tqdm
 
 def str_to_bool(value):
