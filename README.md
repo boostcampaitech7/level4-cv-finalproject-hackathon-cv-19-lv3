@@ -1,43 +1,132 @@
 # 📋 Hackathon Overview
-### Naver Boostcamp AI Tech 7th Hackathon with *NAVER CLOUD*
-세상을 이롭게 하고 비즈니스 가치를 창출하는 AI 기술 활용한 사례를 개발해주세요. 
-<br/>
-
-<br/>
-
-<br/>
-
-
-# 🕺 Service
 <br/>
 
 <div align="center">
 
-## [ 숏폼 챌린지를 위한 AI 댄스 코치 서비스 : 딴- 따라 ]
+## <b> Naver Boostcamp AI Tech 7th - Hackathon with </b>&nbsp;<img src="https://github.com/user-attachments/assets/50d995c4-2a68-4d1b-bc30-c066daa69ba8" alt="이미지 설명" width="100"> 
+
+세상을 이롭게 하고 비즈니스 가치를 창출하는 AI 기술 활용한 사례를 개발해주세요. 
+</div>
+<br/>
+
+<br/>
+
+<br/>
+
+
+# 🕺 딴 - 따라 Service
+<br/>
+
+<div align="center">
+
+## [ 숏폼 챌린지를 위한 AI 댄스 코치 서비스 : 딴 - 따라 ]
 </div>
 <br/>
 
 <p align="center">
+    <br/>
+    <img src="https://github.com/user-attachments/assets/6231b300-27d4-46b2-af10-ebabd148cd88" align="center" width="25%"> 
+    <img src="https://github.com/user-attachments/assets/4d0fb201-2b2a-403e-b844-06067c250643" align="center" width="62%"> 
+    <figcaption align="center"></figcaption></p>
+
 <br/>
-<img src="https://github.com/user-attachments/assets/6231b300-27d4-46b2-af10-ebabd148cd88" align="center" width="25%"> 
-<img src="https://github.com/user-attachments/assets/4d0fb201-2b2a-403e-b844-06067c250643" align="center" width="62%"> 
-<figcaption align="center"></figcaption></p>
+<div align="center">
+    <h3>도전하기 어려웠던 숏폼 챌린지</h3>
+    <h3>AI 댄스 코치 딴-따라와 함께 정복해가요!</h3>
+</div>
+<br/>
 
 <br/>
 
 <br/>
 
-# 🔨 Service Architecture
+<br/>
+
+<br/>
+
+# 🔨 딴 - 따라 Service Architecture
 ![image](https://github.com/user-attachments/assets/f70c99b2-a036-438b-bc0a-856c63180907)
 
 <br/>
 
 <br/>
+<h3>1. SNS(Youtube, TikTok, Instagram)에서 원하는 숏폼 챌린지를 골라보세요!</h3>
+
+- 숏폼을 즐기다 챌린지하길 원하는 영상이 보인다면 링크만 가져와보세요.
+
+<br/>
+
+![image](https://github.com/user-attachments/assets/43623e56-a9ed-45d1-ab26-4ba720b383fb)
+
+
+<br/>
+<h3>2. 노래에 맞춰 신나게 딴따라 해보세요! </h3>
+
+- 우측 상단 위 원본 챌린지 영상, 노래와 함께 춤춰요.
+
+![image](https://github.com/user-attachments/assets/514ef623-3102-4e94-b8dc-2decfd0e197e)
+
+
+<br/>
+<br/>
+<br/>
+<h3>3. 딴따라가 제공한 댄스 피드백으로 자신의 안무를 다듬어 보세요!</h3>
+
+- 원하는 프레임의 내 모습에 대해 자세한 피드백을 받을 수 있습니다. 전체 영상에 대한 총 점수도요!
+
+  ![image](https://github.com/user-attachments/assets/4be6fbcc-4762-4484-88ac-9a7c235ebd56)
+
+<br/>
+<br/>
+<h3>4. 댄스가 마음에 드셨나요? 영상을 다운로드하고 챌린지를 업로드 해봐요!</h3>
+
+- 영상을 다시 찍을 수도, SNS에 게시하기 위해 갤러리에 저장할 수도 있습니다.
+  
+![image](https://github.com/user-attachments/assets/964974ab-e944-4452-9fec-9a58cf278d8f)
+
+<br/>
+<br/>
+
+<br/>
 
 
 <br/>
 
-# ⌛ Service Timeline
+## [🎥 딴 - 따라 시연 영상](https://youtube.com/shorts/nN5Y-eluyfk?feature=share)
+해당 목차 클릭 시 유튜브 시연 영상으로 이동합니다.
+
+
+# 🔧 딴 - 따라 Service Stack
+### ✔️Environment
+<img src="https://img.shields.io/badge/github-181717?style=for-the-badge&logo=github&logoColor=white"> <img src="https://img.shields.io/badge/git-F05032?style=for-the-badge&logo=git&logoColor=white"> <img src="https://img.shields.io/badge/Android Studio-3DDC84?style=for-the-badge&logo=Android Studio&logoColor=white"> <img src="https://img.shields.io/badge/Visual Studio Code-007ACC?style=for-the-badge&logo=Visual Studio Code&logoColor=white">
+
+
+  
+### ✔️Development
+<img src="https://img.shields.io/badge/python-3776AB?style=for-the-badge&logo=python&logoColor=white"> <img src="https://img.shields.io/badge/Kotlin-7F52FF?style=for-the-badge&logo=Kotlin&logoColor=white"> <img src="https://img.shields.io/badge/fastapi-009688?style=for-the-badge&logo=FastAPI&logoColor=white">
+
+### ✔️AI
+<img src="https://img.shields.io/badge/mediapipe-0097A7?style=for-the-badge&logo=mediapipe&logoColor=white"> <img src="https://img.shields.io/badge/hyper%20clova%20x-8e52fe?style=for-the-badge&logo=naver&logoColor=white">  <img src="https://img.shields.io/badge/clova%20studio-03C75A?style=for-the-badge&logo=naver&logoColor=white"> <img src="https://img.shields.io/badge/clova%20dubbing-03C75A?style=for-the-badge&logo=naver&logoColor=white"> 
+
+
+
+### ✔️Communication
+<img src="https://img.shields.io/badge/slack-4A154B?style=for-the-badge&logo=slack&logoColor=white"> <img src="https://img.shields.io/badge/zoom-0B5CFF?style=for-the-badge&logo=zoom&logoColor=white"> 
+<img src="https://img.shields.io/badge/jira-0052CC?style=for-the-badge&logo=jira&logoColor=white"> 
+<img src="https://img.shields.io/badge/confluence-172B4D?style=for-the-badge&logo=confluence&logoColor=white"> 
+<img src="https://img.shields.io/badge/google%20drive-4285F4?style=for-the-badge&logo=Google drive&logoColor=white"> 
+<br/> 
+
+<br/>
+
+<br/>
+<br/>
+
+<br/>
+
+
+
+# ⌛ 딴 - 따라 Service Timeline
 
 ![image](https://github.com/user-attachments/assets/7a64aa3e-f2fc-45a8-bd95-b32e835490b7)
 
@@ -75,7 +164,23 @@
         <td>T7222</td>
         <td>T7154</td>
     </tr>
+    <tr align="center">
+        <td>CLOVA Prompt<br>
+            8집 가수</td>
+        <td>Frontend<br>
+            댄스 머신</td>
+        <td>AI<br>
+            로미오</td>
+        <td>Backend<br>
+            줄리엣</td>
+        <td>CLOVA Tuning<br>
+            소리스타</td>
+        <td>CLOVA Tuning<br>
+            Chill가이</td>
+</td>
+    </tr>
 </table>
 
 <br/>
 <br/>
+
