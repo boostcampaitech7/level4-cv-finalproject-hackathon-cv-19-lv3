@@ -10,8 +10,6 @@ from copy import deepcopy
 from dance_scoring import detector, util, scoring
 from dance_scoring.detector import post_process_pose_landmarks, post_process_world_pose_landmarks
 from dance_scoring.util import draw_landmarks_on_image, get_closest_frame
-from dance_scoring.similarity_with_frames import get_normalized_keypoints, calculate_similarity_with_visualization, make_euclidean_similarity, make_cosine_similarity
-from dance_scoring.similarity_with_frames import get_center_pair_frames
 from dance_feedback.pose_compare import extract_3D_pose_landmarks
 from dance_feedback.clova_feedback import base_feedback_model
 from dance_feedback import pose_feedback
@@ -190,9 +188,8 @@ elif page_option == 'Image Compare':
             temp_filepath_2 = temp_file_2.name
         
         # pose estimate
-        pose_landmarks_1, _, annotated_image_1, b1 = st.session_state['estimate_class'].get_image_landmarks(temp_filepath_1, landmarks_c=(234,63,247), connection_c=(117,249,77))
-        pose_landmarks_2, _, annotated_image_2, b2 = st.session_state['estimate_class'].get_image_landmarks(temp_filepath_2, landmarks_c=(255, 165, 0), connection_c=(200, 200, 200))
-        del _
+        pose_landmarks_1, pose_world_landmarks_1, annotated_image_1, b1 = st.session_state['estimate_class'].get_image_landmarks(temp_filepath_1, landmarks_c=(234,63,247), connection_c=(117,249,77))
+        pose_landmarks_2, pose_world_landmarks_2, annotated_image_2, b2 = st.session_state['estimate_class'].get_image_landmarks(temp_filepath_2, landmarks_c=(255, 165, 0), connection_c=(200, 200, 200))
 
         if pose_landmarks_1 is None or pose_landmarks_2 is None:
             raise ValueError("each image has to at least one person in each of them")
@@ -207,12 +204,14 @@ elif page_option == 'Image Compare':
         # normalize한 경우에 대한 overlap image와 점수 계산
         pose_landmarks_np_1 = scoring.refine_landmarks(pose_landmarks_1)
         pose_landmarks_np_2 = scoring.refine_landmarks(pose_landmarks_2)
-        evaluation_results = scoring.evaluate_everything(pose_landmarks_np_1, b1, pose_landmarks_np_2, pck_thres=pck_thres, normalize=True, ignore_z=ignore_z)
+        pose_world_landmarks_np_1 = scoring.refine_landmarks(pose_world_landmarks_1)
+        pose_world_landmarks_np_2 = scoring.refine_landmarks(pose_world_landmarks_2)
+        evaluation_results = scoring.evaluate_on_two_images(pose_world_landmarks_np_1, b1, pose_world_landmarks_np_2, pck_thres=pck_thres, normalize=True, ignore_z=ignore_z)
 
         overlap_img1 = cv2.cvtColor(cv2.imread(temp_filepath_1), cv2.COLOR_BGR2RGB)
         overlap_img1 = util.image_alpha_control(overlap_img1, alpha=0.4)
         overlap_img1 = util.draw_landmarks_on_image(overlap_img1, pose_landmarks_1)
-
+        
         normalized_pose_landmarks_2 = deepcopy(pose_landmarks_2)
         normalized_pose_landmarks_np_2 = scoring.normalize_landmarks_to_range(
             scoring.refine_landmarks(pose_landmarks_1, target_keys=config.TOTAL_KEYPOINTS), 
@@ -234,7 +233,7 @@ elif page_option == 'Image Compare':
 
 
         # normalize를 진행하지 않은 경우에 대한 overlap image와 점수 계산
-        evaluation_results_2 = scoring.evaluate_everything(pose_landmarks_np_1, b1, scoring.refine_landmarks(pose_landmarks_2), pck_thres=pck_thres, normalize=False, ignore_z=ignore_z)
+        evaluation_results_2 = scoring.evaluate_on_two_images(pose_landmarks_np_1, b1, scoring.refine_landmarks(pose_landmarks_2), pck_thres=pck_thres, normalize=False, ignore_z=ignore_z)
         overlap_img2 = cv2.cvtColor(cv2.imread(temp_filepath_1), cv2.COLOR_BGR2RGB)
         overlap_img2 = util.image_alpha_control(overlap_img2, alpha=0.4)
         overlap_img2 = util.draw_landmarks_on_image(overlap_img2, pose_landmarks_1)
@@ -280,7 +279,7 @@ elif page_option=="Video Compare":
         height_2, width_2 = img_shape2
 
 
-        total_results, low_score_frames = scoring.get_score_from_frames(
+        total_results, low_score_frames = scoring.evaluate_on_two_videos(
             pose_landmarker_results_1, pose_landmarker_results_2, pck_thres=pck_thres, thres=0.4, ignore_z=ignore_z, use_dtw=use_dtw
         )
         for k, v in total_results.items():
@@ -370,33 +369,30 @@ else:
         else:
             original_video_frames_2, pose_landmarker_results_2, height2, width2, fps2 = st.session_state['feedback_info_2']
 
-        # feedback에 사용하기 위한 world landmarks 추출
+        # feedback에 사용하기 위한 landmarks 추출
         pose_world_landmarker_results_1 = post_process_world_pose_landmarks(pose_landmarker_results_1)
         pose_world_landmarker_results_2 = post_process_world_pose_landmarks(pose_landmarker_results_2)
+        pose_landmarker_results_1 = post_process_pose_landmarks(pose_landmarker_results_1)
+        pose_landmarker_results_2 = post_process_pose_landmarks(pose_landmarker_results_2)
 
 
+        # landmark list -> numpy array
+        keypoints1 = np.array([scoring.refine_landmarks(l, config.TOTAL_KEYPOINTS) for l in pose_world_landmarker_results_1])
+        keypoints2 = np.array([scoring.refine_landmarks(l, config.TOTAL_KEYPOINTS) for l in pose_world_landmarker_results_2])
         if feedback_normalize:
         # 시각화 및 피드백을 위한 정규화
             normalized_all_landmarks1 = scoring.normalize_landmarks_to_range_by_mean(
-                np.array([scoring.refine_landmarks(l, config.TOTAL_KEYPOINTS) for l in pose_world_landmarker_results_2]), np.array([scoring.refine_landmarks(l, config.TOTAL_KEYPOINTS) for l in pose_world_landmarker_results_1])
+                keypoints2, keypoints1
             )
             for i, pose_landmarker_result in enumerate(pose_world_landmarker_results_1):
                 for j, landmarks in enumerate(pose_landmarker_result):
                     landmarks.x = normalized_all_landmarks1[i, j, 0]
                     landmarks.y = normalized_all_landmarks1[i, j, 1]
                     landmarks.z = normalized_all_landmarks1[i, j, 2]
-
-
-        # None값을 없애기위한 후처리
-        pose_landmarker_results_1 = post_process_pose_landmarks(pose_landmarker_results_1)
-        pose_landmarker_results_2 = post_process_pose_landmarks(pose_landmarker_results_2)
-
-        # keypoints L2 정규화
-        keypoints1 = get_normalized_keypoints(pose_landmarker_results_1, height1, width1)
-        keypoints2 = get_normalized_keypoints(pose_landmarker_results_2, height2, width2)
+        
 
         # 유사도 및 시각화 데이터 계산
-        distance, average_cosine_similarity, average_euclidean_distance, average_oks, average_pck, pairs = calculate_similarity_with_visualization(
+        average_cosine_similarity, average_euclidean_distance, average_oks, average_pck, pairs = scoring.calculate_similarity(
             keypoints1, keypoints2, pck_threshold=pck_thres
         )
 
@@ -431,10 +427,11 @@ else:
             f"""
             <div class="score-card">
                 <div class="score-title">성적표</div>
-                <div class="metric">📌 Average Cosine Similarity: <b>{make_cosine_similarity(average_cosine_similarity):.2f}</b></div>
-                <div class="metric">📌 Average Euclidean Similarity: <b>{make_euclidean_similarity(average_euclidean_distance):.2f}</b></div>
+                <div class="metric">📌 Average Cosine Similarity: <b>{average_cosine_similarity:.2f}</b></div>
+                <div class="metric">📌 Average Euclidean Similarity: <b>{average_euclidean_distance:.2f}</b></div>
                 <div class="metric">📌 Average OKS: <b>{average_oks:.2f}</b></div>
                 <div class="metric">📌 Average PCK: <b>{average_pck:.2f}</b></div>
+                <div class="metric">📌 Final Score: <b>{scoring.calculate_score(keypoints1, keypoints2):.2f}</b></div>
             </div>
             """,
             unsafe_allow_html=True,
@@ -456,17 +453,13 @@ else:
 
         random_matched_list = []
         for idx2, frame in enumerate(original_video_frames_2):
-            idx1 = get_center_pair_frames(pairs, idx2)
+            idx1 = scoring.get_center_pair_frames(pairs, idx2)
             random_matched_list.append(idx1)
 
             original_video_frames_2[idx2] = draw_landmarks_on_image(
                 frame, pose_landmarker_results_1[idx1],
                 landmarks_c=(234,63,247), connection_c=(117,249,77), thickness=2, circle_r=2
             )
-            # original_video_frames_2[idx2] = draw_landmarks_on_image(
-            #     original_video_frames_2[idx2], pose_landmarker_results_2[idx2],
-            #     landmarks_c=(50, 192, 30), connection_c=(200, 50, 200), thickness=2, circle_r=2
-            # )
 
         del normalized_all_landmarks1
         

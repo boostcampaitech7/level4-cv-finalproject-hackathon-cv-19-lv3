@@ -27,6 +27,30 @@ def filter_important_features(landmarks_np, targets=SELECTED_KEYPOINTS):
     return landmarks_np[targets]
 
 
+def get_center_pair_frames(pairs, keypoint2_index, matched_idx=1):
+    # keypoint2_index와 매칭된 keypoint1의 모든 인덱스를 찾음
+    matching_pairs = [pair for pair in pairs if pair[matched_idx] == keypoint2_index]
+    num_total_pairs = len(matching_pairs)
+
+    if not matching_pairs:
+        print(f"No matching pairs found for keypoint2 index: {keypoint2_index}")
+        return (0, 0)
+
+    # 매칭된 프레임 중 시간축 기준 중간에 위치하는 것을 추출
+    return matching_pairs[num_total_pairs // 2][not matched_idx]
+
+def get_all_pair_frames(pairs, keypoint2_index, matched_idx=1):
+    # keypoint2_index와 매칭된 keypoint1의 모든 인덱스를 찾음
+    matching_pairs = [pair for pair in pairs if pair[matched_idx] == keypoint2_index]
+
+    if not matching_pairs:
+        print(f"No matching pairs found for keypoint2 index: {keypoint2_index}")
+        return (0, 0)
+
+    # keypoint1 매칭된 프레임 번호 모두 return
+    return matching_pairs
+
+
 def normalize_landmarks(landmarks_np, box):
     """
     Normalize landmarks based on the bounding box dimensions.
@@ -127,6 +151,15 @@ def L1_score(landmarks1, landmarks2, ignore_z = False):
     similarity = 1 / (1 + np.mean(distance))  # 유사성을 0~1로 정규화
     return similarity
 
+# 단순히 scipy의 euclidean, cosine함수 썼을 때 범위 맞춰주는 함수들
+def make_cosine_similarity(avg_cosine):
+    # cos = (avg_cosine * 1000) % 100
+    cos = (1 + avg_cosine) / 2 * 100
+    return cos
+
+def make_euclidean_similarity(avg_euclidean):
+    euc = 100 - (avg_euclidean * 100)
+    return euc
 
 # OKS 값 계산 함수
 def oks(gt, preds, boxsize, ignore_z=False):
@@ -159,7 +192,7 @@ def pck(gt, preds, threshold=0.1, ignore_z=False):
     return pck_score, matched
 
 
-def evaluate_everything(landmarks1_np, bs1, landmarks2_np, pck_thres=0.1, normalize=True, verbose=True, ignore_z=False):
+def evaluate_on_two_images(landmarks1_np, bs1, landmarks2_np, pck_thres=0.1, normalize=True, verbose=True, ignore_z=False):
     """
     landmarks1_np, landmarks2_np: [num_selected_keypoints, 4]의 numpy array
     pck_thres : pck스코어 계산 시 얼마나 가까워야 match시킬 것인지
@@ -192,7 +225,7 @@ def evaluate_everything(landmarks1_np, bs1, landmarks2_np, pck_thres=0.1, normal
     return results
 
 
-def get_score_from_frames(all_landmarks1, all_landmarks2, score_target='PCK', pck_thres=0.1, thres=0.4, ignore_z=False, use_dtw=False):
+def evaluate_on_two_videos(all_landmarks1, all_landmarks2, score_target='PCK', pck_thres=0.1, thres=0.4, ignore_z=False, use_dtw=False):
     """
     all_landmarks1, all_landmarks2: list[landmarks]
     pck_thres : pck스코어 계산 시 얼마나 가까워야 match시킬 것인지
@@ -222,7 +255,7 @@ def get_score_from_frames(all_landmarks1, all_landmarks2, score_target='PCK', pc
         for frame_num_1, frame_num_2 in path:
             np_l1 = all_landmarks_np_1[frame_num_1]
             np_l2 = all_landmarks_np_2[frame_num_2]
-            results = evaluate_everything(np_l1, bs1, np_l2, pck_thres=pck_thres, verbose=False, ignore_z=ignore_z)
+            results = evaluate_on_two_images(np_l1, bs1, np_l2, pck_thres=pck_thres, verbose=False, ignore_z=ignore_z)
             results['matched_frame'] = (frame_num_1, frame_num_2)
 
             for k, v in results.items():
@@ -233,7 +266,7 @@ def get_score_from_frames(all_landmarks1, all_landmarks2, score_target='PCK', pc
         for frame_num, (landmarks1, landmarks2) in enumerate(zip(all_landmarks1, all_landmarks2)):
             np_l1 = refine_landmarks(landmarks1)
             np_l2 = refine_landmarks(landmarks2)
-            results = evaluate_everything(np_l1, bs1, np_l2, pck_thres=pck_thres, verbose=False, ignore_z=ignore_z)
+            results = evaluate_on_two_images(np_l1, bs1, np_l2, pck_thres=pck_thres, verbose=False, ignore_z=ignore_z)
             results['matched_frame'] = (frame_num, frame_num)
 
             for k, v in results.items():
@@ -262,7 +295,7 @@ def normalize_landmarks_to_range_dist(keypoints1: np.ndarray, keypoints2: np.nda
     return np.linalg.norm(keypoints1 - keypoints2)
 
 
-def calculate_similarity(keypoints1: np.ndarray, keypoints2: np.ndarray):
+def calculate_similarity(keypoints1: np.ndarray, keypoints2: np.ndarray, pck_threshold=0.1):
     """Calculate similarity between two sequences of keypoints."""
     _, pairs = fastdtw(keypoints1, keypoints2, dist=normalize_landmarks_to_range_dist)
 
@@ -300,10 +333,10 @@ def calculate_similarity(keypoints1: np.ndarray, keypoints2: np.ndarray):
         euclidean_similarities.append(np.mean(frame_euclidean_similarities))
         weighted_distances.append(np.mean(frame_weighted_distances))
 
-        oks_score = oks(kp1, kp2)
+        oks_score = oks(kp1, kp2, boxsize=np.array([1,0,0]))
         oks_scores.append(oks_score)
 
-        pck_score, _ = pck(kp1, kp2)
+        pck_score, _ = pck(kp1, kp2, threshold=pck_threshold)
         pck_scores.append(pck_score)
 
     avg_cosine = np.mean(cosine_similarities)
@@ -312,12 +345,12 @@ def calculate_similarity(keypoints1: np.ndarray, keypoints2: np.ndarray):
     average_oks = np.mean(oks_scores)
     average_pck = np.mean(pck_scores)
 
-    return avg_cosine, avg_euclidean, average_oks, average_pck
+    return avg_cosine, avg_euclidean, average_oks, average_pck, pairs
 
 def calculate_score(keypoints1, keypoints2):
     """Calculate final score."""
     results = calculate_similarity(keypoints1, keypoints2)
-    avg_cosine, avg_euclidean, average_oks, average_pck = results
+    avg_cosine, avg_euclidean, average_oks, average_pck, _ = results
 
     if avg_cosine > 0.9 and avg_euclidean > 0.9:
         final_score = max(avg_cosine, avg_euclidean)

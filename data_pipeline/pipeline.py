@@ -5,8 +5,9 @@ sys.path.append("./")
 import pandas as pd
 import numpy as np
 
-from dance_scoring.detector import PoseDetector, post_process_pose_landmarks
-from dance_scoring.similarity_with_frames import *
+import config
+from dance_scoring.detector import PoseDetector, post_process_world_pose_landmarks
+from dance_scoring.scoring import *
 from dance_feedback.pose_compare import extract_3D_pose_landmarks
 from dance_feedback.pose_feedback import *
 
@@ -19,15 +20,15 @@ def compare_video_pair(right_video_path, wrong_video_path, frame_interval=0.5):
     wrong_original_video_frames, wrong_pose_landmarker_results, wrong_shape, wrong_fps = estimate_class.get_video_landmarks(wrong_video_path)
     
     # None값 처리
-    right_pose_landmarker_results = post_process_pose_landmarks(right_pose_landmarker_results)
-    wrong_pose_landmarker_results = post_process_pose_landmarks(wrong_pose_landmarker_results)
+    right_pose_landmarker_results = post_process_world_pose_landmarks(right_pose_landmarker_results)
+    wrong_pose_landmarker_results = post_process_world_pose_landmarks(wrong_pose_landmarker_results)
 
     # keypoints L2 정규화
-    right_keypoints = get_normalized_keypoints(right_pose_landmarker_results, *right_shape)
-    wrong_keypoints = get_normalized_keypoints(wrong_pose_landmarker_results, *wrong_shape)
+    right_keypoints = np.array([refine_landmarks(l, config.TOTAL_KEYPOINTS) for l in right_pose_landmarker_results])
+    wrong_keypoints = np.array([refine_landmarks(l, config.TOTAL_KEYPOINTS) for l in wrong_pose_landmarker_results])
 
     # 유사도 및 시각화 데이터 계산
-    distance, average_cosine_similarity, average_euclidean_distance, average_oks, average_pck, pairs = calculate_similarity_with_visualization(
+    average_cosine_similarity, average_euclidean_distance, average_oks, average_pck, pairs = calculate_similarity(
         right_keypoints, wrong_keypoints
     )
     
