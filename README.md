@@ -92,8 +92,10 @@
 
 <br/>
 
-## [🎥 딴 - 따라 시연 영상](https://youtube.com/shorts/nN5Y-eluyfk?feature=share)
-해당 목차 클릭 시 유튜브 시연 영상으로 이동합니다.
+# [🎥 딴 - 따라 서비스 발표 및 시연 영상](https://youtu.be/9fVOk6eNxbc)
+해당 목차 클릭 시 유튜브 발표 영상으로 이동합니다.
+
+<br/>
 
 
 # 🔧 딴 - 따라 Service Stack
@@ -180,7 +182,7 @@
 </td>
     </tr>
 </table>
-
+- 해당 멤버 이름 클릭 시 각자의 GitHub 계정으로 이동합니다.
 <br/>
 <br/>
 
