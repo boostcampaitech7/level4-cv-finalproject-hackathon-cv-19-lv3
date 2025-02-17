@@ -85,7 +85,7 @@ def make_dataset(matched_dict_list, system_prompt, start_CID=0, angle_thres=20, 
 
     for idx, matched_dict in enumerate(matched_dict_list):
         differences = refine_float_dict(get_feedback_from_keypoints(matched_dict))
-        feedbacks = get_korean_3D_feedback(differences, angle_thres=20, dist_thres=0.12, height_thres=20)
+        feedbacks = get_korean_3D_feedback(differences, angle_thres=angle_thres, dist_thres=dist_thres, height_thres=height_thres)
         feedbacks = aggregate_feedback(feedbacks)
 
         # output sentence를 dict로부터 작성
